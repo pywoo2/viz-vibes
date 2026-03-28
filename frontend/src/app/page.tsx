@@ -16,7 +16,7 @@ export default function Home() {
   const [isResizing, setIsResizing] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [vizMode, setVizMode] = useState('noise');
-  const [figuresVisible, setFiguresVisible] = useState(false);
+  const [figuresVisible, setFiguresVisible] = useState(true);
   const [colorMode, setColorMode] = useState('mono');
   const [clickEffect, setClickEffect] = useState('ripple');
   const [showAbout, setShowAbout] = useState(false);
@@ -98,7 +98,12 @@ export default function Home() {
 
   return (
     <>
+    <div className="mobile-block">
+      <p>viz-vibes</p>
+      <p className="mobile-sub">best experienced on desktop</p>
+    </div>
     <div
+      className="desktop-only"
       style={{
         display: 'grid',
         gridTemplateColumns: `${isCollapsed ? '40px' : `${sidebarWidth}px`} 1fr`,
@@ -176,7 +181,7 @@ export default function Home() {
             <h2 className="about-title">about viz-vibes</h2>
             <div className="about-section">
               <h3>the music</h3>
-              <p>All songs are AI-generated — composed, arranged, and produced with artificial intelligence.</p>
+              <p>All songs are AI-generated.</p>
             </div>
             <div className="about-section">
               <h3>the tech</h3>
@@ -184,7 +189,7 @@ export default function Home() {
             </div>
             <div className="about-section">
               <h3>the design</h3>
-              <p>Built with obsessive attention to interaction detail — mouse-reactive shaders, generative art overlays, and interfaces that feel alive.</p>
+              <p>Inspired by iOS liquid glass and MySpace.</p>
             </div>
             <a href="https://www.linkedin.com/in/pywoo/" target="_blank" rel="noopener noreferrer" className="about-link">
               Made by Peter Woo &rarr;

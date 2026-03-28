@@ -60,8 +60,7 @@ export default function AboutPage() {
         </p>
 
         <Section title="the music">
-          All songs are AI-generated — composed, arranged, and produced with
-          artificial intelligence.
+          All songs are AI-generated.
         </Section>
 
         <Section title="the tech">
@@ -70,8 +69,7 @@ export default function AboutPage() {
         </Section>
 
         <Section title="the design">
-          Built with obsessive attention to interaction detail —
-          mouse-reactive shaders, generative art overlays, and interfaces that feel alive.
+          Inspired by iOS liquid glass and MySpace.
         </Section>
 
         <div

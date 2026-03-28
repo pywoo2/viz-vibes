@@ -931,23 +931,24 @@ body {
 
 /* ========== SIDEBAR COLLAPSE / EXPAND BUTTONS ========== */
 .collapse-sidebar-btn {
-  background: none;
-  border: 1px solid var(--glass-border);
-  color: var(--fg-dim);
-  width: 24px;
-  height: 24px;
-  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.5);
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.5rem;
-  transition: color 0.15s, background 0.15s;
+  font-size: 0.7rem;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
   flex-shrink: 0;
 }
 .collapse-sidebar-btn:hover {
   color: var(--fg-bright);
-  background: var(--bg-hover);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .expand-sidebar-btn {
@@ -975,4 +976,44 @@ body {
 .expand-sidebar-btn:hover {
   color: var(--fg-bright);
   background: var(--glass-hover);
+}
+
+/* ========== MOBILE BLOCK ========== */
+.mobile-block {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: #0a0a0a;
+  color: rgba(255, 255, 255, 0.7);
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 1.2rem;
+  font-weight: 300;
+  letter-spacing: 0.08em;
+  text-transform: lowercase;
+}
+
+.mobile-block .mobile-sub {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.desktop-only {
+  display: grid;
+}
+
+@media (max-width: 768px) {
+  .mobile-block {
+    display: flex;
+  }
+  .desktop-only {
+    display: none !important;
+  }
+  .expand-sidebar-btn,
+  #viz-picker {
+    display: none !important;
+  }
 }

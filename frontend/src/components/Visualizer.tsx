@@ -679,10 +679,51 @@ const floralShader = uniformHeader + `
   }
 `;
 
-// No visualization — just black
+// No visualization — black with subtle mouse glow and click effects
 const noneShader = uniformHeader + `
   void main() {
-    gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+    vec2 uv = gl_FragCoord.xy / resolution;
+    vec2 p = uv * 2.0 - 1.0;
+    p.x *= resolution.x / resolution.y;
+
+    float brightness = 0.0;
+
+    // Subtle mouse glow
+    if (mouse.x >= 0.0) {
+      vec2 mp = mouse * 2.0 - 1.0;
+      mp.x *= resolution.x / resolution.y;
+      float md = length(p - mp);
+      brightness += 0.015 / (md * md + 0.02);
+    }
+
+    // Click effect
+    if (click.z > 0.0 && clickType > 0) {
+      float clickAge = time - click.z;
+      if (clickAge < 1.5) {
+        vec2 cp = click.xy * 2.0 - 1.0;
+        cp.x *= resolution.x / resolution.y;
+        float cd = length(p - cp);
+        float fade = 1.0 - clickAge / 1.5;
+        if (clickType == 1) {
+          float ring = abs(cd - clickAge * 0.35) - 0.01;
+          brightness += smoothstep(0.02, 0.0, ring) * fade * 0.4;
+        } else if (clickType == 2) {
+          float cAngle = atan(p.y - cp.y, p.x - cp.x);
+          float rays = pow(abs(sin(cAngle * 6.0)), 3.0);
+          float radial = smoothstep(clickAge * 0.5, 0.0, cd) * fade;
+          float flash = 0.15 / (cd + 0.05) * max(0.0, 1.0 - clickAge * 3.0);
+          brightness += (rays * radial * 0.5 + flash);
+        } else if (clickType == 3) {
+          float radius = clickAge * 0.4;
+          float thickness = 0.05 + clickAge * 0.03;
+          float wave = smoothstep(radius + thickness, radius, cd) * smoothstep(radius - thickness, radius, cd);
+          brightness += wave * fade * 0.8;
+          brightness += 0.1 * fade / (abs(cd - radius) + 0.05);
+        }
+      }
+    }
+
+    gl_FragColor = vec4(vec3(brightness), 1.0);
   }
 `;
 
@@ -693,7 +734,6 @@ export const VISUALIZER_MODES = [
   { id: 'particles', label: 'Particles', shader: particlesShader },
   { id: 'grid', label: 'Grid', shader: gridShader },
   { id: 'plasma', label: 'Plasma', shader: plasmaShader },
-  { id: 'floral', label: 'Floral', shader: floralShader },
 ];
 
 function getShaderForMode(mode: string): string {

@@ -118,13 +118,15 @@ export default function Sidebar({
   return (
     <div
       id="sidebar"
-      style={isCollapsed ? { overflow: 'hidden', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', paddingTop: '24px' } : undefined}
+      style={isCollapsed ? { overflow: 'hidden' } : undefined}
       ref={sidebarRef}
       onMouseMove={isCollapsed ? undefined : handleSidebarMouseMove}
       onMouseLeave={isCollapsed ? undefined : handleSidebarMouseLeave}
     >
       {isCollapsed ? (
-        <button className="collapse-sidebar-btn" onClick={onCollapse} title="Expand sidebar">{'\u25B6'}</button>
+        <div id="sidebar-header" style={{ justifyContent: 'center' }}>
+          <button className="collapse-sidebar-btn" onClick={onCollapse} title="Expand sidebar">{'\u25B6'}</button>
+        </div>
       ) : (
         <>
         {/* Mouse-tracking specular highlight overlay */}
