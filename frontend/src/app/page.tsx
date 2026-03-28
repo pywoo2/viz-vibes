@@ -55,12 +55,20 @@ export default function Home() {
     if (collapsed === 'true') setIsCollapsed(true);
     const savedVizMode = localStorage.getItem('viz-mode');
     if (savedVizMode) setVizMode(savedVizMode);
-    const savedFigures = localStorage.getItem('figures-visible');
-    if (savedFigures === 'true') setFiguresVisible(true);
     const savedColorMode = localStorage.getItem('color-mode');
     if (savedColorMode) setColorMode(savedColorMode);
     const savedClickEffect = localStorage.getItem('click-effect');
     if (savedClickEffect) setClickEffect(savedClickEffect);
+
+    // On mobile, disable figures/notes by default for performance
+    // On desktop, respect localStorage (default true)
+    const isMobile = window.innerWidth < 768;
+    if (isMobile) {
+      setFiguresVisible(false);
+    } else {
+      const savedFigures = localStorage.getItem('figures-visible');
+      if (savedFigures === 'false') setFiguresVisible(false);
+    }
   }, []);
 
   const startResize = useCallback((e: React.MouseEvent) => {
@@ -273,12 +281,7 @@ export default function Home() {
           </p>
           <button
             onClick={() => setShowWarning(false)}
-            style={{
-              background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)',
-              color: 'rgba(255,255,255,0.7)', padding: '10px 24px', borderRadius: 8,
-              fontSize: '0.8rem', fontFamily: 'inherit', fontWeight: 400, letterSpacing: '0.04em',
-              cursor: 'pointer', textTransform: 'lowercase' as const,
-            }}
+            className="epilepsy-btn"
           >
             i understand, continue
           </button>

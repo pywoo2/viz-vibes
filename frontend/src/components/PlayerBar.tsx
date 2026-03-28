@@ -61,12 +61,37 @@ export default function PlayerBar({
     [duration, onSeek]
   );
 
+  const seekFromTouch = useCallback(
+    (e: TouchEvent) => {
+      if (!duration || !progressRef.current) return;
+      const touch = e.touches[0];
+      if (!touch) return;
+      const rect = progressRef.current.getBoundingClientRect();
+      const ratio = Math.max(0, Math.min(1, (touch.clientX - rect.left) / rect.width));
+      onSeek(ratio * duration);
+    },
+    [duration, onSeek]
+  );
+
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
       isDraggingRef.current = true;
       if (!duration || !progressRef.current) return;
       const rect = progressRef.current.getBoundingClientRect();
       const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+      onSeek(ratio * duration);
+    },
+    [duration, onSeek]
+  );
+
+  const handleTouchStart = useCallback(
+    (e: React.TouchEvent) => {
+      isDraggingRef.current = true;
+      if (!duration || !progressRef.current) return;
+      const touch = e.touches[0];
+      if (!touch) return;
+      const rect = progressRef.current.getBoundingClientRect();
+      const ratio = Math.max(0, Math.min(1, (touch.clientX - rect.left) / rect.width));
       onSeek(ratio * duration);
     },
     [duration, onSeek]
@@ -79,13 +104,26 @@ export default function PlayerBar({
     const handleMouseUp = () => {
       isDraggingRef.current = false;
     };
+    const handleTouchMove = (e: TouchEvent) => {
+      if (isDraggingRef.current) {
+        e.preventDefault();
+        seekFromTouch(e);
+      }
+    };
+    const handleTouchEnd = () => {
+      isDraggingRef.current = false;
+    };
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
+    document.addEventListener('touchmove', handleTouchMove, { passive: false });
+    document.addEventListener('touchend', handleTouchEnd);
     return () => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [seekFromEvent]);
+  }, [seekFromEvent, seekFromTouch]);
 
   // Effect 5: Mouse-tracking highlight on player bar — uses refs to avoid re-renders
   const handleBarMouseMove = useCallback((e: React.MouseEvent) => {
@@ -220,6 +258,7 @@ export default function PlayerBar({
             id="progress-container"
             ref={progressRef}
             onMouseDown={handleMouseDown}
+            onTouchStart={handleTouchStart}
           >
             <div
               id="progress-bar"

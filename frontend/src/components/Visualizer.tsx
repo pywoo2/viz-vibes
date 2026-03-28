@@ -857,7 +857,10 @@ export default function Visualizer({ analyser, isPlaying, mode, colorMode, click
     const resize = () => {
       const rect = canvas.parentElement?.getBoundingClientRect();
       if (!rect) return;
-      const dpr = Math.min(window.devicePixelRatio, 2);
+      const isMobile = window.innerWidth < 768;
+      const dpr = isMobile
+        ? Math.min(window.devicePixelRatio, 1.5)
+        : Math.min(window.devicePixelRatio, 2);
       canvas.width = rect.width * dpr;
       canvas.height = rect.height * dpr;
       canvas.style.width = rect.width + 'px';

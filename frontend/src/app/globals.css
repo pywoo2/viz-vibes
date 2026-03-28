@@ -1078,6 +1078,7 @@ body {
   #player-bar {
     height: 56px;
     padding: 0 10px;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
   /* Smaller controls */
@@ -1439,5 +1440,102 @@ body {
   .note-submit-btn {
     padding: 8px 10px;
     font-size: 0.75rem;
+  }
+}
+
+/* ========== TABLET / IPAD LAYOUT (768-1024px) ========== */
+@media (min-width: 769px) and (max-width: 1024px) {
+  /* Fixed 200px sidebar, no resize handle */
+  .desktop-only {
+    grid-template-columns: 200px 1fr !important;
+  }
+
+  .resize-handle {
+    display: none !important;
+  }
+
+  /* Smaller player bar */
+  #player-bar {
+    height: 70px;
+    padding: 0 12px;
+  }
+
+  /* Tighter controls */
+  #controls { gap: 12px; }
+  #controls button svg { width: 17px; height: 17px; }
+  #play-btn { width: 34px; height: 34px; }
+  #play-btn svg { width: 17px; height: 17px; }
+
+  /* Smaller volume slider */
+  #volume-slider {
+    width: 70px;
+  }
+}
+
+/* ========== REMOVE HOVER EFFECTS ON TOUCH DEVICES ========== */
+@media (hover: none) {
+  #track-list li:hover {
+    background: none;
+  }
+
+  #track-list li:hover .track-num-wrap .play-hover-icon {
+    opacity: 0;
+  }
+
+  #track-list li:hover .track-num-wrap .track-num {
+    opacity: 1;
+  }
+
+  .like-btn:hover svg {
+    fill: rgba(255, 255, 255, 0.5);
+  }
+
+  .download-btn:hover svg {
+    fill: rgba(255, 255, 255, 0.35);
+  }
+
+  #progress-container:hover {
+    height: 3px;
+  }
+
+  #progress-container:hover #progress-bar::after {
+    transform: translateY(-50%) scale(0);
+  }
+
+  /* Always show progress thumb on touch for better UX */
+  #progress-bar::after {
+    transform: translateY(-50%) scale(1) !important;
+  }
+
+  #controls button:hover {
+    color: var(--fg-subtle);
+    transform: none;
+  }
+
+  .viz-mode-btn:hover {
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  #sidebar:hover::after {
+    opacity: 0;
+  }
+
+  .resize-handle:hover,
+  .resize-handle:active {
+    background: none;
+  }
+}
+
+/* ========== EPILEPSY WARNING MOBILE ========== */
+@media (max-width: 768px) {
+  .epilepsy-card {
+    padding: 24px;
+  }
+
+  .epilepsy-btn {
+    min-width: 200px;
+    min-height: 44px;
+    padding: 12px 28px;
+    font-size: 0.85rem;
   }
 }
