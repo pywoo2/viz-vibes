@@ -557,69 +557,87 @@ const plasmaShader = uniformHeader + `
   }
 `;
 
-// Mode 7: Floral — audio-reactive flower/petal patterns
+// Mode 7: Floral — dark moody dahlias, deep reds on black
 const floralShader = uniformHeader + `
+  // Petal shape function — creates layered dahlia-like forms
+  float petal(vec2 p, float angle, float count, float sharpness, float size) {
+    float a = atan(p.y, p.x) + angle;
+    float r = length(p);
+    float pShape = pow(abs(cos(a * count * 0.5)), sharpness) * size;
+    return smoothstep(pShape + 0.01, pShape - 0.01, r);
+  }
+
   void main() {
     vec2 uv = gl_FragCoord.xy / resolution;
     vec2 p = uv * 2.0 - 1.0;
     p.x *= resolution.x / resolution.y;
 
-    float t = time * 0.2;
+    float t = time * 0.15;
     float dist = length(p);
     float angle = atan(p.y, p.x);
 
-    // Multiple flower layers
-    float flower = 0.0;
+    // Dark deep red palette
+    vec3 deepRed = vec3(0.45, 0.02, 0.04);
+    vec3 crimson = vec3(0.65, 0.05, 0.08);
+    vec3 rose = vec3(0.55, 0.08, 0.12);
+    vec3 darkCore = vec3(0.15, 0.01, 0.02);
 
-    // Main flower — petals using sin(angle * n) in polar coords
-    float petals1 = abs(sin(angle * 3.0 + t)) * (0.3 + bass * 0.4);
-    float shape1 = smoothstep(petals1 + 0.02, petals1, dist);
-    flower += shape1 * 0.4;
+    vec3 color = vec3(0.0);
 
-    // Second flower layer — offset and different petal count
-    float petals2 = abs(sin(angle * 5.0 - t * 0.7 + mid)) * (0.2 + mid * 0.3);
-    float shape2 = smoothstep(petals2 + 0.015, petals2, dist);
-    flower += shape2 * 0.3;
+    // Layer 1: Large outer dahlia — many petals, slow rotation
+    float outer = petal(p, t * 0.3 + bass * 0.2, 12.0, 1.5, 0.7 + bass * 0.3);
+    color += deepRed * outer * 0.5;
 
-    // Third layer — small inner flower
-    float petals3 = abs(cos(angle * 8.0 + t * 1.3)) * (0.1 + high * 0.15);
-    float shape3 = smoothstep(petals3 + 0.01, petals3, dist);
-    flower += shape3 * 0.2;
+    // Layer 2: Mid dahlia — tighter petals, opposite rotation
+    float mid2 = petal(p, -t * 0.4 + mid * 0.3, 16.0, 2.0, 0.5 + mid * 0.2);
+    color += crimson * mid2 * 0.6;
 
-    // Spiraling vines/tendrils growing outward
-    float spiral = sin(dist * 12.0 - t * 2.0 + angle * 2.0) * 0.5 + 0.5;
-    float vine = smoothstep(0.03, 0.0, abs(spiral - 0.5) - 0.47) * (0.1 + energy * 0.2) * smoothstep(0.0, 0.8, dist);
+    // Layer 3: Inner petals — many thin petals
+    float inner = petal(p, t * 0.6 + high * 0.2, 24.0, 3.0, 0.3 + energy * 0.15);
+    color += rose * inner * 0.7;
 
-    // Center stamen glow
-    float center = (0.02 + bass * 0.04) / (dist + 0.05);
+    // Layer 4: Tight center bud
+    float bud = petal(p, -t * 0.8, 32.0, 4.0, 0.15 + bass * 0.08);
+    color += crimson * bud * 0.8;
 
-    // Pollen particles floating outward
-    float pollen = 0.0;
-    for (int i = 0; i < 12; i++) {
+    // Center dark core
+    float core = smoothstep(0.08, 0.0, dist);
+    color = mix(color, darkCore, core * 0.8);
+
+    // Center glow — warm ember
+    float glow = (0.01 + energy * 0.03) / (dist + 0.08);
+    color += deepRed * glow * 0.5;
+
+    // Scattered smaller flowers at edges
+    for (int i = 0; i < 4; i++) {
       float fi = float(i);
-      float a = fi * 0.524 + t * 0.3;
-      float r = fract(fi * 0.38 + t * 0.05) * 1.2;
-      vec2 pos = vec2(cos(a) * r, sin(a) * r);
-      float d = length(p - pos);
-      pollen += 0.003 / (d * d + 0.001) * energy * 0.2;
+      vec2 offset = vec2(
+        sin(fi * 2.1 + t * 0.2) * (0.6 + fi * 0.15),
+        cos(fi * 1.7 + t * 0.15) * (0.5 + fi * 0.2)
+      );
+      vec2 q = p - offset;
+      float smallFlower = petal(q, t * 0.5 + fi, 8.0 + fi * 2.0, 2.0, 0.12 + bass * 0.05);
+      color += rose * smallFlower * 0.3;
     }
 
-    float brightness = flower + vine + center + pollen;
+    // Subtle vein/fiber texture on petals
+    float veins = sin(angle * 20.0 + dist * 15.0 - t) * 0.5 + 0.5;
+    veins = pow(veins, 8.0) * 0.15 * smoothstep(0.8, 0.1, dist);
+    color += crimson * veins;
 
-    // Mouse interaction — bloom effect around cursor
-    float mouseGlow = 0.0;
+    // Ambient pulsing with bass
+    color *= 0.7 + energy * 0.5;
+
+    // Mouse — bloom light
     if (mouse.x >= 0.0) {
       vec2 mp = mouse * 2.0 - 1.0;
       mp.x *= resolution.x / resolution.y;
       float md = length(p - mp);
-      float mouseAngle = atan(p.y - mp.y, p.x - mp.x);
-      float mousePetals = abs(sin(mouseAngle * 6.0 + t * 2.0)) * 0.15;
-      mouseGlow = smoothstep(mousePetals + 0.02, mousePetals, md) * 0.2;
-      mouseGlow += 0.01 / (md * md + 0.01);
+      color += crimson * 0.15 / (md * md + 0.02);
     }
-    brightness += mouseGlow;
 
     // Click effect
+    float brightness = length(color);
     if (click.z > 0.0 && clickType > 0) {
       float clickAge = time - click.z;
       if (clickAge < 1.5) {
@@ -629,40 +647,47 @@ const floralShader = uniformHeader + `
         float fade = 1.0 - clickAge / 1.5;
         if (clickType == 1) {
           float ring = abs(cd - clickAge * 0.35) - 0.01;
-          brightness += smoothstep(0.02, 0.0, ring) * fade * 0.4;
+          color += crimson * smoothstep(0.02, 0.0, ring) * fade * 0.6;
         } else if (clickType == 2) {
           float cAngle = atan(p.y - cp.y, p.x - cp.x);
           float rays = pow(abs(sin(cAngle * 6.0)), 3.0);
           float radial = smoothstep(clickAge * 0.5, 0.0, cd) * fade;
-          float flash = 0.15 / (cd + 0.05) * max(0.0, 1.0 - clickAge * 3.0);
-          brightness += (rays * radial * 0.5 + flash);
+          color += rose * rays * radial * 0.5;
         } else if (clickType == 3) {
           float radius = clickAge * 0.4;
           float thickness = 0.05 + clickAge * 0.03;
           float wave = smoothstep(radius + thickness, radius, cd) * smoothstep(radius - thickness, radius, cd);
-          brightness += wave * fade * 0.8;
-          brightness += 0.1 * fade / (abs(cd - radius) + 0.05);
+          color += crimson * wave * fade * 0.7;
         }
       }
     }
 
-    brightness = clamp(brightness, 0.0, 1.0);
-    brightness = pow(brightness, 0.85);
-
+    // Color mode overrides
+    brightness = (color.r + color.g + color.b) / 3.0;
     if (colorMode == 0) {
-      gl_FragColor = vec4(vec3(brightness), 1.0);
+      // Default: the deep red palette (always colored for floral)
+      gl_FragColor = vec4(color, 1.0);
     } else if (colorMode == 2) {
       gl_FragColor = vec4(vec3(1.0 - brightness), 1.0);
     } else if (colorMode == 3) {
-      gl_FragColor = vec4(brightness * 0.7, brightness * 0.05, brightness * 0.05, 1.0);
+      // Already red — just boost it
+      gl_FragColor = vec4(color * 1.3, 1.0);
     } else {
-      float hue = angle / 6.28318 + 0.5 + dist * 0.3 + time * 0.05;
-      gl_FragColor = vec4(rainbow(hue) * brightness, 1.0);
+      float hue = angle / 6.28318 + dist * 0.3 + time * 0.03;
+      gl_FragColor = vec4(rainbow(hue) * brightness * 2.0, 1.0);
     }
   }
 `;
 
+// No visualization — just black
+const noneShader = uniformHeader + `
+  void main() {
+    gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+  }
+`;
+
 export const VISUALIZER_MODES = [
+  { id: 'none', label: 'None', shader: noneShader },
   { id: 'noise', label: 'Noise Field', shader: noiseFieldShader },
   { id: 'waveform', label: 'Waveform', shader: waveformShader },
   { id: 'particles', label: 'Particles', shader: particlesShader },

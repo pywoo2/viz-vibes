@@ -14,6 +14,12 @@ interface VisualizerPickerProps {
 }
 
 const icons: Record<string, React.ReactNode> = {
+  none: (
+    <svg viewBox="0 0 20 20">
+      <circle cx="10" cy="10" r="7" />
+      <line x1="5" y1="15" x2="15" y2="5" />
+    </svg>
+  ),
   noise: (
     <svg viewBox="0 0 20 20">
       <path d="M3 10c1-3 3-5 5-2s3 1 5-2 3-1 4 1" strokeLinecap="round" />
