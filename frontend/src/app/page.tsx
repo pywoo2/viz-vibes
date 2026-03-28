@@ -17,6 +17,7 @@ export default function Home() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [vizMode, setVizMode] = useState('noise');
   const [figuresVisible, setFiguresVisible] = useState(false);
+  const [colorMode, setColorMode] = useState('mono');
   const [showAbout, setShowAbout] = useState(false);
 
   useEffect(() => {
@@ -28,6 +29,8 @@ export default function Home() {
     if (savedVizMode) setVizMode(savedVizMode);
     const savedFigures = localStorage.getItem('figures-visible');
     if (savedFigures === 'true') setFiguresVisible(true);
+    const savedColorMode = localStorage.getItem('color-mode');
+    if (savedColorMode) setColorMode(savedColorMode);
   }, []);
 
   const startResize = useCallback((e: React.MouseEvent) => {
@@ -69,6 +72,11 @@ export default function Home() {
     localStorage.setItem('viz-mode', mode);
   }, []);
 
+  const handleColorModeChange = useCallback((mode: string) => {
+    setColorMode(mode);
+    localStorage.setItem('color-mode', mode);
+  }, []);
+
   const handleToggleFigures = useCallback(() => {
     setFiguresVisible(prev => {
       const next = !prev;
@@ -93,7 +101,7 @@ export default function Home() {
     >
       {/* Visualizer spans full viewport behind everything */}
       <div id="visualizer-bg">
-        <Visualizer analyser={player.analyserRef?.current ?? null} isPlaying={player.isPlaying} mode={vizMode} />
+        <Visualizer analyser={player.analyserRef?.current ?? null} isPlaying={player.isPlaying} mode={vizMode} colorMode={colorMode} />
       </div>
 
       <FiguresLayer
@@ -107,6 +115,8 @@ export default function Home() {
         onModeChange={handleVizModeChange}
         figuresVisible={figuresVisible}
         onToggleFigures={handleToggleFigures}
+        colorMode={colorMode}
+        onColorModeChange={handleColorModeChange}
       />
 
       <Sidebar
@@ -154,7 +164,7 @@ export default function Home() {
             <h2 className="about-title">about viz-vibes</h2>
             <div className="about-section">
               <h3>the music</h3>
-              <p>All songs are AI-generated — composed, arranged, and produced with artificial intelligence. I listen to them daily.</p>
+              <p>All songs are AI-generated — composed, arranged, and produced with artificial intelligence.</p>
             </div>
             <div className="about-section">
               <h3>the tech</h3>
@@ -162,7 +172,7 @@ export default function Home() {
             </div>
             <div className="about-section">
               <h3>the design</h3>
-              <p>Inspired by iOS liquid glass, with interactive effects throughout — mouse-tracking highlights, glass reflections, and fluid animations.</p>
+              <p>Built with obsessive attention to interaction detail — mouse-reactive shaders, generative art overlays, and interfaces that feel alive.</p>
             </div>
             <a href="https://www.linkedin.com/in/pywoo/" target="_blank" rel="noopener noreferrer" className="about-link">
               Made by Peter Woo &rarr;

@@ -7,6 +7,8 @@ interface VisualizerPickerProps {
   onModeChange: (mode: string) => void;
   figuresVisible: boolean;
   onToggleFigures: () => void;
+  colorMode: string;
+  onColorModeChange: (mode: string) => void;
 }
 
 const icons: Record<string, React.ReactNode> = {
@@ -57,7 +59,7 @@ const icons: Record<string, React.ReactNode> = {
   ),
 };
 
-export default function VisualizerPicker({ mode, onModeChange, figuresVisible, onToggleFigures }: VisualizerPickerProps) {
+export default function VisualizerPicker({ mode, onModeChange, figuresVisible, onToggleFigures, colorMode, onColorModeChange }: VisualizerPickerProps) {
   return (
     <div id="viz-picker">
       {VISUALIZER_MODES.map((m) => (
@@ -82,6 +84,46 @@ export default function VisualizerPicker({ mode, onModeChange, figuresVisible, o
           <line x1="8" y1="8" x2="12" y2="11" />
           <line x1="12" y1="11" x2="17" y2="7" />
           <circle cx="14" cy="8" r="1.5" fill="rgba(255,255,255,0.4)" stroke="none" />
+        </svg>
+      </button>
+      <div className="viz-picker-separator" />
+      <button
+        className={`viz-mode-btn${colorMode === 'mono' ? ' active' : ''}`}
+        onClick={() => onColorModeChange('mono')}
+        title="Monochrome"
+      >
+        <svg viewBox="0 0 20 20">
+          <defs>
+            <clipPath id="mono-left">
+              <rect x="0" y="0" width="10" height="20" />
+            </clipPath>
+            <clipPath id="mono-right">
+              <rect x="10" y="0" width="10" height="20" />
+            </clipPath>
+          </defs>
+          <circle cx="10" cy="10" r="7" fill="white" clipPath="url(#mono-left)" stroke="none" />
+          <circle cx="10" cy="10" r="7" fill="black" clipPath="url(#mono-right)" stroke="none" />
+          <circle cx="10" cy="10" r="7" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="1" />
+        </svg>
+      </button>
+      <button
+        className={`viz-mode-btn${colorMode === 'rainbow' ? ' active' : ''}`}
+        onClick={() => onColorModeChange('rainbow')}
+        title="Rainbow"
+      >
+        <svg viewBox="0 0 20 20">
+          <defs>
+            <linearGradient id="rainbow-grad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="#ff0000" />
+              <stop offset="17%" stopColor="#ff8800" />
+              <stop offset="33%" stopColor="#ffff00" />
+              <stop offset="50%" stopColor="#00ff00" />
+              <stop offset="67%" stopColor="#0088ff" />
+              <stop offset="83%" stopColor="#4400ff" />
+              <stop offset="100%" stopColor="#ff00ff" />
+            </linearGradient>
+          </defs>
+          <circle cx="10" cy="10" r="7" fill="url(#rainbow-grad)" stroke="none" />
         </svg>
       </button>
     </div>
