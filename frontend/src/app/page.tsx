@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAudioPlayer } from '../hooks/useAudioPlayer';
 import { useTheme } from '../components/ThemePicker';
 import Sidebar from '../components/Sidebar';
@@ -28,6 +28,29 @@ export default function Home() {
   const [noteName, setNoteName] = useState('');
   const [notesRefreshKey, setNotesRefreshKey] = useState(0);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const drawerTouchStartY = useRef<number | null>(null);
+  const drawerTouchCurrentY = useRef<number | null>(null);
+
+  // Swipe-to-close: track touch on the drawer and close if swiped down > 100px
+  const handleDrawerTouchStart = useCallback((e: React.TouchEvent) => {
+    drawerTouchStartY.current = e.touches[0].clientY;
+    drawerTouchCurrentY.current = e.touches[0].clientY;
+  }, []);
+
+  const handleDrawerTouchMove = useCallback((e: React.TouchEvent) => {
+    drawerTouchCurrentY.current = e.touches[0].clientY;
+  }, []);
+
+  const handleDrawerTouchEnd = useCallback(() => {
+    if (drawerTouchStartY.current !== null && drawerTouchCurrentY.current !== null) {
+      const delta = drawerTouchCurrentY.current - drawerTouchStartY.current;
+      if (delta > 100) {
+        setMobileDrawerOpen(false);
+      }
+    }
+    drawerTouchStartY.current = null;
+    drawerTouchCurrentY.current = null;
+  }, []);
 
   // Prevent body scroll when mobile drawer is open
   useEffect(() => {
@@ -149,6 +172,9 @@ export default function Home() {
     <button className="mobile-tracks-btn" onClick={() => setMobileDrawerOpen(!mobileDrawerOpen)}>
       &#9835; {player.tracks.length} tracks
     </button>
+    <button className="mobile-about-btn" onClick={() => setShowAbout(prev => !prev)}>
+      i
+    </button>
     <div
       className={`mobile-overlay ${mobileDrawerOpen ? 'visible' : ''}`}
       onClick={() => setMobileDrawerOpen(false)}
@@ -200,6 +226,9 @@ export default function Home() {
         isCollapsed={isCollapsed}
         onCollapse={handleDoubleClick}
         className={mobileDrawerOpen ? 'mobile-open' : ''}
+        onTouchStart={handleDrawerTouchStart}
+        onTouchMove={handleDrawerTouchMove}
+        onTouchEnd={handleDrawerTouchEnd}
       />
 
       <div

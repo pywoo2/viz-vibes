@@ -16,6 +16,9 @@ interface SidebarProps {
   isCollapsed: boolean;
   onCollapse: () => void;
   className?: string;
+  onTouchStart?: (e: React.TouchEvent) => void;
+  onTouchMove?: (e: React.TouchEvent) => void;
+  onTouchEnd?: (e: React.TouchEvent) => void;
 }
 
 export default function Sidebar({
@@ -29,6 +32,9 @@ export default function Sidebar({
   isCollapsed,
   onCollapse,
   className,
+  onTouchStart,
+  onTouchMove,
+  onTouchEnd,
 }: SidebarProps) {
   const [likingTracks, setLikingTracks] = useState<Set<number>>(new Set());
   const [heartPulsingTracks, setHeartPulsingTracks] = useState<Set<number>>(new Set());
@@ -159,6 +165,9 @@ export default function Sidebar({
       ref={sidebarRef}
       onMouseMove={isCollapsed ? undefined : handleSidebarMouseMove}
       onMouseLeave={isCollapsed ? undefined : handleSidebarMouseLeave}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
     >
       {/* Mobile drawer handle — visible only on small screens via CSS */}
       <div className="mobile-drawer-handle">

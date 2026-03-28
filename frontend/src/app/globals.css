@@ -771,6 +771,16 @@ body {
     transform: translateY(0);
   }
 }
+@keyframes npFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 .np-title-animated {
   animation: npSlideUp 0.3s ease-out forwards;
 }
@@ -1026,6 +1036,11 @@ body {
   display: none;
 }
 
+/* ========== MOBILE ABOUT BUTTON (hidden on desktop) ========== */
+.mobile-about-btn {
+  display: none;
+}
+
 /* ========== MOBILE OVERLAY (hidden on desktop) ========== */
 .mobile-overlay {
   display: none;
@@ -1121,6 +1136,8 @@ body {
   .mobile-overlay.visible {
     display: block;
     opacity: 1;
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
   }
 
   /* Prevent body scroll when drawer is open */
@@ -1162,7 +1179,12 @@ body {
     min-width: 0;
   }
   #np-info .np-title {
-    font-size: 0.7rem;
+    font-size: 0.85rem;
+    color: #fff;
+  }
+  /* Smooth fade on track change for mobile */
+  #np-info .np-title-animated {
+    animation: npFadeIn 0.35s ease-out forwards;
   }
 
   /* Player center becomes horizontal: controls on one line, progress below */
@@ -1234,8 +1256,39 @@ body {
   /* Hide note input on mobile */
   .note-input-container { display: none !important; }
 
-  /* AI disclaimer smaller */
-  .ai-disclaimer { font-size: 0.5rem; top: 4px; }
+  /* Hide AI disclaimer on mobile — takes up precious space */
+  .ai-disclaimer { display: none; }
+
+  /* Mobile about "i" button — top-right corner */
+  .mobile-about-btn {
+    display: flex;
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    z-index: 35;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(0, 0, 0, 0.5);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.85rem;
+    font-weight: 600;
+    font-family: inherit;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    touch-action: manipulation;
+    box-shadow: 0 0 12px rgba(255, 255, 255, 0.15);
+  }
+
+  /* Epilepsy button full-width on mobile for easy tapping */
+  .epilepsy-btn {
+    width: 100%;
+    min-width: unset;
+  }
 }
 
 /* ========== NOTES LAYER ========== */
@@ -1707,7 +1760,8 @@ body {
   }
 
   .epilepsy-btn {
-    min-width: 200px;
+    width: 100%;
+    min-width: unset;
     min-height: 44px;
     padding: 12px 28px;
     font-size: 0.85rem;
