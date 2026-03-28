@@ -88,10 +88,6 @@ export default function Home() {
       />
 
       <div id="main-area">
-        <header id="main-header">
-          <h1>peter&apos;s music</h1>
-          <p>made with ai, listened to daily</p>
-        </header>
         <Visualizer />
       </div>
 
