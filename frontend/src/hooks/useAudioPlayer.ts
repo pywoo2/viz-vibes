@@ -99,9 +99,14 @@ export function useAudioPlayer(): AudioPlayerState & AudioPlayerActions & { anal
         setTracks(data);
         tracksRef.current = data;
         setLoading(false);
-        // Auto-select first track (don't autoplay — just load it)
+        // Auto-select first track and load its source (don't autoplay)
         if (data.length > 0) {
           setCurrentIndex(0);
+          currentIndexRef.current = 0;
+          const audio = audioRef.current;
+          if (audio) {
+            audio.src = data[0].url || data[0].file;
+          }
         }
       })
       .catch(() => {

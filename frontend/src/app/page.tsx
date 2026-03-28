@@ -6,6 +6,7 @@ import { useTheme } from '../components/ThemePicker';
 import Sidebar from '../components/Sidebar';
 import PlayerBar from '../components/PlayerBar';
 import Visualizer from '../components/Visualizer';
+import VisualizerPicker from '../components/VisualizerPicker';
 
 export default function Home() {
   const player = useAudioPlayer();
@@ -13,12 +14,15 @@ export default function Home() {
   const [sidebarWidth, setSidebarWidth] = useState(280);
   const [isResizing, setIsResizing] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [vizMode, setVizMode] = useState('noise');
 
   useEffect(() => {
     const stored = localStorage.getItem('sidebar-width');
     if (stored) setSidebarWidth(parseInt(stored));
     const collapsed = localStorage.getItem('sidebar-collapsed');
     if (collapsed === 'true') setIsCollapsed(true);
+    const savedVizMode = localStorage.getItem('viz-mode');
+    if (savedVizMode) setVizMode(savedVizMode);
   }, []);
 
   const startResize = useCallback((e: React.MouseEvent) => {
@@ -55,6 +59,11 @@ export default function Home() {
     });
   }, []);
 
+  const handleVizModeChange = useCallback((mode: string) => {
+    setVizMode(mode);
+    localStorage.setItem('viz-mode', mode);
+  }, []);
+
   const currentTrack =
     player.currentIndex >= 0 ? player.tracks[player.currentIndex] : null;
 
@@ -71,8 +80,10 @@ export default function Home() {
     >
       {/* Visualizer spans full viewport behind everything */}
       <div id="visualizer-bg">
-        <Visualizer analyser={player.analyserRef?.current ?? null} isPlaying={player.isPlaying} />
+        <Visualizer analyser={player.analyserRef?.current ?? null} isPlaying={player.isPlaying} mode={vizMode} />
       </div>
+
+      <VisualizerPicker mode={vizMode} onModeChange={handleVizModeChange} />
 
       <Sidebar
         tracks={player.tracks}
