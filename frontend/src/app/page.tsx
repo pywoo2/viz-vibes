@@ -2,21 +2,53 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useAudioPlayer } from '../hooks/useAudioPlayer';
+import { useTheme } from '../components/ThemePicker';
 import Sidebar from '../components/Sidebar';
 import PlayerBar from '../components/PlayerBar';
 import Visualizer from '../components/Visualizer';
 
 export default function Home() {
   const player = useAudioPlayer();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  useTheme();
+  const [sidebarWidth, setSidebarWidth] = useState(280);
+  const [isResizing, setIsResizing] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   useEffect(() => {
-    const stored = localStorage.getItem('sidebar-collapsed');
-    if (stored === 'true') setSidebarCollapsed(true);
+    const stored = localStorage.getItem('sidebar-width');
+    if (stored) setSidebarWidth(parseInt(stored));
+    const collapsed = localStorage.getItem('sidebar-collapsed');
+    if (collapsed === 'true') setIsCollapsed(true);
   }, []);
 
-  const toggleCollapse = useCallback(() => {
-    setSidebarCollapsed((prev) => {
+  const startResize = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+    const startX = e.clientX;
+    const startWidth = sidebarWidth;
+
+    const onMouseMove = (e: MouseEvent) => {
+      const newWidth = Math.max(200, Math.min(400, startWidth + e.clientX - startX));
+      setSidebarWidth(newWidth);
+      localStorage.setItem('sidebar-width', String(newWidth));
+    };
+
+    const onMouseUp = () => {
+      setIsResizing(false);
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  }, [sidebarWidth]);
+
+  const handleDoubleClick = useCallback(() => {
+    setIsCollapsed(prev => {
       const next = !prev;
       localStorage.setItem('sidebar-collapsed', String(next));
       return next;
@@ -30,10 +62,11 @@ export default function Home() {
     <div
       style={{
         display: 'grid',
-        gridTemplateColumns: `${sidebarCollapsed ? '56px' : '280px'} 1fr`,
-        gridTemplateRows: '1fr 80px',
+        gridTemplateColumns: `${isCollapsed ? '0px' : `${sidebarWidth}px`} 1fr`,
+        gridTemplateRows: 'minmax(0, 1fr) 80px',
         height: '100vh',
-        transition: 'grid-template-columns 0.3s ease',
+        transition: isResizing ? 'none' : 'grid-template-columns 0.3s ease',
+        position: 'relative',
       }}
     >
       <Sidebar
@@ -42,10 +75,16 @@ export default function Home() {
         isPlaying={player.isPlaying}
         loading={player.loading}
         error={player.error}
-        collapsed={sidebarCollapsed}
         onPlayTrack={player.playTrack}
-        onToggleCollapse={toggleCollapse}
         onUpdateTrackLikes={player.updateTrackLikes}
+        isCollapsed={isCollapsed}
+      />
+
+      <div
+        className="resize-handle"
+        onMouseDown={startResize}
+        onDoubleClick={handleDoubleClick}
+        style={{ left: isCollapsed ? 0 : sidebarWidth }}
       />
 
       <div id="main-area">

@@ -44,6 +44,10 @@ export default function PlayerBar({
 }: PlayerBarProps) {
   const progressRef = useRef<HTMLDivElement>(null);
   const isDraggingRef = useRef(false);
+  const barRef = useRef<HTMLDivElement>(null);
+  const barHighlightRef = useRef<HTMLDivElement>(null);
+  const barRafRef = useRef<number>(0);
+  const playBtnRef = useRef<HTMLButtonElement>(null);
 
   const seekFromEvent = useCallback(
     (e: MouseEvent) => {
@@ -81,13 +85,59 @@ export default function PlayerBar({
     };
   }, [seekFromEvent]);
 
+  // Effect 5: Mouse-tracking highlight on player bar — uses refs to avoid re-renders
+  const handleBarMouseMove = useCallback((e: React.MouseEvent) => {
+    const rect = barRef.current?.getBoundingClientRect();
+    const highlight = barHighlightRef.current;
+    if (!rect || !highlight) return;
+    cancelAnimationFrame(barRafRef.current);
+    barRafRef.current = requestAnimationFrame(() => {
+      const x = ((e.clientX - rect.left) / rect.width) * 100;
+      const y = ((e.clientY - rect.top) / rect.height) * 100;
+      highlight.style.background = `radial-gradient(ellipse 400px 200px at ${x}% ${y}%, rgba(255,255,255,0.04) 0%, transparent 70%)`;
+    });
+  }, []);
+
+  const handleBarMouseLeave = useCallback(() => {
+    const highlight = barHighlightRef.current;
+    if (highlight) {
+      highlight.style.background = '';
+    }
+  }, []);
+
+  useEffect(() => {
+    return () => cancelAnimationFrame(barRafRef.current);
+  }, []);
+
+  // Effect 3: Play button glass press — spring animation on click
+  const handlePlayClick = useCallback(() => {
+    const btn = playBtnRef.current;
+    if (btn) {
+      btn.classList.add('play-press');
+      setTimeout(() => btn.classList.remove('play-press'), 400);
+    }
+    onTogglePlay();
+  }, [onTogglePlay]);
+
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   const repeatClass =
     repeatMode === 1 ? 'active' : repeatMode === 2 ? 'repeat-one' : '';
 
   return (
-    <div id="player-bar">
+    <div
+      id="player-bar"
+      ref={barRef}
+      onMouseMove={handleBarMouseMove}
+      onMouseLeave={handleBarMouseLeave}
+    >
+      {/* Mouse-tracking specular highlight overlay (effect 5) */}
+      <div
+        ref={barHighlightRef}
+        className="glass-highlight"
+        style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 1, willChange: 'background' }}
+      />
+
       {/* Left: now playing info */}
       <div id="np-info">
         <div className="np-text">
@@ -120,9 +170,10 @@ export default function PlayerBar({
           </button>
           <button
             id="play-btn"
+            ref={playBtnRef}
             title={isPlaying ? 'Pause' : 'Play'}
             className={isPlaying ? 'pulsing' : ''}
-            onClick={onTogglePlay}
+            onClick={handlePlayClick}
           >
             {isPlaying ? (
               <svg viewBox="0 0 24 24">

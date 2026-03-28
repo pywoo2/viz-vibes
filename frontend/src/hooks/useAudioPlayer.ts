@@ -96,6 +96,10 @@ export function useAudioPlayer(): AudioPlayerState & AudioPlayerActions {
         setTracks(data);
         tracksRef.current = data;
         setLoading(false);
+        // Auto-select first track (don't autoplay — just load it)
+        if (data.length > 0) {
+          setCurrentIndex(0);
+        }
       })
       .catch(() => {
         setError(true);

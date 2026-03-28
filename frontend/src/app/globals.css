@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@layer base, components, utilities;
+
 /* ========== CSS VARIABLES (defaults = gruvbox) ========== */
 :root {
   --bg: #282828;
@@ -29,6 +31,12 @@
   --slider-thumb: #ebdbb2;
   --slider-thumb-hover: #fbf1c7;
   --glow: rgba(184, 187, 38, 0.4);
+  --glass-bg: rgba(28, 28, 30, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-blur: 40px;
+  --glass-hover: rgba(28, 28, 30, 0.82);
+  --accent-rgb: 184, 187, 38;
+  --accent2-rgb: 215, 153, 33;
 }
 
 /* ========== BASE STYLES ========== */
@@ -52,20 +60,7 @@ body {
   transition: background 0.4s ease, color 0.4s ease;
 }
 
-/* Grain texture overlay */
-body::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 9999;
-  opacity: 0.025;
-  background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  background-size: 256px 256px;
-}
+/* Grain texture overlay — removed for liquid glass aesthetic */
 
 @keyframes fadeInPage {
   from { opacity: 0; }
@@ -75,44 +70,53 @@ body::before {
 /* ========== SIDEBAR ========== */
 #sidebar {
   grid-row: 1 / 2;
-  background: var(--bg-sidebar);
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  backdrop-filter: blur(40px) saturate(180%);
   display: flex;
   flex-direction: column;
-  border-right: 1px solid var(--border);
+  border-right: 1px solid var(--glass-border);
   z-index: 2;
   transition: background 0.4s ease, border-color 0.4s ease, width 0.3s ease, padding 0.3s ease;
   overflow: hidden;
+  position: relative;
+  box-shadow:
+    inset 1px 0 0 rgba(255, 255, 255, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    inset -1px 0 0 rgba(255, 255, 255, 0.02);
 }
 
-#sidebar.collapsed {
-  width: 56px;
+/* Sidebar edge glow on hover (effect 8) */
+#sidebar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 1px;
+  height: 100%;
+  background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.1) 30%, rgba(255,255,255,0.1) 70%, transparent);
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+  z-index: 2;
+}
+#sidebar:hover::after {
+  opacity: 1;
 }
 
-#sidebar.collapsed #sidebar-header {
-  justify-content: center;
-  padding: 24px 0 12px;
+/* Resize handle */
+.resize-handle {
+  position: absolute;
+  top: 0;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 10;
+  transition: background 0.2s;
 }
-
-/* Collapse toggle button */
-.collapse-btn {
-  background: none;
-  border: 1px solid var(--border);
-  color: var(--fg-dim);
-  font-size: 0.55rem;
-  width: 24px;
-  height: 24px;
-  border-radius: 4px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  transition: color 0.15s, border-color 0.15s, background 0.15s;
-}
-.collapse-btn:hover {
-  color: var(--fg-bright);
-  border-color: var(--fg-muted);
-  background: var(--bg-hover);
+.resize-handle:hover,
+.resize-handle:active {
+  background: rgba(255, 255, 255, 0.08);
 }
 
 #sidebar-header {
@@ -156,9 +160,11 @@ body::before {
   position: absolute;
   top: calc(100% + 6px);
   right: 0;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  backdrop-filter: blur(40px) saturate(180%);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
   padding: 4px;
   z-index: 100;
   min-width: 140px;
@@ -219,8 +225,8 @@ body::before {
 #track-list li {
   display: flex;
   align-items: center;
-  padding: 8px 12px;
-  border-radius: 6px;
+  padding: 10px 12px;
+  border-radius: 10px;
   cursor: pointer;
   transition: background 0.15s ease-out;
   gap: 10px;
@@ -228,8 +234,17 @@ body::before {
   animation: fadeInTrack 0.3s ease-out forwards;
 }
 
-#track-list li:hover { background: var(--bg-hover); }
-#track-list li.active { background: var(--bg-active); }
+#track-list li:hover { background: rgba(255, 255, 255, 0.04); }
+#track-list li.active {
+  background: rgba(255, 255, 255, 0.06);
+  animation: fadeInTrack 0.3s ease-out forwards, activeGlow 4s ease-in-out infinite;
+}
+
+/* Active track breathing glass glow (effect 6) */
+@keyframes activeGlow {
+  0%, 100% { box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.02); }
+  50% { box-shadow: inset 0 0 30px rgba(255, 255, 255, 0.05); }
+}
 
 @keyframes fadeInTrack {
   from { opacity: 0; transform: translateY(6px); }
@@ -329,6 +344,17 @@ body::before {
   100% { transform: scale(1); }
 }
 
+/* Heart pulse on click (effect 7) */
+.like-btn.heart-pulsing svg {
+  animation: heartPulse 0.5s ease forwards !important;
+}
+@keyframes heartPulse {
+  0% { transform: scale(1); filter: brightness(1); }
+  30% { transform: scale(1.4); filter: brightness(2); }
+  60% { transform: scale(0.9); filter: brightness(1.2); }
+  100% { transform: scale(1); filter: brightness(1); }
+}
+
 #empty-state {
   text-align: center;
   padding: 40px 16px;
@@ -351,6 +377,11 @@ body::before {
   justify-content: center;
   padding: 40px;
   position: relative;
+  background:
+    radial-gradient(ellipse 120% 80% at 10% 80%, rgba(var(--accent-rgb), 0.12) 0%, transparent 50%),
+    radial-gradient(ellipse 100% 60% at 90% 20%, rgba(var(--accent2-rgb), 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse 80% 80% at 50% 50%, rgba(var(--accent-rgb), 0.04) 0%, transparent 60%),
+    var(--bg);
 }
 
 #main-header {
@@ -360,9 +391,9 @@ body::before {
 }
 
 #main-header h1 {
-  font-size: 2rem;
-  font-weight: 300;
-  letter-spacing: 0.12em;
+  font-size: 2.2rem;
+  font-weight: 200;
+  letter-spacing: 0.08em;
   text-transform: lowercase;
   margin-bottom: 6px;
   line-height: 1.2;
@@ -393,12 +424,18 @@ body::before {
 #player-bar {
   grid-column: 1 / -1;
   grid-row: 2 / 3;
-  background: var(--bg-bar);
-  border-top: 1px solid var(--border-bar);
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  backdrop-filter: blur(40px) saturate(180%);
+  border-top: 1px solid var(--glass-border);
   display: grid;
   grid-template-columns: 1fr 2fr 1fr;
   align-items: center;
   padding: 0 16px;
+  position: relative;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.02);
   height: 80px;
   z-index: 2;
   transition: background 0.4s ease, border-color 0.4s ease;
@@ -459,17 +496,33 @@ body::before {
 #controls button:active { transform: scale(0.97); }
 #controls button svg { width: 16px; height: 16px; fill: currentColor; }
 
-/* Play button - white/cream, not green */
+/* Play button - glass-like iOS style (effect 3: glass press) */
 #play-btn {
-  background: var(--btn-bg) !important;
-  color: var(--btn-fg) !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: #000 !important;
   width: 32px;
   height: 32px;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.15s ease, box-shadow 0.3s ease !important;
+  will-change: transform;
 }
 #play-btn svg { width: 16px; height: 16px; }
 #play-btn:hover {
-  background: var(--btn-bg-hover) !important;
+  background: rgba(255, 255, 255, 1) !important;
   transform: scale(1.06);
+}
+#play-btn:active {
+  transform: scale(0.92) !important;
+  transition: transform 0.1s ease !important;
+}
+#play-btn.play-press {
+  animation: playPress 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+@keyframes playPress {
+  0% { transform: scale(0.92); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+  40% { transform: scale(1.05); box-shadow: 0 0 16px rgba(255, 255, 255, 0.25); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
 }
 
 @keyframes playPulse {
@@ -497,8 +550,8 @@ body::before {
 #progress-container {
   position: relative;
   flex: 1;
-  height: 4px;
-  background: var(--progress-bg);
+  height: 3px;
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 2px;
   cursor: pointer;
   transition: height 0.1s ease;
@@ -507,18 +560,19 @@ body::before {
   box-sizing: content-box;
   background-clip: content-box;
 }
-#progress-container:hover { height: 6px; }
+#progress-container:hover { height: 5px; }
 
 #progress-bar {
   position: relative;
   height: 100%;
-  background: var(--fg);
+  background: var(--accent);
+  opacity: 0.9;
   border-radius: 2px;
   width: 0%;
   transition: width 0.1s linear;
 }
 
-#progress-container:hover #progress-bar { background: var(--accent); }
+#progress-container:hover #progress-bar { opacity: 1; }
 
 #progress-bar::after {
   content: '';
@@ -528,13 +582,21 @@ body::before {
   transform: translateY(-50%) scale(0);
   width: 10px;
   height: 10px;
-  background: var(--fg);
+  background: #fff;
   border-radius: 50%;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.3);
   transition: transform 0.15s ease-out;
 }
 
 #progress-container:hover #progress-bar::after {
   transform: translateY(-50%) scale(1);
+}
+
+/* Liquid drag indicator glow (effect 4) */
+#progress-container:active #progress-bar::after {
+  transform: translateY(-50%) scale(1.5);
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.3);
+  transition: transform 0.1s ease-out, box-shadow 0.1s ease-out;
 }
 
 /* Shuffle / Repeat active states */
@@ -573,21 +635,22 @@ body::before {
   -webkit-appearance: none;
   appearance: none;
   width: 100px;
-  height: 4px;
-  background: var(--progress-bg);
+  height: 3px;
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 2px;
   outline: none;
 }
-#volume-slider:hover { background: var(--progress-hover); }
+#volume-slider:hover { background: rgba(255, 255, 255, 0.15); }
 #volume-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   width: 12px;
   height: 12px;
-  background: var(--slider-thumb);
+  background: #fff;
   border-radius: 50%;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background 0.15s, box-shadow 0.15s;
 }
 #volume-slider::-webkit-slider-thumb:hover {
-  background: var(--slider-thumb-hover);
+  background: #fff;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.3);
 }
