@@ -34,6 +34,7 @@ NOTES_KEY = "_notes.json"
 
 class NoteBody(BaseModel):
     text: str
+    name: str = "anonymous"
 
 
 def get_r2_client():
@@ -182,8 +183,10 @@ def add_note(body: NoteBody):
             status_code=400, detail="Note must be 1-140 characters"
         )
     notes = load_notes()
+    name = body.name.strip()[:30] or "anonymous"
     new_note = {
         "text": text,
+        "name": name,
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
     notes.append(new_note)

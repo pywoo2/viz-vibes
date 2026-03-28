@@ -6,6 +6,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 interface Note {
   text: string;
+  name?: string;
   timestamp: string;
 }
 
@@ -17,6 +18,7 @@ interface NoteState {
   scale: number;
   opacity: number;
   text: string;
+  name?: string;
 }
 
 function randomPosition() {
@@ -87,6 +89,7 @@ export default function NotesLayer({ visible, refreshKey }: NotesLayerProps) {
         scale: 1,
         opacity: 0,
         text: note.text,
+        name: note.name,
       });
     }
     setDisplayed(initial);
@@ -135,6 +138,7 @@ export default function NotesLayer({ visible, refreshKey }: NotesLayerProps) {
                   scale: 1,
                   opacity: 0,
                   text: newNote.text,
+                  name: newNote.name,
                 }
               : n
           );
@@ -233,7 +237,7 @@ export default function NotesLayer({ visible, refreshKey }: NotesLayerProps) {
             left: `${note.x}%`,
             top: `${note.y}%`,
             transform: `translate(-50%, -50%) rotateX(${note.rotateX}deg) rotateY(${note.rotateY}deg) scale(${note.scale})`,
-            opacity: note.opacity * 0.15,
+            opacity: note.opacity * 0.4,
             mixBlendMode: 'screen',
             cursor: dragRef.current?.index === index ? 'grabbing' : 'grab',
             pointerEvents: 'auto',
@@ -243,17 +247,19 @@ export default function NotesLayer({ visible, refreshKey }: NotesLayerProps) {
                 : 'opacity 2s ease, transform 0.15s ease-out',
             userSelect: 'none',
             transformStyle: 'preserve-3d',
-            fontSize: '0.9rem',
+            fontSize: '1.1rem',
             fontWeight: 300,
             fontStyle: 'italic',
             color: 'rgba(255, 255, 255, 1)',
-            maxWidth: '250px',
+            maxWidth: '300px',
             textAlign: 'center',
+            lineHeight: '1.5',
           }}
           onMouseDown={(e) => handleMouseDown(e, index)}
           onWheel={(e) => handleWheel(e, index)}
         >
-          {note.text}
+          &ldquo;{note.text}&rdquo;
+          {note.name && <div style={{ fontSize: '0.7rem', marginTop: '4px', opacity: 0.6, fontStyle: 'normal' }}>— {note.name}</div>}
         </div>
       ))}
     </div>

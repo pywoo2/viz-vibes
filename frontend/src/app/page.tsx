@@ -24,15 +24,17 @@ export default function Home() {
   const [clickEffect, setClickEffect] = useState('ripple');
   const [showAbout, setShowAbout] = useState(false);
   const [noteText, setNoteText] = useState('');
+  const [noteName, setNoteName] = useState('');
   const [notesRefreshKey, setNotesRefreshKey] = useState(0);
 
   const submitNote = useCallback(() => {
     const text = noteText.trim();
     if (!text) return;
+    const name = noteName.trim() || 'anonymous';
     fetch(`${API_URL}/api/notes`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text }),
+      body: JSON.stringify({ text, name }),
     })
       .then((r) => {
         if (r.ok) {
@@ -41,7 +43,7 @@ export default function Home() {
         }
       })
       .catch(() => {});
-  }, [noteText]);
+  }, [noteText, noteName]);
 
   useEffect(() => {
     const stored = localStorage.getItem('sidebar-width');
@@ -202,6 +204,14 @@ export default function Home() {
       <div className="note-input-container">
         <input
           type="text"
+          placeholder="your name"
+          maxLength={30}
+          value={noteName}
+          onChange={(e) => setNoteName(e.target.value)}
+          className="note-name-input"
+        />
+        <input
+          type="text"
           placeholder="leave a note..."
           maxLength={140}
           value={noteText}
@@ -211,6 +221,7 @@ export default function Home() {
           }}
         />
         <button className="note-submit-btn" onClick={submitNote} title="Submit note">&rarr;</button>
+        <span className="note-disclaimer">public &amp; visible to all</span>
       </div>
 
       {showAbout && (

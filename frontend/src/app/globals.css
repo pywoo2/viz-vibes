@@ -1103,3 +1103,15 @@ body {
   color: var(--fg-bright);
   background: rgba(255, 255, 255, 0.12);
 }
+
+.note-name-input {
+  width: 100px !important;
+  flex-shrink: 0;
+}
+
+.note-disclaimer {
+  font-size: 0.55rem;
+  color: rgba(255, 255, 255, 0.2);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
