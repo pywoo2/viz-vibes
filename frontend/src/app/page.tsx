@@ -134,7 +134,7 @@ export default function Home() {
       style={{
         display: 'grid',
         gridTemplateColumns: `${isCollapsed ? '40px' : `${sidebarWidth}px`} 1fr`,
-        gridTemplateRows: 'minmax(0, 1fr) 80px',
+        gridTemplateRows: 'minmax(0, 1fr) auto',
         height: '100vh',
         transition: isResizing ? 'none' : 'grid-template-columns 0.3s ease',
         position: 'relative',

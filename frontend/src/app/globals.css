@@ -801,6 +801,8 @@ body {
   right: 16px;
   top: 50%;
   transform: translateY(-50%);
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
   z-index: 5;
   display: flex;
   flex-direction: column;
@@ -1207,4 +1209,162 @@ body {
   color: rgba(255, 255, 255, 0.9);
   background: rgba(255, 255, 255, 0.12);
   border-color: rgba(255, 255, 255, 0.25);
+}
+
+/* ========== RESPONSIVE — SMALLER SCREENS / ZOOM ========== */
+@media (max-width: 1024px) {
+  #sidebar-header {
+    padding: 16px 12px 8px;
+  }
+
+  #sidebar-header h2 {
+    font-size: 10px;
+  }
+
+  #track-list li {
+    min-height: 40px;
+    padding: 10px 8px;
+    gap: 8px;
+  }
+
+  #track-list li .track-info .name {
+    font-size: 12px;
+  }
+
+  #track-list li .track-num {
+    font-size: 0.65rem;
+  }
+
+  .like-btn svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  .like-count {
+    font-size: 0.55rem;
+  }
+
+  .sort-hint {
+    font-size: 0.5rem;
+    padding: 2px 8px 6px;
+  }
+
+  #player-bar {
+    height: 64px;
+    padding: 0 12px;
+  }
+
+  #controls button svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  #play-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  #play-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  #np-info .np-title {
+    font-size: 0.72rem;
+  }
+
+  #progress-row .time {
+    font-size: 9px;
+    min-width: 28px;
+  }
+
+  #player-right svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  #volume-slider {
+    width: 70px;
+  }
+
+  #viz-picker {
+    right: 8px;
+    padding: 6px;
+    gap: 6px;
+  }
+
+  .viz-mode-btn {
+    width: 34px;
+    height: 34px;
+  }
+
+  .viz-mode-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .note-input-container {
+    right: 60px;
+    bottom: 76px;
+  }
+
+  .note-input-container input {
+    padding: 8px 10px;
+    font-size: 0.75rem;
+    width: 200px;
+  }
+
+  .note-name-input {
+    width: 80px !important;
+  }
+
+  .collapse-sidebar-btn {
+    width: 28px;
+    height: 28px;
+    font-size: 0.6rem;
+  }
+
+  .ai-disclaimer {
+    font-size: 0.55rem;
+  }
+}
+
+@media (max-width: 900px) and (min-width: 769px) {
+  #viz-picker {
+    right: 4px;
+    padding: 4px;
+    gap: 4px;
+  }
+
+  .viz-mode-btn {
+    width: 28px;
+    height: 28px;
+  }
+
+  .viz-mode-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .viz-picker-separator {
+    width: 18px;
+    margin: 1px auto;
+  }
+
+  .note-input-container {
+    right: 44px;
+  }
+
+  .note-input-container input {
+    width: 160px;
+  }
+
+  .note-name-input {
+    width: 60px !important;
+  }
+
+  .note-submit-btn {
+    padding: 8px 10px;
+    font-size: 0.75rem;
+  }
 }
