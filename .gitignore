@@ -1,3 +1,6 @@
+node_modules/
+.next/
+venv/
+__pycache__/
 .DS_Store
 .blackboard.md
-__pycache__/
