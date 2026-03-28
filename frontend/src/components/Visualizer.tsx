@@ -977,10 +977,38 @@ export default function Visualizer({ analyser, isPlaying, mode, colorMode, click
       clickRef.current = { x, y, z: time };
     };
 
+    // Touch handlers for mobile — drag to move, tap to click
+    const onTouchMove = (e: TouchEvent) => {
+      const touch = e.touches[0];
+      if (!touch) return;
+      const rect = parent.getBoundingClientRect();
+      mouseRef.current = {
+        x: (touch.clientX - rect.left) / rect.width,
+        y: 1.0 - (touch.clientY - rect.top) / rect.height,
+      };
+    };
+    const onTouchEnd = (e: TouchEvent) => {
+      // Tap = click effect
+      const touch = e.changedTouches[0];
+      if (touch) {
+        const rect = parent.getBoundingClientRect();
+        const x = (touch.clientX - rect.left) / rect.width;
+        const y = 1.0 - (touch.clientY - rect.top) / rect.height;
+        const time = (Date.now() - startTimeRef.current) / 1000;
+        clickRef.current = { x, y, z: time };
+      }
+      // Reset mouse position after touch ends
+      mouseRef.current = { x: -1, y: -1 };
+    };
+
     window.addEventListener('mousemove', onMove);
+    window.addEventListener('touchmove', onTouchMove, { passive: true });
+    window.addEventListener('touchend', onTouchEnd);
     canvas.addEventListener('click', onClick);
     return () => {
       window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('touchend', onTouchEnd);
       canvas.removeEventListener('click', onClick);
     };
   }, []);

@@ -1980,3 +1980,16 @@ body {
 .viz-mode-btn {
   touch-action: manipulation;
 }
+
+/* ========== MOBILE NOTES/IMAGES SIZING ========== */
+@media (max-width: 768px) {
+  #figures-layer img {
+    max-width: 20vw !important;
+    max-height: 25vh !important;
+    opacity: 0.06 !important;
+  }
+  #notes-layer > div {
+    font-size: 0.75rem !important;
+    max-width: 180px !important;
+  }
+}
