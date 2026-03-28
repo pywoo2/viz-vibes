@@ -7,7 +7,7 @@ import Sidebar from '../components/Sidebar';
 import PlayerBar from '../components/PlayerBar';
 import Visualizer from '../components/Visualizer';
 import VisualizerPicker from '../components/VisualizerPicker';
-import FiguresLayer from '../components/FiguresLayer';
+
 
 export default function Home() {
   const player = useAudioPlayer();
@@ -16,7 +16,6 @@ export default function Home() {
   const [isResizing, setIsResizing] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [vizMode, setVizMode] = useState('noise');
-  const [figuresVisible, setFiguresVisible] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
 
   useEffect(() => {
@@ -26,8 +25,6 @@ export default function Home() {
     if (collapsed === 'true') setIsCollapsed(true);
     const savedVizMode = localStorage.getItem('viz-mode');
     if (savedVizMode) setVizMode(savedVizMode);
-    const savedFigures = localStorage.getItem('figures-visible');
-    if (savedFigures === 'true') setFiguresVisible(true);
   }, []);
 
   const startResize = useCallback((e: React.MouseEvent) => {
@@ -69,14 +66,6 @@ export default function Home() {
     localStorage.setItem('viz-mode', mode);
   }, []);
 
-  const handleToggleFigures = useCallback(() => {
-    setFiguresVisible(prev => {
-      const next = !prev;
-      localStorage.setItem('figures-visible', String(next));
-      return next;
-    });
-  }, []);
-
   const currentTrack =
     player.currentIndex >= 0 ? player.tracks[player.currentIndex] : null;
 
@@ -96,13 +85,7 @@ export default function Home() {
         <Visualizer analyser={player.analyserRef?.current ?? null} isPlaying={player.isPlaying} mode={vizMode} />
       </div>
 
-      <FiguresLayer
-        isPlaying={player.isPlaying}
-        analyser={player.analyserRef?.current ?? null}
-        visible={figuresVisible}
-      />
-
-      <VisualizerPicker mode={vizMode} onModeChange={handleVizModeChange} figuresVisible={figuresVisible} onToggleFigures={handleToggleFigures} />
+      <VisualizerPicker mode={vizMode} onModeChange={handleVizModeChange} />
 
       <Sidebar
         tracks={player.tracks}
@@ -139,7 +122,7 @@ export default function Home() {
         onCycleRepeat={player.cycleRepeat}
         onSeek={player.seek}
         onSetVolume={player.setVolume}
-        onAboutClick={() => setShowAbout(true)}
+        onAboutClick={() => { setShowAbout(prev => !prev); }}
       />
 
       {showAbout && (

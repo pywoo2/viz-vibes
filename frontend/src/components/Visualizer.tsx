@@ -26,6 +26,7 @@ const uniformHeader = `
   uniform float high;
   uniform float energy;
   uniform vec2 mouse; // 0-1 normalized, (-1,-1) when inactive
+  uniform vec3 click; // xy = position (0-1), z = time of click
 `;
 
 // Mode 1: Noise Field (original)
@@ -85,6 +86,19 @@ const noiseFieldShader = uniformHeader + `
     brightness += glow * 0.3 + mouseGlow;
     brightness = pow(brightness, 0.8);
 
+    // Click ripple
+    if (click.z > 0.0) {
+      float clickAge = time - click.z;
+      if (clickAge < 1.5) {
+        vec2 cp = click.xy * 2.0 - 1.0;
+        cp.x *= resolution.x / resolution.y;
+        float cd = length(p - cp);
+        float ring = abs(cd - clickAge * 0.8) - 0.02;
+        float ripple = smoothstep(0.03, 0.0, ring) * (1.0 - clickAge / 1.5);
+        brightness += ripple * 0.5;
+      }
+    }
+
     vec3 color = vec3(brightness);
     gl_FragColor = vec4(color, 1.0);
   }
@@ -118,6 +132,22 @@ const waveformShader = uniformHeader + `
     }
 
     float brightness = line + glow + mouseGlow;
+
+    // Click ripple
+    if (click.z > 0.0) {
+      float clickAge = time - click.z;
+      if (clickAge < 1.5) {
+        vec2 p = uv * 2.0 - 1.0;
+        p.x *= resolution.x / resolution.y;
+        vec2 cp = click.xy * 2.0 - 1.0;
+        cp.x *= resolution.x / resolution.y;
+        float cd = length(p - cp);
+        float ring = abs(cd - clickAge * 0.8) - 0.02;
+        float ripple = smoothstep(0.03, 0.0, ring) * (1.0 - clickAge / 1.5);
+        brightness += ripple * 0.5;
+      }
+    }
+
     gl_FragColor = vec4(vec3(brightness), 1.0);
   }
 `;
@@ -176,6 +206,20 @@ const particlesShader = uniformHeader + `
 
     brightness = clamp(brightness, 0.0, 1.0);
     brightness = pow(brightness, 0.85);
+
+    // Click ripple
+    if (click.z > 0.0) {
+      float clickAge = time - click.z;
+      if (clickAge < 1.5) {
+        vec2 cp = click.xy * 2.0 - 1.0;
+        cp.x *= resolution.x / resolution.y;
+        float cd = length(p - cp);
+        float ring = abs(cd - clickAge * 0.8) - 0.02;
+        float ripple = smoothstep(0.03, 0.0, ring) * (1.0 - clickAge / 1.5);
+        brightness += ripple * 0.5;
+      }
+    }
+
     gl_FragColor = vec4(vec3(brightness), 1.0);
   }
 `;
@@ -238,6 +282,7 @@ export default function Visualizer({ analyser, isPlaying, mode }: VisualizerProp
   const animRef = useRef<number>(0);
   const startTimeRef = useRef(Date.now());
   const mouseRef = useRef({ x: -1, y: -1 });
+  const clickRef = useRef({ x: -1, y: -1, time: 0 });
 
   // Initialize WebGL context (once)
   useEffect(() => {
@@ -341,6 +386,8 @@ export default function Visualizer({ analyser, isPlaying, mode }: VisualizerProp
       gl.uniform1f(gl.getUniformLocation(program, 'high'), high);
       gl.uniform1f(gl.getUniformLocation(program, 'energy'), energy);
       gl.uniform2f(gl.getUniformLocation(program, 'mouse'), mouseRef.current.x, mouseRef.current.y);
+      gl.uniform3f(gl.getUniformLocation(program, 'click'),
+        clickRef.current.x, clickRef.current.y, clickRef.current.time);
 
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     };
@@ -364,12 +411,22 @@ export default function Visualizer({ analyser, isPlaying, mode }: VisualizerProp
     const onLeave = () => {
       mouseRef.current = { x: -1, y: -1 };
     };
+    const onClick = (e: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      clickRef.current = {
+        x: (e.clientX - rect.left) / rect.width,
+        y: 1.0 - (e.clientY - rect.top) / rect.height,
+        time: (Date.now() - startTimeRef.current) / 1000,
+      };
+    };
 
     window.addEventListener('mousemove', onMove);
     canvas.addEventListener('mouseleave', onLeave);
+    canvas.addEventListener('click', onClick);
     return () => {
       window.removeEventListener('mousemove', onMove);
       canvas.removeEventListener('mouseleave', onLeave);
+      canvas.removeEventListener('click', onClick);
     };
   }, []);
 

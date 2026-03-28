@@ -85,6 +85,18 @@ export function useAudioPlayer(): AudioPlayerState & AudioPlayerActions & { anal
       playNextInternal();
     });
 
+    // Retry without crossOrigin if a track fails to load (CORS issue)
+    audio.addEventListener('error', () => {
+      if (audio.crossOrigin && audio.src) {
+        console.warn('Track load failed with crossOrigin, retrying without...');
+        audio.crossOrigin = null as unknown as string;
+        const src = audio.src;
+        audio.src = '';
+        audio.src = src;
+        audio.play().catch(() => {});
+      }
+    });
+
     return () => {
       audio.pause();
       audio.src = '';

@@ -8,263 +8,484 @@ interface FiguresLayerProps {
   visible: boolean;
 }
 
-interface Pose {
-  headX: number;
-  headY: number;
-  bodyEndY: number;
-  leftArmX: number;
-  leftArmY: number;
-  rightArmX: number;
-  rightArmY: number;
-  leftLegX: number;
-  leftLegY: number;
-  rightLegX: number;
-  rightLegY: number;
+// --- Architectural sketch drawing functions ---
+
+function drawSkyscraper(ctx: CanvasRenderingContext2D, w: number, h: number, time: number, energy: number) {
+  const cx = w * 0.5;
+  const cy = h * 0.5;
+  const scale = Math.min(w, h) * 0.3;
+  const sway = Math.sin(time * 0.8) * energy * 2;
+
+  const bw = scale * 0.35;
+  const bh = scale * 1.2;
+  const left = cx - bw / 2 + sway;
+  const top = cy - bh * 0.6;
+  const bottom = cy + bh * 0.4;
+
+  // Outline
+  ctx.beginPath();
+  ctx.rect(left, top, bw, bh);
+  ctx.stroke();
+
+  // Floors
+  const floors = 10;
+  for (let i = 1; i < floors; i++) {
+    const fy = top + (bh / floors) * i;
+    ctx.beginPath();
+    ctx.moveTo(left, fy);
+    ctx.lineTo(left + bw, fy);
+    ctx.stroke();
+  }
+
+  // Windows (2 columns)
+  const winW = bw * 0.15;
+  const winH = (bh / floors) * 0.5;
+  for (let i = 0; i < floors; i++) {
+    const fy = top + (bh / floors) * i + (bh / floors) * 0.25;
+    // Left window
+    ctx.beginPath();
+    ctx.rect(left + bw * 0.2, fy, winW, winH);
+    ctx.stroke();
+    // Right window
+    ctx.beginPath();
+    ctx.rect(left + bw * 0.6, fy, winW, winH);
+    ctx.stroke();
+  }
+
+  // Antenna
+  ctx.beginPath();
+  ctx.moveTo(cx + sway, top);
+  ctx.lineTo(cx + sway, top - scale * 0.15);
+  ctx.stroke();
+
+  // Ground line
+  ctx.beginPath();
+  ctx.moveTo(cx - scale * 0.5 + sway * 0.5, bottom);
+  ctx.lineTo(cx + scale * 0.5 + sway * 0.5, bottom);
+  ctx.stroke();
 }
 
-function drawFigure(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  scale: number,
-  pose: Pose,
-  sway: number
-) {
-  const sw = sway * scale * 0.02;
+function drawBridge(ctx: CanvasRenderingContext2D, w: number, h: number, time: number, energy: number) {
+  const cx = w * 0.5;
+  const cy = h * 0.5;
+  const scale = Math.min(w, h) * 0.35;
+  const sway = Math.sin(time * 0.6) * energy * 1.5;
 
+  const deckY = cy + scale * 0.1 + sway * 0.5;
+  const left = cx - scale * 0.8;
+  const right = cx + scale * 0.8;
+
+  // Deck
   ctx.beginPath();
-  ctx.arc(x + pose.headX * scale + sw, y - scale * 0.8 + pose.headY * scale, scale * 0.12, 0, Math.PI * 2);
+  ctx.moveTo(left, deckY);
+  ctx.lineTo(right, deckY);
   ctx.stroke();
 
+  // Two towers
+  const towerH = scale * 0.5;
+  const t1x = cx - scale * 0.35;
+  const t2x = cx + scale * 0.35;
+  [t1x, t2x].forEach((tx) => {
+    ctx.beginPath();
+    ctx.moveTo(tx, deckY);
+    ctx.lineTo(tx, deckY - towerH);
+    ctx.stroke();
+  });
+
+  // Main arch cable
   ctx.beginPath();
-  ctx.moveTo(x + sw * 0.8, y - scale * 0.65);
-  ctx.lineTo(x + sw * 0.3, y + pose.bodyEndY * scale);
+  for (let i = 0; i <= 40; i++) {
+    const t = i / 40;
+    const x = left + (right - left) * t;
+    const archY = deckY - towerH * 0.9 + Math.pow((t - 0.5) * 2, 2) * towerH * 0.9;
+    if (i === 0) ctx.moveTo(x, archY);
+    else ctx.lineTo(x, archY);
+  }
   ctx.stroke();
 
-  // Left arm
+  // Vertical cables
+  const numCables = 12;
+  for (let i = 1; i < numCables; i++) {
+    const t = i / numCables;
+    const x = left + (right - left) * t;
+    const archY = deckY - towerH * 0.9 + Math.pow((t - 0.5) * 2, 2) * towerH * 0.9;
+    ctx.beginPath();
+    ctx.moveTo(x, archY);
+    ctx.lineTo(x, deckY);
+    ctx.stroke();
+  }
+}
+
+function drawArch(ctx: CanvasRenderingContext2D, w: number, h: number, time: number, energy: number) {
+  const cx = w * 0.5;
+  const cy = h * 0.5;
+  const scale = Math.min(w, h) * 0.3;
+  const sway = Math.sin(time * 0.7) * energy * 1.5;
+
+  const baseY = cy + scale * 0.4;
+  const colW = scale * 0.08;
+  const colH = scale * 0.6;
+  const archW = scale * 0.6;
+
+  // Left column
   ctx.beginPath();
-  ctx.moveTo(x + sw * 0.6, y - scale * 0.5);
-  ctx.lineTo(x + pose.leftArmX * scale + sw, y + pose.leftArmY * scale);
+  ctx.rect(cx - archW / 2 - colW / 2 + sway, baseY - colH, colW, colH);
   ctx.stroke();
 
-  // Right arm
+  // Right column
   ctx.beginPath();
-  ctx.moveTo(x + sw * 0.6, y - scale * 0.5);
-  ctx.lineTo(x + pose.rightArmX * scale + sw, y + pose.rightArmY * scale);
+  ctx.rect(cx + archW / 2 - colW / 2 + sway, baseY - colH, colW, colH);
   ctx.stroke();
 
-  // Left leg
+  // Arch
   ctx.beginPath();
-  ctx.moveTo(x + sw * 0.3, y + pose.bodyEndY * scale);
-  ctx.lineTo(x + pose.leftLegX * scale, y + pose.leftLegY * scale);
+  ctx.arc(cx + sway, baseY - colH, archW / 2, Math.PI, 0);
   ctx.stroke();
 
-  // Right leg
+  // Keystone detail
   ctx.beginPath();
-  ctx.moveTo(x + sw * 0.3, y + pose.bodyEndY * scale);
-  ctx.lineTo(x + pose.rightLegX * scale, y + pose.rightLegY * scale);
+  const ksW = scale * 0.06;
+  const ksH = scale * 0.08;
+  ctx.rect(cx - ksW / 2 + sway, baseY - colH - archW / 2 - ksH / 2, ksW, ksH);
+  ctx.stroke();
+
+  // Column capitals (small rectangles)
+  [cx - archW / 2 + sway, cx + archW / 2 + sway].forEach((x) => {
+    ctx.beginPath();
+    ctx.rect(x - colW * 0.8, baseY - colH - colW * 0.3, colW * 1.6, colW * 0.3);
+    ctx.stroke();
+  });
+
+  // Base line
+  ctx.beginPath();
+  ctx.moveTo(cx - scale * 0.5 + sway, baseY);
+  ctx.lineTo(cx + scale * 0.5 + sway, baseY);
   ctx.stroke();
 }
 
-// --- Scene drawing functions ---
+function drawFloorPlan(ctx: CanvasRenderingContext2D, w: number, h: number, time: number, energy: number) {
+  const cx = w * 0.5;
+  const cy = h * 0.5;
+  const scale = Math.min(w, h) * 0.3;
+  const sway = Math.sin(time * 0.5) * energy * 1.5;
 
-function drawWaving(ctx: CanvasRenderingContext2D, w: number, h: number, time: number, energy: number) {
-  const baseY = h * 0.78;
-  const scale = Math.min(w, h) * 0.12;
-  const sway = Math.sin(time * 1.2) * energy;
+  const pw = scale * 1.0;
+  const ph = scale * 0.7;
+  const left = cx - pw / 2 + sway;
+  const top = cy - ph / 2;
 
-  // Figure 1 — standing, waving
-  drawFigure(ctx, w * 0.42, baseY, scale, {
-    headX: 0, headY: 0, bodyEndY: 0,
-    leftArmX: -0.35, leftArmY: -0.25,
-    rightArmX: 0.35, rightArmY: -0.75 + Math.sin(time * 2.5) * 0.1,
-    leftLegX: -0.15, leftLegY: 0.45,
-    rightLegX: 0.15, rightLegY: 0.45,
-  }, sway);
+  // Outer walls
+  ctx.beginPath();
+  ctx.rect(left, top, pw, ph);
+  ctx.stroke();
 
-  // Figure 2 — standing, relaxed
-  drawFigure(ctx, w * 0.58, baseY, scale, {
-    headX: 0, headY: 0, bodyEndY: 0,
-    leftArmX: -0.3, leftArmY: -0.15,
-    rightArmX: 0.3, rightArmY: -0.15,
-    leftLegX: -0.15, leftLegY: 0.45,
-    rightLegX: 0.15, rightLegY: 0.45,
-  }, sway * 0.7);
+  // Vertical divider (hallway)
+  ctx.beginPath();
+  ctx.moveTo(left + pw * 0.4, top);
+  ctx.lineTo(left + pw * 0.4, top + ph);
+  ctx.stroke();
+
+  // Horizontal divider left side
+  ctx.beginPath();
+  ctx.moveTo(left, top + ph * 0.5);
+  ctx.lineTo(left + pw * 0.4, top + ph * 0.5);
+  ctx.stroke();
+
+  // Horizontal divider right side (partial -- door gap)
+  ctx.beginPath();
+  ctx.moveTo(left + pw * 0.4, top + ph * 0.35);
+  ctx.lineTo(left + pw * 0.75, top + ph * 0.35);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(left + pw * 0.85, top + ph * 0.35);
+  ctx.lineTo(left + pw, top + ph * 0.35);
+  ctx.stroke();
+
+  // Door arcs (quarter circles to indicate door swing)
+  const doorR = pw * 0.1;
+  // Door in upper left room
+  ctx.beginPath();
+  ctx.arc(left + pw * 0.4, top + ph * 0.5, doorR, -Math.PI / 2, 0);
+  ctx.stroke();
+
+  // Small room at bottom-right
+  ctx.beginPath();
+  ctx.moveTo(left + pw * 0.7, top + ph * 0.35);
+  ctx.lineTo(left + pw * 0.7, top + ph);
+  ctx.stroke();
+
+  // Bathroom fixtures (small rectangles)
+  ctx.beginPath();
+  ctx.rect(left + pw * 0.73, top + ph * 0.75, pw * 0.08, pw * 0.06);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.rect(left + pw * 0.88, top + ph * 0.75, pw * 0.06, pw * 0.06);
+  ctx.stroke();
 }
 
-function drawHighFive(ctx: CanvasRenderingContext2D, w: number, h: number, time: number, energy: number) {
-  const baseY = h * 0.78;
-  const scale = Math.min(w, h) * 0.12;
-  const sway = Math.sin(time * 1.5) * energy;
-  const bob = Math.sin(time * 3) * 0.03;
+function drawStaircase(ctx: CanvasRenderingContext2D, w: number, h: number, time: number, energy: number) {
+  const cx = w * 0.5;
+  const cy = h * 0.5;
+  const scale = Math.min(w, h) * 0.3;
+  const sway = Math.sin(time * 0.9) * energy * 1.5;
 
-  drawFigure(ctx, w * 0.45, baseY, scale, {
-    headX: 0, headY: bob, bodyEndY: 0,
-    leftArmX: -0.3, leftArmY: -0.2,
-    rightArmX: 0.4, rightArmY: -0.8,
-    leftLegX: -0.15, leftLegY: 0.45,
-    rightLegX: 0.15, rightLegY: 0.45,
-  }, sway);
+  const steps = 12;
+  const stepW = scale * 0.6;
+  const stepH = scale * 0.08;
+  const totalH = steps * stepH;
 
-  drawFigure(ctx, w * 0.55, baseY, scale, {
-    headX: 0, headY: bob, bodyEndY: 0,
-    leftArmX: -0.4, leftArmY: -0.8,
-    rightArmX: 0.3, rightArmY: -0.2,
-    leftLegX: -0.15, leftLegY: 0.45,
-    rightLegX: 0.15, rightLegY: 0.45,
-  }, sway * 0.8);
+  const startX = cx - stepW / 2 + sway;
+  const startY = cy + totalH / 2;
+
+  // Draw steps
+  for (let i = 0; i < steps; i++) {
+    const x = startX;
+    const y = startY - i * stepH;
+
+    // Horizontal tread
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + stepW, y);
+    ctx.stroke();
+
+    // Vertical riser
+    ctx.beginPath();
+    ctx.moveTo(x + stepW, y);
+    ctx.lineTo(x + stepW, y - stepH);
+    ctx.stroke();
+  }
+
+  // Left railing
+  ctx.beginPath();
+  ctx.moveTo(startX, startY);
+  ctx.lineTo(startX, startY - totalH);
+  ctx.stroke();
+
+  // Right railing (diagonal)
+  ctx.beginPath();
+  ctx.moveTo(startX + stepW, startY);
+  ctx.lineTo(startX + stepW, startY - totalH - stepH);
+  ctx.stroke();
+
+  // Railing handrail (slightly offset, diagonal)
+  ctx.beginPath();
+  ctx.moveTo(startX - scale * 0.03, startY - scale * 0.05);
+  ctx.lineTo(startX - scale * 0.03, startY - totalH - scale * 0.05);
+  ctx.stroke();
+
+  // Top landing
+  ctx.beginPath();
+  ctx.moveTo(startX, startY - totalH);
+  ctx.lineTo(startX + stepW, startY - totalH - stepH);
+  ctx.stroke();
 }
 
-function drawDancing(ctx: CanvasRenderingContext2D, w: number, h: number, time: number, energy: number) {
-  const baseY = h * 0.78;
-  const scale = Math.min(w, h) * 0.1;
-  const sway = Math.sin(time * 2) * energy;
+function drawDome(ctx: CanvasRenderingContext2D, w: number, h: number, time: number, energy: number) {
+  const cx = w * 0.5;
+  const cy = h * 0.5;
+  const scale = Math.min(w, h) * 0.3;
+  const sway = Math.sin(time * 0.7) * energy * 1.5;
 
-  const poses = [
-    { x: 0.38, armPhase: 0 },
-    { x: 0.5, armPhase: 1.2 },
-    { x: 0.62, armPhase: 2.4 },
+  const baseY = cy + scale * 0.3;
+  const domeR = scale * 0.5;
+  const dCx = cx + sway;
+
+  // Dome outline (half circle)
+  ctx.beginPath();
+  ctx.arc(dCx, baseY, domeR, Math.PI, 0);
+  ctx.stroke();
+
+  // Ribs (curved lines from base to top)
+  const numRibs = 7;
+  for (let i = 1; i < numRibs; i++) {
+    const t = i / numRibs;
+    const angle = Math.PI * t;
+    ctx.beginPath();
+    // Draw a meridian line from base-left through top
+    for (let j = 0; j <= 20; j++) {
+      const a = Math.PI + (0 - Math.PI) * (j / 20);
+      const rx = Math.cos(a) * domeR * Math.sin(angle);
+      const ry = -Math.sin(a) * domeR;
+      const px = dCx + rx;
+      const py = baseY + ry;
+      if (j === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+  }
+
+  // Horizontal rings
+  const numRings = 4;
+  for (let i = 1; i <= numRings; i++) {
+    const ringAngle = (Math.PI / 2) * (i / (numRings + 1));
+    const ringR = Math.cos(ringAngle) * domeR;
+    const ringY = baseY - Math.sin(ringAngle) * domeR;
+    ctx.beginPath();
+    ctx.moveTo(dCx - ringR, ringY);
+    ctx.lineTo(dCx + ringR, ringY);
+    ctx.stroke();
+  }
+
+  // Base line
+  ctx.beginPath();
+  ctx.moveTo(dCx - domeR * 1.1, baseY);
+  ctx.lineTo(dCx + domeR * 1.1, baseY);
+  ctx.stroke();
+
+  // Small lantern at top
+  ctx.beginPath();
+  ctx.rect(dCx - scale * 0.03, baseY - domeR - scale * 0.08, scale * 0.06, scale * 0.08);
+  ctx.stroke();
+}
+
+function drawTower(ctx: CanvasRenderingContext2D, w: number, h: number, time: number, energy: number) {
+  const cx = w * 0.5;
+  const cy = h * 0.5;
+  const scale = Math.min(w, h) * 0.3;
+  const sway = Math.sin(time * 0.6) * energy * 1.5;
+
+  const tw = scale * 0.3;
+  const th = scale * 1.3;
+  const left = cx - tw / 2 + sway;
+  const top = cy - th * 0.55;
+  const bottom = cy + th * 0.45;
+
+  // Outline with slight taper
+  const taperTop = tw * 0.8;
+  ctx.beginPath();
+  ctx.moveTo(cx - tw / 2 + sway, bottom);
+  ctx.lineTo(cx - taperTop / 2 + sway, top);
+  ctx.lineTo(cx + taperTop / 2 + sway, top);
+  ctx.lineTo(cx + tw / 2 + sway, bottom);
+  ctx.closePath();
+  ctx.stroke();
+
+  // Geometric patterns - diagonal cross-bracing
+  const sections = 8;
+  for (let i = 0; i < sections; i++) {
+    const t1 = i / sections;
+    const t2 = (i + 1) / sections;
+    const y1 = bottom - th * t1;
+    const y2 = bottom - th * t2;
+    const w1 = tw / 2 - (tw / 2 - taperTop / 2) * t1;
+    const w2 = tw / 2 - (tw / 2 - taperTop / 2) * t2;
+
+    // Horizontal line
+    ctx.beginPath();
+    ctx.moveTo(cx - w1 + sway, y1);
+    ctx.lineTo(cx + w1 + sway, y1);
+    ctx.stroke();
+
+    // X-bracing
+    if (i % 2 === 0) {
+      ctx.beginPath();
+      ctx.moveTo(cx - w1 + sway, y1);
+      ctx.lineTo(cx + w2 + sway, y2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(cx + w1 + sway, y1);
+      ctx.lineTo(cx - w2 + sway, y2);
+      ctx.stroke();
+    } else {
+      // Diamond pattern
+      const midY = (y1 + y2) / 2;
+      const midW = (w1 + w2) / 2;
+      ctx.beginPath();
+      ctx.moveTo(cx + sway, y1);
+      ctx.lineTo(cx + midW + sway, midY);
+      ctx.lineTo(cx + sway, y2);
+      ctx.lineTo(cx - midW + sway, midY);
+      ctx.closePath();
+      ctx.stroke();
+    }
+  }
+
+  // Top line
+  ctx.beginPath();
+  ctx.moveTo(cx - taperTop / 2 + sway, top);
+  ctx.lineTo(cx + taperTop / 2 + sway, top);
+  ctx.stroke();
+
+  // Spire
+  ctx.beginPath();
+  ctx.moveTo(cx + sway, top - scale * 0.12);
+  ctx.lineTo(cx - taperTop * 0.15 + sway, top);
+  ctx.moveTo(cx + sway, top - scale * 0.12);
+  ctx.lineTo(cx + taperTop * 0.15 + sway, top);
+  ctx.stroke();
+}
+
+function drawSkyline(ctx: CanvasRenderingContext2D, w: number, h: number, time: number, energy: number) {
+  const cx = w * 0.5;
+  const cy = h * 0.5;
+  const scale = Math.min(w, h) * 0.3;
+  const sway = Math.sin(time * 0.5) * energy * 1.5;
+
+  const baseY = cy + scale * 0.35;
+  const skyW = scale * 1.6;
+  const startX = cx - skyW / 2 + sway;
+
+  // Building definitions: [x offset ratio, width ratio, height ratio]
+  const buildings: [number, number, number][] = [
+    [0.0, 0.08, 0.3],
+    [0.08, 0.06, 0.45],
+    [0.14, 0.1, 0.55],
+    [0.24, 0.07, 0.35],
+    [0.31, 0.12, 0.75],
+    [0.43, 0.06, 0.4],
+    [0.49, 0.09, 0.9],
+    [0.58, 0.07, 0.5],
+    [0.65, 0.1, 0.6],
+    [0.75, 0.08, 0.35],
+    [0.83, 0.06, 0.5],
+    [0.89, 0.11, 0.42],
   ];
 
-  poses.forEach(({ x, armPhase }) => {
-    const armY = -0.5 + Math.sin(time * 2 + armPhase) * 0.3;
-    const legSpread = 0.12 + Math.abs(Math.sin(time * 2 + armPhase)) * 0.08;
-    drawFigure(ctx, w * x, baseY, scale, {
-      headX: 0, headY: Math.sin(time * 2 + armPhase) * 0.05, bodyEndY: 0,
-      leftArmX: -0.4, leftArmY: armY,
-      rightArmX: 0.4, rightArmY: armY - 0.15,
-      leftLegX: -legSpread, leftLegY: 0.45,
-      rightLegX: legSpread, rightLegY: 0.45,
-    }, sway);
+  buildings.forEach(([xOff, wRatio, hRatio]) => {
+    const bx = startX + xOff * skyW;
+    const bw = wRatio * skyW;
+    const bh = hRatio * scale * 0.8;
+    const by = baseY - bh;
+
+    // Building outline
+    ctx.beginPath();
+    ctx.rect(bx, by, bw, bh);
+    ctx.stroke();
+
+    // Window rows
+    const floorH = bh / Math.max(3, Math.floor(bh / (scale * 0.06)));
+    for (let f = 1; f < Math.floor(bh / floorH); f++) {
+      const fy = by + f * floorH;
+      // Small window dots
+      const numWin = Math.max(1, Math.floor(bw / (scale * 0.04)));
+      const winSpacing = bw / (numWin + 1);
+      for (let wi = 1; wi <= numWin; wi++) {
+        const wx = bx + wi * winSpacing;
+        ctx.beginPath();
+        ctx.rect(wx - scale * 0.008, fy - scale * 0.01, scale * 0.016, scale * 0.02);
+        ctx.stroke();
+      }
+    }
   });
-}
 
-function drawHolding(ctx: CanvasRenderingContext2D, w: number, h: number, time: number, energy: number) {
-  const baseY = h * 0.78;
-  const scale = Math.min(w, h) * 0.12;
-  const sway = Math.sin(time * 0.8) * energy;
-
-  drawFigure(ctx, w * 0.44, baseY, scale, {
-    headX: 0, headY: 0, bodyEndY: 0,
-    leftArmX: -0.3, leftArmY: -0.2,
-    rightArmX: 0.35, rightArmY: -0.1,
-    leftLegX: -0.15, leftLegY: 0.45,
-    rightLegX: 0.15, rightLegY: 0.45,
-  }, sway);
-
-  drawFigure(ctx, w * 0.56, baseY, scale, {
-    headX: 0, headY: 0, bodyEndY: 0,
-    leftArmX: -0.35, leftArmY: -0.1,
-    rightArmX: 0.3, rightArmY: -0.2,
-    leftLegX: -0.15, leftLegY: 0.45,
-    rightLegX: 0.15, rightLegY: 0.45,
-  }, sway * 0.9);
-
-  // Connecting line (held hands)
-  const midY = baseY - scale * 0.1;
+  // Ground line
   ctx.beginPath();
-  ctx.moveTo(w * 0.44 + 0.35 * scale, midY);
-  ctx.lineTo(w * 0.56 - 0.35 * scale, midY);
+  ctx.moveTo(startX - scale * 0.05, baseY);
+  ctx.lineTo(startX + skyW + scale * 0.05, baseY);
   ctx.stroke();
-}
-
-function drawTalking(ctx: CanvasRenderingContext2D, w: number, h: number, time: number, energy: number) {
-  const baseY = h * 0.78;
-  const scale = Math.min(w, h) * 0.12;
-  const sway = Math.sin(time * 1.0) * energy;
-  const gesture = Math.sin(time * 2.2) * 0.15;
-
-  drawFigure(ctx, w * 0.43, baseY, scale, {
-    headX: 0.02, headY: 0, bodyEndY: 0,
-    leftArmX: -0.25, leftArmY: -0.15,
-    rightArmX: 0.35, rightArmY: -0.35 + gesture,
-    leftLegX: -0.15, leftLegY: 0.45,
-    rightLegX: 0.15, rightLegY: 0.45,
-  }, sway);
-
-  drawFigure(ctx, w * 0.57, baseY, scale, {
-    headX: -0.02, headY: 0, bodyEndY: 0,
-    leftArmX: -0.35, leftArmY: -0.35 - gesture,
-    rightArmX: 0.25, rightArmY: -0.15,
-    leftLegX: -0.15, leftLegY: 0.45,
-    rightLegX: 0.15, rightLegY: 0.45,
-  }, sway * 0.8);
-}
-
-function drawHugging(ctx: CanvasRenderingContext2D, w: number, h: number, time: number, energy: number) {
-  const baseY = h * 0.78;
-  const scale = Math.min(w, h) * 0.12;
-  const sway = Math.sin(time * 0.6) * energy;
-  const squeeze = Math.sin(time * 1.5) * 0.02;
-
-  drawFigure(ctx, w * 0.47 + squeeze * scale, baseY, scale, {
-    headX: 0.05, headY: -0.03, bodyEndY: 0,
-    leftArmX: -0.15, leftArmY: -0.2,
-    rightArmX: 0.35, rightArmY: -0.3,
-    leftLegX: -0.18, leftLegY: 0.45,
-    rightLegX: 0.1, rightLegY: 0.45,
-  }, sway);
-
-  drawFigure(ctx, w * 0.53 - squeeze * scale, baseY, scale, {
-    headX: -0.05, headY: -0.03, bodyEndY: 0,
-    leftArmX: -0.35, leftArmY: -0.3,
-    rightArmX: 0.15, rightArmY: -0.2,
-    leftLegX: -0.1, leftLegY: 0.45,
-    rightLegX: 0.18, rightLegY: 0.45,
-  }, sway * 0.9);
-}
-
-function drawWalking(ctx: CanvasRenderingContext2D, w: number, h: number, time: number, energy: number) {
-  const baseY = h * 0.78;
-  const scale = Math.min(w, h) * 0.11;
-  const sway = Math.sin(time * 1.3) * energy;
-  const stride = Math.sin(time * 1.8);
-
-  drawFigure(ctx, w * 0.44, baseY, scale, {
-    headX: 0, headY: Math.abs(stride) * 0.03, bodyEndY: 0,
-    leftArmX: -0.25 + stride * 0.1, leftArmY: -0.15 - stride * 0.1,
-    rightArmX: 0.25 - stride * 0.1, rightArmY: -0.15 + stride * 0.1,
-    leftLegX: -0.1 + stride * 0.1, leftLegY: 0.45,
-    rightLegX: 0.1 - stride * 0.1, rightLegY: 0.45,
-  }, sway);
-
-  drawFigure(ctx, w * 0.56, baseY, scale, {
-    headX: 0, headY: Math.abs(-stride) * 0.03, bodyEndY: 0,
-    leftArmX: -0.25 - stride * 0.1, leftArmY: -0.15 + stride * 0.1,
-    rightArmX: 0.25 + stride * 0.1, rightArmY: -0.15 - stride * 0.1,
-    leftLegX: -0.1 - stride * 0.1, leftLegY: 0.45,
-    rightLegX: 0.1 + stride * 0.1, rightLegY: 0.45,
-  }, sway * 0.8);
-}
-
-function drawCheering(ctx: CanvasRenderingContext2D, w: number, h: number, time: number, energy: number) {
-  const baseY = h * 0.78;
-  const scale = Math.min(w, h) * 0.1;
-  const sway = Math.sin(time * 1.6) * energy;
-
-  const positions = [0.38, 0.5, 0.62];
-  positions.forEach((xp, i) => {
-    const phase = i * 0.8;
-    const armUp = -0.7 + Math.sin(time * 2.5 + phase) * 0.15;
-    drawFigure(ctx, w * xp, baseY, scale, {
-      headX: 0, headY: Math.sin(time * 2.5 + phase) * 0.04, bodyEndY: 0,
-      leftArmX: -0.35, leftArmY: armUp,
-      rightArmX: 0.35, rightArmY: armUp - 0.05,
-      leftLegX: -0.15, leftLegY: 0.45,
-      rightLegX: 0.15, rightLegY: 0.45,
-    }, sway);
-  });
 }
 
 const scenes = [
-  drawWaving,
-  drawHighFive,
-  drawDancing,
-  drawHolding,
-  drawTalking,
-  drawHugging,
-  drawWalking,
-  drawCheering,
+  drawSkyscraper,
+  drawBridge,
+  drawArch,
+  drawFloorPlan,
+  drawStaircase,
+  drawDome,
+  drawTower,
+  drawSkyline,
 ];
 
 export default function FiguresLayer({ isPlaying, analyser, visible }: FiguresLayerProps) {
@@ -336,7 +557,7 @@ export default function FiguresLayer({ isPlaying, analyser, visible }: FiguresLa
 
     const opacity = fadeRef.current * 0.1; // max 0.1 opacity — very faint
     ctx.strokeStyle = `rgba(255, 255, 255, ${opacity})`;
-    ctx.lineWidth = 1.5;
+    ctx.lineWidth = 1;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
 
