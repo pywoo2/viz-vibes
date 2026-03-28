@@ -432,6 +432,32 @@ body {
   height: 100%;
 }
 
+/* ========== FIGURES LAYER ========== */
+#figures-layer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 1s ease;
+}
+
+#figures-layer.visible {
+  opacity: 1;
+}
+
+/* ========== VISUALIZER PICKER SEPARATOR ========== */
+.viz-picker-separator {
+  width: 24px;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 2px auto;
+  align-self: center;
+}
+
 /* ========== MAIN AREA ========== */
 #main-area {
   position: relative;
@@ -810,3 +836,100 @@ body {
   margin: 4px 12px;
 }
 
+
+/* ========== ABOUT MODAL ========== */
+.about-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.6);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.3s ease;
+}
+
+.about-card {
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  backdrop-filter: blur(40px) saturate(180%);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 40px;
+  max-width: 500px;
+  width: 90%;
+  position: relative;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4);
+}
+
+.about-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  color: var(--fg-dim);
+  font-size: 1.2rem;
+  cursor: pointer;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: color 0.15s, background 0.15s;
+}
+
+.about-close:hover {
+  color: var(--fg-bright);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.about-title {
+  font-size: 1.3rem;
+  font-weight: 200;
+  letter-spacing: 0.08em;
+  color: var(--fg-bright);
+  margin-bottom: 24px;
+  text-transform: lowercase;
+}
+
+.about-section {
+  margin-bottom: 20px;
+}
+
+.about-section h3 {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: lowercase;
+  letter-spacing: 0.08em;
+  color: var(--fg-dim);
+  margin-bottom: 6px;
+}
+
+.about-section p {
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: var(--fg);
+  line-height: 1.6;
+}
+
+.about-link {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 0.8rem;
+  color: var(--fg-dim);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.about-link:hover {
+  color: var(--fg-bright);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

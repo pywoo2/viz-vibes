@@ -1,7 +1,6 @@
 'use client';
 
 import { useRef, useCallback, useEffect } from 'react';
-import Link from 'next/link';
 import { Track } from '../hooks/useAudioPlayer';
 
 interface PlayerBarProps {
@@ -19,6 +18,7 @@ interface PlayerBarProps {
   onCycleRepeat: () => void;
   onSeek: (time: number) => void;
   onSetVolume: (vol: number) => void;
+  onAboutClick?: () => void;
 }
 
 function fmt(s: number): string {
@@ -42,6 +42,7 @@ export default function PlayerBar({
   onCycleRepeat,
   onSeek,
   onSetVolume,
+  onAboutClick,
 }: PlayerBarProps) {
   const progressRef = useRef<HTMLDivElement>(null);
   const isDraggingRef = useRef(false);
@@ -248,8 +249,8 @@ export default function PlayerBar({
           value={volume}
           onChange={(e) => onSetVolume(parseFloat(e.target.value))}
         />
-        <Link
-          href="/about"
+        <button
+          onClick={onAboutClick}
           title="About"
           style={{
             display: 'flex',
@@ -259,10 +260,11 @@ export default function PlayerBar({
             height: 24,
             borderRadius: '50%',
             border: '1px solid var(--glass-border)',
+            background: 'none',
             color: 'var(--fg-subtle)',
             fontSize: '0.7rem',
             fontWeight: 500,
-            textDecoration: 'none',
+            cursor: 'pointer',
             marginLeft: 4,
             transition: 'color 0.15s, border-color 0.15s',
             flexShrink: 0,
@@ -277,7 +279,7 @@ export default function PlayerBar({
           }}
         >
           i
-        </Link>
+        </button>
       </div>
     </div>
   );

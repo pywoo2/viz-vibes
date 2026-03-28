@@ -7,6 +7,7 @@ import Sidebar from '../components/Sidebar';
 import PlayerBar from '../components/PlayerBar';
 import Visualizer from '../components/Visualizer';
 import VisualizerPicker from '../components/VisualizerPicker';
+import FiguresLayer from '../components/FiguresLayer';
 
 export default function Home() {
   const player = useAudioPlayer();
@@ -15,6 +16,8 @@ export default function Home() {
   const [isResizing, setIsResizing] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [vizMode, setVizMode] = useState('noise');
+  const [figuresVisible, setFiguresVisible] = useState(false);
+  const [showAbout, setShowAbout] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem('sidebar-width');
@@ -23,6 +26,8 @@ export default function Home() {
     if (collapsed === 'true') setIsCollapsed(true);
     const savedVizMode = localStorage.getItem('viz-mode');
     if (savedVizMode) setVizMode(savedVizMode);
+    const savedFigures = localStorage.getItem('figures-visible');
+    if (savedFigures === 'true') setFiguresVisible(true);
   }, []);
 
   const startResize = useCallback((e: React.MouseEvent) => {
@@ -64,6 +69,14 @@ export default function Home() {
     localStorage.setItem('viz-mode', mode);
   }, []);
 
+  const handleToggleFigures = useCallback(() => {
+    setFiguresVisible(prev => {
+      const next = !prev;
+      localStorage.setItem('figures-visible', String(next));
+      return next;
+    });
+  }, []);
+
   const currentTrack =
     player.currentIndex >= 0 ? player.tracks[player.currentIndex] : null;
 
@@ -83,7 +96,13 @@ export default function Home() {
         <Visualizer analyser={player.analyserRef?.current ?? null} isPlaying={player.isPlaying} mode={vizMode} />
       </div>
 
-      <VisualizerPicker mode={vizMode} onModeChange={handleVizModeChange} />
+      <FiguresLayer
+        isPlaying={player.isPlaying}
+        analyser={player.analyserRef?.current ?? null}
+        visible={figuresVisible}
+      />
+
+      <VisualizerPicker mode={vizMode} onModeChange={handleVizModeChange} figuresVisible={figuresVisible} onToggleFigures={handleToggleFigures} />
 
       <Sidebar
         tracks={player.tracks}
@@ -120,7 +139,32 @@ export default function Home() {
         onCycleRepeat={player.cycleRepeat}
         onSeek={player.seek}
         onSetVolume={player.setVolume}
+        onAboutClick={() => setShowAbout(true)}
       />
+
+      {showAbout && (
+        <div className="about-overlay" onClick={() => setShowAbout(false)}>
+          <div className="about-card" onClick={(e) => e.stopPropagation()}>
+            <button className="about-close" onClick={() => setShowAbout(false)}>&times;</button>
+            <h2 className="about-title">about viz-vibes</h2>
+            <div className="about-section">
+              <h3>the music</h3>
+              <p>All songs are AI-generated — composed, arranged, and produced with artificial intelligence. I listen to them daily.</p>
+            </div>
+            <div className="about-section">
+              <h3>the tech</h3>
+              <p>WebGL shaders power the audio-reactive visualizer. The frontend is Next.js, the backend is FastAPI, and audio streams from Cloudflare R2.</p>
+            </div>
+            <div className="about-section">
+              <h3>the design</h3>
+              <p>Inspired by iOS liquid glass, with interactive effects throughout — mouse-tracking highlights, glass reflections, and fluid animations.</p>
+            </div>
+            <a href="https://www.linkedin.com/in/pywoo/" target="_blank" rel="noopener noreferrer" className="about-link">
+              Made by Peter Woo &rarr;
+            </a>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
