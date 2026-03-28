@@ -53,7 +53,7 @@ def list_tracks_from_r2() -> list[dict]:
                 title = os.path.splitext(key)[0]
                 tracks.append({
                     "title": title,
-                    "url": f"{R2_BASE}/{urllib.parse.quote(key)}",
+                    "url": f"{R2_BASE}/{urllib.parse.quote(key, safe='(),')}",
                 })
         return tracks
     except Exception:
