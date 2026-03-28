@@ -31,6 +31,7 @@ export default function Home() {
   const drawerTouchStartY = useRef<number | null>(null);
   const drawerTouchCurrentY = useRef<number | null>(null);
   const touchStartRef = useRef<number>(0);
+  const tracksPillRef = useRef<HTMLButtonElement>(null);
 
   // Swipe-to-close: track touch on the drawer and close if swiped down > 100px
   const handleDrawerTouchStart = useCallback((e: React.TouchEvent) => {
@@ -47,6 +48,7 @@ export default function Home() {
       const delta = drawerTouchCurrentY.current - drawerTouchStartY.current;
       if (delta > 100) {
         setMobileDrawerOpen(false);
+        tracksPillRef.current?.focus();
       }
     }
     drawerTouchStartY.current = null;
@@ -165,15 +167,15 @@ export default function Home() {
     <button className="mobile-menu-btn" onClick={() => setMobileDrawerOpen(!mobileDrawerOpen)}>
       {mobileDrawerOpen ? '\u2715' : '\u2630'}
     </button>
-    <button className={`mobile-tracks-btn ${mobileDrawerOpen ? 'hidden' : ''}`} onClick={() => setMobileDrawerOpen(!mobileDrawerOpen)}>
+    <button ref={tracksPillRef} className={`mobile-tracks-btn ${mobileDrawerOpen ? 'hidden' : ''}`} onClick={() => setMobileDrawerOpen(!mobileDrawerOpen)}>
       {player.tracks.length === 0 ? 'loading...' : `\u266B ${player.tracks.length} tracks`}
     </button>
-    <button className="mobile-about-btn" onClick={() => setShowAbout(prev => !prev)}>
+    <button className="mobile-about-btn" aria-label="About" onClick={() => setShowAbout(prev => !prev)}>
       i
     </button>
     <div
       className={`mobile-overlay ${mobileDrawerOpen ? 'visible' : ''}`}
-      onClick={() => setMobileDrawerOpen(false)}
+      onClick={() => { setMobileDrawerOpen(false); tracksPillRef.current?.focus(); }}
     />
     <div className="ai-disclaimer">all music was created using ai</div>
     <div
