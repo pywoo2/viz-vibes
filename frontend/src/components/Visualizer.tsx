@@ -557,12 +557,118 @@ const plasmaShader = uniformHeader + `
   }
 `;
 
+// Mode 7: Floral — audio-reactive flower/petal patterns
+const floralShader = uniformHeader + `
+  void main() {
+    vec2 uv = gl_FragCoord.xy / resolution;
+    vec2 p = uv * 2.0 - 1.0;
+    p.x *= resolution.x / resolution.y;
+
+    float t = time * 0.2;
+    float dist = length(p);
+    float angle = atan(p.y, p.x);
+
+    // Multiple flower layers
+    float flower = 0.0;
+
+    // Main flower — petals using sin(angle * n) in polar coords
+    float petals1 = abs(sin(angle * 3.0 + t)) * (0.3 + bass * 0.4);
+    float shape1 = smoothstep(petals1 + 0.02, petals1, dist);
+    flower += shape1 * 0.4;
+
+    // Second flower layer — offset and different petal count
+    float petals2 = abs(sin(angle * 5.0 - t * 0.7 + mid)) * (0.2 + mid * 0.3);
+    float shape2 = smoothstep(petals2 + 0.015, petals2, dist);
+    flower += shape2 * 0.3;
+
+    // Third layer — small inner flower
+    float petals3 = abs(cos(angle * 8.0 + t * 1.3)) * (0.1 + high * 0.15);
+    float shape3 = smoothstep(petals3 + 0.01, petals3, dist);
+    flower += shape3 * 0.2;
+
+    // Spiraling vines/tendrils growing outward
+    float spiral = sin(dist * 12.0 - t * 2.0 + angle * 2.0) * 0.5 + 0.5;
+    float vine = smoothstep(0.03, 0.0, abs(spiral - 0.5) - 0.47) * (0.1 + energy * 0.2) * smoothstep(0.0, 0.8, dist);
+
+    // Center stamen glow
+    float center = (0.02 + bass * 0.04) / (dist + 0.05);
+
+    // Pollen particles floating outward
+    float pollen = 0.0;
+    for (int i = 0; i < 12; i++) {
+      float fi = float(i);
+      float a = fi * 0.524 + t * 0.3;
+      float r = fract(fi * 0.38 + t * 0.05) * 1.2;
+      vec2 pos = vec2(cos(a) * r, sin(a) * r);
+      float d = length(p - pos);
+      pollen += 0.003 / (d * d + 0.001) * energy * 0.2;
+    }
+
+    float brightness = flower + vine + center + pollen;
+
+    // Mouse interaction — bloom effect around cursor
+    float mouseGlow = 0.0;
+    if (mouse.x >= 0.0) {
+      vec2 mp = mouse * 2.0 - 1.0;
+      mp.x *= resolution.x / resolution.y;
+      float md = length(p - mp);
+      float mouseAngle = atan(p.y - mp.y, p.x - mp.x);
+      float mousePetals = abs(sin(mouseAngle * 6.0 + t * 2.0)) * 0.15;
+      mouseGlow = smoothstep(mousePetals + 0.02, mousePetals, md) * 0.2;
+      mouseGlow += 0.01 / (md * md + 0.01);
+    }
+    brightness += mouseGlow;
+
+    // Click effect
+    if (click.z > 0.0 && clickType > 0) {
+      float clickAge = time - click.z;
+      if (clickAge < 1.5) {
+        vec2 cp = click.xy * 2.0 - 1.0;
+        cp.x *= resolution.x / resolution.y;
+        float cd = length(p - cp);
+        float fade = 1.0 - clickAge / 1.5;
+        if (clickType == 1) {
+          float ring = abs(cd - clickAge * 0.35) - 0.01;
+          brightness += smoothstep(0.02, 0.0, ring) * fade * 0.4;
+        } else if (clickType == 2) {
+          float cAngle = atan(p.y - cp.y, p.x - cp.x);
+          float rays = pow(abs(sin(cAngle * 6.0)), 3.0);
+          float radial = smoothstep(clickAge * 0.5, 0.0, cd) * fade;
+          float flash = 0.15 / (cd + 0.05) * max(0.0, 1.0 - clickAge * 3.0);
+          brightness += (rays * radial * 0.5 + flash);
+        } else if (clickType == 3) {
+          float radius = clickAge * 0.4;
+          float thickness = 0.05 + clickAge * 0.03;
+          float wave = smoothstep(radius + thickness, radius, cd) * smoothstep(radius - thickness, radius, cd);
+          brightness += wave * fade * 0.8;
+          brightness += 0.1 * fade / (abs(cd - radius) + 0.05);
+        }
+      }
+    }
+
+    brightness = clamp(brightness, 0.0, 1.0);
+    brightness = pow(brightness, 0.85);
+
+    if (colorMode == 0) {
+      gl_FragColor = vec4(vec3(brightness), 1.0);
+    } else if (colorMode == 2) {
+      gl_FragColor = vec4(vec3(1.0 - brightness), 1.0);
+    } else if (colorMode == 3) {
+      gl_FragColor = vec4(brightness * 0.7, brightness * 0.05, brightness * 0.05, 1.0);
+    } else {
+      float hue = angle / 6.28318 + 0.5 + dist * 0.3 + time * 0.05;
+      gl_FragColor = vec4(rainbow(hue) * brightness, 1.0);
+    }
+  }
+`;
+
 export const VISUALIZER_MODES = [
   { id: 'noise', label: 'Noise Field', shader: noiseFieldShader },
   { id: 'waveform', label: 'Waveform', shader: waveformShader },
   { id: 'particles', label: 'Particles', shader: particlesShader },
   { id: 'grid', label: 'Grid', shader: gridShader },
   { id: 'plasma', label: 'Plasma', shader: plasmaShader },
+  { id: 'floral', label: 'Floral', shader: floralShader },
 ];
 
 function getShaderForMode(mode: string): string {

@@ -59,6 +59,15 @@ const icons: Record<string, React.ReactNode> = {
       <path d="M1 7 C4 13, 8 3, 11 9 S15 14, 18 8" strokeLinecap="round" opacity="0.3" />
     </svg>
   ),
+  floral: (
+    <svg viewBox="0 0 20 20">
+      <circle cx="10" cy="10" r="2" />
+      <ellipse cx="10" cy="5" rx="2" ry="3" />
+      <ellipse cx="10" cy="15" rx="2" ry="3" />
+      <ellipse cx="5" cy="10" rx="3" ry="2" />
+      <ellipse cx="15" cy="10" rx="3" ry="2" />
+    </svg>
+  ),
 };
 
 const clickEffects = [
