@@ -82,18 +82,23 @@ const noiseFieldShader = uniformHeader + `
     float dist = length(p);
     float glow = energy * 0.5 / (dist + 0.5);
 
-    // Mouse — bright attractor that distorts noise
-    float mouseGlow = 0.0;
+    // Mouse — gravitational pull that warps the noise field
     if (mouse.x >= 0.0) {
       vec2 mp = mouse * 2.0 - 1.0;
       mp.x *= resolution.x / resolution.y;
-      float md = length(p - mp);
-      mouseGlow = 0.02 / (md * md + 0.03);
-      n += snoise(p * 2.0 + mp * 0.5 + t) * 0.06 / (md + 0.5);
+      vec2 toMouse = mp - p;
+      float md = length(toMouse);
+      // Warp coordinates toward mouse (gravity well)
+      p += toMouse * 0.4 / (md + 0.3);
+      // Recalculate noise with warped coords
+      n = 0.0;
+      n += snoise(p * 1.5 + t * 0.5 + bass * 0.3) * (0.3 + bass * 0.4);
+      n += snoise(p * 3.0 - t * 0.3 + mid * 0.2) * (0.2 + mid * 0.3);
+      n += snoise(p * 6.0 + t * 0.8) * (0.1 + high * 0.3);
     }
 
     float brightness = smoothstep(-0.3, 0.6, n) * (0.15 + energy * 0.85);
-    brightness += glow * 0.3 + mouseGlow;
+    brightness += glow * 0.3;
     brightness = pow(brightness, 0.8);
 
     // Click effect
@@ -145,11 +150,11 @@ const waveformShader = uniformHeader + `
     wave += sin(uv.x * 6.28 * 4.0 + time * 1.5) * mid * 0.2;
     wave += sin(uv.x * 6.28 * 8.0 + time * 2.0) * high * 0.1;
 
-    // Mouse pulls the wave toward cursor
+    // Mouse pulls the wave toward cursor — strong gravity
     if (mouse.x >= 0.0) {
       float dx = uv.x - mouse.x;
-      float proximity = exp(-dx * dx * 20.0); // gaussian falloff
-      wave += (mouse.y - 0.5) * proximity * 0.25;
+      float proximity = exp(-dx * dx * 8.0); // wider gaussian falloff
+      wave += (mouse.y - 0.5) * proximity * 1.2;
     }
 
     float dist = abs(uv.y - 0.5 - wave * 0.3);
@@ -160,7 +165,7 @@ const waveformShader = uniformHeader + `
     float mouseGlow = 0.0;
     if (mouse.x >= 0.0) {
       float md = length(uv - mouse);
-      mouseGlow = 0.008 / (md * md + 0.008);
+      mouseGlow = 0.01 / (md * md + 0.02);
     }
 
     float brightness = line + glow + mouseGlow;
@@ -229,7 +234,7 @@ const particlesShader = uniformHeader + `
       // Each particle has a unique orbit
       float angle1 = fi * 2.399 + time * speed * (0.5 + fract(fi * 0.37) * 0.5);
       float angle2 = fi * 1.673 + time * speed * (0.3 + fract(fi * 0.61) * 0.7);
-      float radius = 0.3 + fract(fi * 0.71) * 0.6 + bass * 0.2;
+      float radius = 0.4 + fract(fi * 0.71) * 1.4 + bass * 0.3;
 
       vec2 pos = vec2(
         sin(angle1) * radius,
@@ -242,7 +247,7 @@ const particlesShader = uniformHeader + `
         mp.x *= resolution.x / resolution.y;
         vec2 toMouse = mp - pos;
         float md = length(toMouse);
-        pos += toMouse * 0.1 / (md + 0.8);
+        pos += toMouse * 0.5 / (md + 0.3);
       }
 
       // Size pulses with bass, smaller particles further from center
@@ -259,7 +264,7 @@ const particlesShader = uniformHeader + `
       vec2 mp = mouse * 2.0 - 1.0;
       mp.x *= resolution.x / resolution.y;
       float md = length(p - mp);
-      float mg = 0.004 / (md * md + 0.008);
+      float mg = 0.01 / (md * md + 0.02);
       brightness += mg;
       colorAccum += vec3(mg);
     }
@@ -397,8 +402,13 @@ const gridShader = uniformHeader + `
 
     float t = time * 0.3;
 
-    // Tunnel center shifts with audio
+    // Tunnel center shifts with audio + mouse gravity
     vec2 center = vec2(sin(t * 0.5) * bass * 0.3, cos(t * 0.7) * mid * 0.3);
+    if (mouse.x >= 0.0) {
+      vec2 mp = mouse * 2.0 - 1.0;
+      mp.x *= resolution.x / resolution.y;
+      center = mix(center, mp, 0.15);
+    }
     vec2 q = p - center;
 
     float angle = atan(q.y, q.x);
@@ -430,7 +440,7 @@ const gridShader = uniformHeader + `
       vec2 mp = mouse * 2.0 - 1.0;
       mp.x *= resolution.x / resolution.y;
       float md = length(p - mp);
-      mouseGlow = 0.02 / (md * md + 0.02);
+      mouseGlow = 0.02 / (md * md + 0.03);
     }
 
     float brightness = grid + glow + scan + mouseGlow;
@@ -485,6 +495,15 @@ const plasmaShader = uniformHeader + `
 
     float t = time * 0.4;
 
+    // Mouse gravity — warp coordinates
+    if (mouse.x >= 0.0) {
+      vec2 mp = mouse * 2.0 - 1.0;
+      mp.x *= resolution.x / resolution.y;
+      vec2 toMouse = mp - p;
+      float md = length(toMouse);
+      p += toMouse * 0.35 / (md + 0.3);
+    }
+
     // Multiple plasma layers that shift with audio
     float v = 0.0;
     v += sin(p.x * (2.0 + bass * 3.0) + t * 1.2) * 0.5;
@@ -509,7 +528,7 @@ const plasmaShader = uniformHeader + `
       vec2 mp = mouse * 2.0 - 1.0;
       mp.x *= resolution.x / resolution.y;
       float md = length(p - mp);
-      brightness += 0.025 / (md * md + 0.02);
+      brightness += 0.01 / (md * md + 0.03);
       float mouseWave = sin(md * 10.0 - t * 3.0) * 0.2 / (md + 0.3);
       brightness += mouseWave * energy;
     }
@@ -693,7 +712,7 @@ const noneShader = uniformHeader + `
       vec2 mp = mouse * 2.0 - 1.0;
       mp.x *= resolution.x / resolution.y;
       float md = length(p - mp);
-      brightness += 0.015 / (md * md + 0.02);
+      brightness += 0.01 / (md * md + 0.03);
     }
 
     // Click effect
@@ -945,9 +964,7 @@ export default function Visualizer({ analyser, isPlaying, mode, colorMode, click
         y: 1.0 - (e.clientY - rect.top) / rect.height,
       };
     };
-    const onLeave = () => {
-      mouseRef.current = { x: -1, y: -1 };
-    };
+    // No mouseleave — track mouse globally since canvas is behind other elements
 
     const onClick = (e: MouseEvent) => {
       const rect = canvas.getBoundingClientRect();
@@ -958,11 +975,9 @@ export default function Visualizer({ analyser, isPlaying, mode, colorMode, click
     };
 
     window.addEventListener('mousemove', onMove);
-    parent.addEventListener('mouseleave', onLeave);
     canvas.addEventListener('click', onClick);
     return () => {
       window.removeEventListener('mousemove', onMove);
-      parent.removeEventListener('mouseleave', onLeave);
       canvas.removeEventListener('click', onClick);
     };
   }, []);

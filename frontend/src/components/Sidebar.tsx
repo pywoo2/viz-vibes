@@ -30,6 +30,7 @@ export default function Sidebar({
 }: SidebarProps) {
   const [likingTracks, setLikingTracks] = useState<Set<number>>(new Set());
   const [heartPulsingTracks, setHeartPulsingTracks] = useState<Set<number>>(new Set());
+  const [downloadingTracks, setDownloadingTracks] = useState<Set<number>>(new Set());
   const sidebarRef = useRef<HTMLDivElement>(null);
   const highlightRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number>(0);
@@ -115,6 +116,38 @@ export default function Sidebar({
     [tracks, likingTracks, onUpdateTrackLikes]
   );
 
+  const handleDownload = useCallback(
+    async (e: React.MouseEvent, index: number) => {
+      e.stopPropagation();
+      e.preventDefault();
+      const track = tracks[index];
+      if (!track.url || downloadingTracks.has(index)) return;
+
+      setDownloadingTracks((prev) => new Set(prev).add(index));
+      try {
+        const res = await fetch(track.url);
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = track.file || `${track.title}.mp3`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch {
+        // silently fail
+      } finally {
+        setDownloadingTracks((prev) => {
+          const next = new Set(prev);
+          next.delete(index);
+          return next;
+        });
+      }
+    },
+    [tracks, downloadingTracks]
+  );
+
   return (
     <div
       id="sidebar"
@@ -183,6 +216,15 @@ export default function Sidebar({
                   {(track.likes || 0) > 0 && (
                     <span className="like-count">{track.likes}</span>
                   )}
+                </button>
+                <button
+                  className={`download-btn ${downloadingTracks.has(i) ? 'downloading' : ''}`}
+                  onClick={(e) => handleDownload(e, i)}
+                  title="Download"
+                >
+                  <svg viewBox="0 0 24 24" width="16" height="16">
+                    <path d="M5 20h14v-2H5v2zm7-18v12.17l5.59-5.59L19 10l-7 7-7-7 1.41-1.41L11 14.17V2h2z" />
+                  </svg>
                 </button>
               </li>
             ))}

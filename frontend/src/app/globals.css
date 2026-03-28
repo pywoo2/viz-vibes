@@ -402,6 +402,36 @@ body {
   100% { transform: scale(1); filter: brightness(1); }
 }
 
+.download-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  min-width: 28px;
+  min-height: 28px;
+  transition: transform 0.15s ease;
+}
+.download-btn svg {
+  fill: rgba(255, 255, 255, 0.35);
+  transition: fill 0.15s ease;
+  pointer-events: none;
+}
+.download-btn:hover svg {
+  fill: rgba(255, 255, 255, 0.85);
+}
+.download-btn.downloading svg {
+  animation: downloadPulse 1s ease infinite;
+}
+@keyframes downloadPulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
 #empty-state {
   text-align: center;
   padding: 40px 16px;
