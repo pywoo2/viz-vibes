@@ -186,14 +186,6 @@ export default function Home() {
         transition: isResizing ? 'none' : 'grid-template-columns 0.3s ease',
         position: 'relative',
       }}
-      onTouchStart={(e) => { touchStartRef.current = e.touches[0].clientX; }}
-      onTouchEnd={(e) => {
-        const dx = e.changedTouches[0].clientX - touchStartRef.current;
-        if (Math.abs(dx) > 80) {
-          if (dx < 0) player.nextTrack();
-          else player.prevTrack();
-        }
-      }}
     >
       {/* Visualizer spans full viewport behind everything */}
       <div id="visualizer-bg">
