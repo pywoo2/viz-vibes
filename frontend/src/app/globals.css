@@ -2163,3 +2163,55 @@ body {
     touch-action: manipulation;
   }
 }
+
+/* ===== Round 9: Typography & Spacing Polish ===== */
+@media (max-width: 767px) {
+  /* R9-1: Player bar song title — bolder for readability */
+  #np-info .np-title {
+    font-weight: 500 !important;
+    letter-spacing: 0.02em;
+  }
+
+  /* R9-2: Track list — improve readability */
+  #track-list li .track-info .name {
+    font-size: 14px !important;
+    font-weight: 400;
+    letter-spacing: 0.01em;
+  }
+  #track-list li .track-num {
+    font-size: 11px !important;
+    color: rgba(255, 255, 255, 0.35) !important;
+  }
+
+  /* R9-3: Drawer handle — more breathing room */
+  .mobile-drawer-handle {
+    padding: 14px 0 8px !important;
+  }
+
+  /* R9-4: Viz picker pills — more padding for finger-friendliness */
+  .mobile-viz-btn {
+    padding: 8px 16px !important;
+    font-size: 0.72rem !important;
+  }
+
+  /* R9-5: Sort hint text — slightly bigger */
+  .sort-hint {
+    font-size: 0.55rem !important;
+    padding: 6px 12px 10px !important;
+  }
+
+  /* R9-6: Like count — better positioned */
+  .like-count {
+    font-size: 0.6rem !important;
+  }
+
+  /* R9-7: Progress bar time labels — monospace for alignment */
+  #progress-row .time {
+    font-family: "SF Mono", "Fira Code", monospace !important;
+  }
+
+  /* R9-8: Note input disclaimer — larger for readability */
+  .note-input-container .note-disclaimer {
+    font-size: 0.55rem !important;
+  }
+}
