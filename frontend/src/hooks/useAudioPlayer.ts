@@ -123,27 +123,34 @@ export function useAudioPlayer(): AudioPlayerState & AudioPlayerActions & { anal
   const initAudioContext = useCallback(() => {
     const audio = audioRef.current;
     if (!audio || audioContextRef.current) return;
-    const ctx = new AudioContext();
-    const analyser = ctx.createAnalyser();
-    analyser.fftSize = 256;
-    analyser.smoothingTimeConstant = 0.8;
-    const source = ctx.createMediaElementSource(audio);
-    source.connect(analyser);
-    analyser.connect(ctx.destination);
-    audioContextRef.current = ctx;
-    analyserRef.current = analyser;
-    sourceRef.current = source;
+    try {
+      const ctx = new AudioContext();
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 256;
+      analyser.smoothingTimeConstant = 0.8;
+      const source = ctx.createMediaElementSource(audio);
+      source.connect(analyser);
+      analyser.connect(ctx.destination);
+      audioContextRef.current = ctx;
+      analyserRef.current = analyser;
+      sourceRef.current = source;
+    } catch (err) {
+      console.warn('Audio context init failed (visualizer disabled):', err);
+    }
   }, []);
 
   const playTrack = useCallback((index: number) => {
     const audio = audioRef.current;
     if (!audio || !tracksRef.current[index]) return;
     initAudioContext();
+    if (audioContextRef.current?.state === 'suspended') {
+      audioContextRef.current.resume();
+    }
     setCurrentIndex(index);
     currentIndexRef.current = index;
     const track = tracksRef.current[index];
     audio.src = track.url || track.file;
-    audio.play().catch(() => {});
+    audio.play().catch((err) => { console.error('Play failed:', err); });
     setIsPlaying(true);
     isPlayingRef.current = true;
   }, [initAudioContext]);
@@ -200,6 +207,9 @@ export function useAudioPlayer(): AudioPlayerState & AudioPlayerActions & { anal
       isPlayingRef.current = false;
     } else {
       initAudioContext();
+      if (audioContextRef.current?.state === 'suspended') {
+        audioContextRef.current.resume();
+      }
       audio.play().catch(() => {});
       setIsPlaying(true);
       isPlayingRef.current = true;
