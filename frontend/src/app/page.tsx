@@ -146,6 +146,9 @@ export default function Home() {
     <button className="mobile-menu-btn" onClick={() => setMobileDrawerOpen(!mobileDrawerOpen)}>
       {mobileDrawerOpen ? '\u2715' : '\u2630'}
     </button>
+    <button className="mobile-tracks-btn" onClick={() => setMobileDrawerOpen(!mobileDrawerOpen)}>
+      &#9835; {player.tracks.length} tracks
+    </button>
     <div
       className={`mobile-overlay ${mobileDrawerOpen ? 'visible' : ''}`}
       onClick={() => setMobileDrawerOpen(false)}
