@@ -25,6 +25,7 @@ const uniformHeader = `
   uniform float mid;
   uniform float high;
   uniform float energy;
+  uniform vec2 mouse; // 0-1 normalized, (-1,-1) when inactive
 `;
 
 // Mode 1: Noise Field (original)
@@ -70,8 +71,18 @@ const noiseFieldShader = uniformHeader + `
     float dist = length(p);
     float glow = energy * 0.5 / (dist + 0.5);
 
+    // Mouse — bright attractor that distorts noise
+    float mouseGlow = 0.0;
+    if (mouse.x >= 0.0) {
+      vec2 mp = mouse * 2.0 - 1.0;
+      mp.x *= resolution.x / resolution.y;
+      float md = length(p - mp);
+      mouseGlow = 0.02 / (md * md + 0.03);
+      n += snoise(p * 2.0 + mp * 0.5 + t) * 0.06 / (md + 0.5);
+    }
+
     float brightness = smoothstep(-0.3, 0.6, n) * (0.15 + energy * 0.85);
-    brightness += glow * 0.3;
+    brightness += glow * 0.3 + mouseGlow;
     brightness = pow(brightness, 0.8);
 
     vec3 color = vec3(brightness);
@@ -79,7 +90,7 @@ const noiseFieldShader = uniformHeader + `
   }
 `;
 
-// Mode 2: Waveform
+// Mode 2: Waveform — mouse bends the wave
 const waveformShader = uniformHeader + `
   void main() {
     vec2 uv = gl_FragCoord.xy / resolution;
@@ -88,35 +99,83 @@ const waveformShader = uniformHeader + `
     wave += sin(uv.x * 6.28 * 4.0 + time * 1.5) * mid * 0.2;
     wave += sin(uv.x * 6.28 * 8.0 + time * 2.0) * high * 0.1;
 
+    // Mouse pulls the wave toward cursor
+    if (mouse.x >= 0.0) {
+      float dx = uv.x - mouse.x;
+      float proximity = exp(-dx * dx * 20.0); // gaussian falloff
+      wave += (mouse.y - 0.5) * proximity * 0.25;
+    }
+
     float dist = abs(uv.y - 0.5 - wave * 0.3);
     float line = smoothstep(0.02, 0.0, dist);
     float glow = smoothstep(0.1, 0.0, dist) * 0.3;
 
-    float brightness = line + glow;
+    // Mouse glow at cursor
+    float mouseGlow = 0.0;
+    if (mouse.x >= 0.0) {
+      float md = length(uv - mouse);
+      mouseGlow = 0.008 / (md * md + 0.008);
+    }
+
+    float brightness = line + glow + mouseGlow;
     gl_FragColor = vec4(vec3(brightness), 1.0);
   }
 `;
 
-// Mode 3: Particles
+// Mode 3: Particles — count and velocity scale with volume
 const particlesShader = uniformHeader + `
   void main() {
     vec2 uv = gl_FragCoord.xy / resolution;
     vec2 p = uv * 2.0 - 1.0;
     p.x *= resolution.x / resolution.y;
 
+    // Energy controls how many particles are visible (up to 25)
+    float maxParticles = 8.0 + energy * 17.0;
+    // Energy controls speed
+    float speed = 0.12 + energy * 0.12;
+
     float brightness = 0.0;
-    for (int i = 0; i < 30; i++) {
+    for (int i = 0; i < 25; i++) {
       float fi = float(i);
+      // Skip particles beyond the energy-driven count
+      if (fi >= maxParticles) break;
+
+      // Each particle has a unique orbit
+      float angle1 = fi * 2.399 + time * speed * (0.5 + fract(fi * 0.37) * 0.5);
+      float angle2 = fi * 1.673 + time * speed * (0.3 + fract(fi * 0.61) * 0.7);
+      float radius = 0.3 + fract(fi * 0.71) * 0.6 + bass * 0.2;
+
       vec2 pos = vec2(
-        sin(fi * 1.7 + time * 0.2 + mid) * 0.8,
-        cos(fi * 2.3 + time * 0.15 + bass * 0.5) * 0.8
+        sin(angle1) * radius,
+        cos(angle2) * radius
       );
-      float size = 0.01 + bass * 0.02;
+
+      // Mouse attracts particles toward cursor
+      if (mouse.x >= 0.0) {
+        vec2 mp = mouse * 2.0 - 1.0;
+        mp.x *= resolution.x / resolution.y;
+        vec2 toMouse = mp - pos;
+        float md = length(toMouse);
+        pos += toMouse * 0.1 / (md + 0.8);
+      }
+
+      // Size pulses with bass, smaller particles further from center
+      float size = (0.006 + bass * 0.015) * (1.0 - fract(fi * 0.71) * 0.5);
       float d = length(p - pos);
-      brightness += size / (d + 0.01) * energy * 0.3;
+      float glow = size / (d * d + 0.001);
+      brightness += glow * (0.1 + energy * 0.4);
+    }
+
+    // Mouse cursor glow
+    if (mouse.x >= 0.0) {
+      vec2 mp = mouse * 2.0 - 1.0;
+      mp.x *= resolution.x / resolution.y;
+      float md = length(p - mp);
+      brightness += 0.004 / (md * md + 0.008);
     }
 
     brightness = clamp(brightness, 0.0, 1.0);
+    brightness = pow(brightness, 0.85);
     gl_FragColor = vec4(vec3(brightness), 1.0);
   }
 `;
@@ -178,6 +237,7 @@ export default function Visualizer({ analyser, isPlaying, mode }: VisualizerProp
   const bufferRef = useRef<WebGLBuffer | null>(null);
   const animRef = useRef<number>(0);
   const startTimeRef = useRef(Date.now());
+  const mouseRef = useRef({ x: -1, y: -1 });
 
   // Initialize WebGL context (once)
   useEffect(() => {
@@ -280,6 +340,7 @@ export default function Visualizer({ analyser, isPlaying, mode }: VisualizerProp
       gl.uniform1f(gl.getUniformLocation(program, 'mid'), mid);
       gl.uniform1f(gl.getUniformLocation(program, 'high'), high);
       gl.uniform1f(gl.getUniformLocation(program, 'energy'), energy);
+      gl.uniform2f(gl.getUniformLocation(program, 'mouse'), mouseRef.current.x, mouseRef.current.y);
 
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     };
@@ -287,6 +348,30 @@ export default function Visualizer({ analyser, isPlaying, mode }: VisualizerProp
     render();
     return () => cancelAnimationFrame(animRef.current);
   }, [analyser, isPlaying]);
+
+  // Mouse tracking
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const onMove = (e: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      mouseRef.current = {
+        x: (e.clientX - rect.left) / rect.width,
+        y: 1.0 - (e.clientY - rect.top) / rect.height, // flip Y for GL
+      };
+    };
+    const onLeave = () => {
+      mouseRef.current = { x: -1, y: -1 };
+    };
+
+    window.addEventListener('mousemove', onMove);
+    canvas.addEventListener('mouseleave', onLeave);
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      canvas.removeEventListener('mouseleave', onLeave);
+    };
+  }, []);
 
   return <canvas ref={canvasRef} id="visualizer-canvas" style={{ width: '100%', height: '100%' }} />;
 }
