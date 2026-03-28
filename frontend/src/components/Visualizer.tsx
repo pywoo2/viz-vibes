@@ -98,18 +98,24 @@ const noiseFieldShader = uniformHeader + `
         float fade = 1.0 - clickAge / 1.5;
 
         if (clickType == 1) {
-          float ring = abs(cd - clickAge * 0.8) - 0.02;
-          brightness += smoothstep(0.03, 0.0, ring) * fade * 0.4;
+          // Ripple — expanding thin ring
+          float ring = abs(cd - clickAge * 0.8) - 0.015;
+          brightness += smoothstep(0.025, 0.0, ring) * fade * 0.5;
         } else if (clickType == 2) {
+          // Burst — rays exploding outward with bright center flash
           float angle = atan(p.y - cp.y, p.x - cp.x);
-          float rays = abs(sin(angle * 8.0));
-          float expand = smoothstep(clickAge * 0.6, clickAge * 0.6 + 0.1, cd) *
-                         smoothstep(clickAge * 0.8, clickAge * 0.6, cd);
-          brightness += rays * expand * fade * 0.5;
+          float rays = pow(abs(sin(angle * 6.0)), 3.0);
+          float radial = smoothstep(clickAge * 1.2, 0.0, cd) * fade;
+          float flash = 0.3 / (cd + 0.05) * max(0.0, 1.0 - clickAge * 3.0);
+          brightness += (rays * radial * 0.6 + flash);
         } else if (clickType == 3) {
-          float wave = smoothstep(clickAge * 0.7 + 0.05, clickAge * 0.7, cd) *
-                       smoothstep(clickAge * 0.7 - 0.15, clickAge * 0.7, cd);
-          brightness += wave * fade * 0.6;
+          // Shockwave — thick bright expanding disc
+          float radius = clickAge * 0.9;
+          float thickness = 0.08 + clickAge * 0.05;
+          float wave = smoothstep(radius + thickness, radius, cd) *
+                       smoothstep(radius - thickness, radius, cd);
+          brightness += wave * fade * 0.8;
+          brightness += 0.1 * fade / (abs(cd - radius) + 0.05);
         }
       }
     }
@@ -160,18 +166,24 @@ const waveformShader = uniformHeader + `
         float fade = 1.0 - clickAge / 1.5;
 
         if (clickType == 1) {
-          float ring = abs(cd - clickAge * 0.8) - 0.02;
-          brightness += smoothstep(0.03, 0.0, ring) * fade * 0.4;
+          // Ripple — expanding thin ring
+          float ring = abs(cd - clickAge * 0.8) - 0.015;
+          brightness += smoothstep(0.025, 0.0, ring) * fade * 0.5;
         } else if (clickType == 2) {
+          // Burst — rays exploding outward with bright center flash
           float angle = atan(p.y - cp.y, p.x - cp.x);
-          float rays = abs(sin(angle * 8.0));
-          float expand = smoothstep(clickAge * 0.6, clickAge * 0.6 + 0.1, cd) *
-                         smoothstep(clickAge * 0.8, clickAge * 0.6, cd);
-          brightness += rays * expand * fade * 0.5;
+          float rays = pow(abs(sin(angle * 6.0)), 3.0);
+          float radial = smoothstep(clickAge * 1.2, 0.0, cd) * fade;
+          float flash = 0.3 / (cd + 0.05) * max(0.0, 1.0 - clickAge * 3.0);
+          brightness += (rays * radial * 0.6 + flash);
         } else if (clickType == 3) {
-          float wave = smoothstep(clickAge * 0.7 + 0.05, clickAge * 0.7, cd) *
-                       smoothstep(clickAge * 0.7 - 0.15, clickAge * 0.7, cd);
-          brightness += wave * fade * 0.6;
+          // Shockwave — thick bright expanding disc
+          float radius = clickAge * 0.9;
+          float thickness = 0.08 + clickAge * 0.05;
+          float wave = smoothstep(radius + thickness, radius, cd) *
+                       smoothstep(radius - thickness, radius, cd);
+          brightness += wave * fade * 0.8;
+          brightness += 0.1 * fade / (abs(cd - radius) + 0.05);
         }
       }
     }
@@ -245,11 +257,151 @@ const particlesShader = uniformHeader + `
         float fade = 1.0 - clickAge / 1.5;
 
         if (clickType == 1) {
+          // Ripple — expanding thin ring
+          float ring = abs(cd - clickAge * 0.8) - 0.015;
+          brightness += smoothstep(0.025, 0.0, ring) * fade * 0.5;
+        } else if (clickType == 2) {
+          // Burst — rays exploding outward with bright center flash
+          float angle = atan(p.y - cp.y, p.x - cp.x);
+          float rays = pow(abs(sin(angle * 6.0)), 3.0);
+          float radial = smoothstep(clickAge * 1.2, 0.0, cd) * fade;
+          float flash = 0.3 / (cd + 0.05) * max(0.0, 1.0 - clickAge * 3.0);
+          brightness += (rays * radial * 0.6 + flash);
+        } else if (clickType == 3) {
+          // Shockwave — thick bright expanding disc
+          float radius = clickAge * 0.9;
+          float thickness = 0.08 + clickAge * 0.05;
+          float wave = smoothstep(radius + thickness, radius, cd) *
+                       smoothstep(radius - thickness, radius, cd);
+          brightness += wave * fade * 0.8;
+          brightness += 0.1 * fade / (abs(cd - radius) + 0.05);
+        }
+      }
+    }
+
+    gl_FragColor = vec4(vec3(brightness), 1.0);
+  }
+`;
+
+// Mode 4: Rings — concentric rings pulsing outward
+const ringsShader = uniformHeader + `
+  void main() {
+    vec2 uv = gl_FragCoord.xy / resolution;
+    vec2 p = uv * 2.0 - 1.0;
+    p.x *= resolution.x / resolution.y;
+
+    float dist = length(p);
+    float t = time * 0.5;
+
+    // Multiple rings expanding outward
+    float rings = 0.0;
+    for (int i = 0; i < 5; i++) {
+      float fi = float(i);
+      float radius = mod(t * 0.3 + fi * 0.2, 1.5);
+      float ring = abs(dist - radius);
+      float thickness = 0.008 + energy * 0.015;
+      rings += smoothstep(thickness, 0.0, ring) * (1.0 - radius / 1.5) * (0.3 + energy * 0.7);
+    }
+
+    // Center glow
+    float glow = (0.02 + bass * 0.04) / (dist + 0.1);
+
+    // Mouse interaction
+    float mouseGlow = 0.0;
+    if (mouse.x >= 0.0) {
+      vec2 mp = mouse * 2.0 - 1.0;
+      mp.x *= resolution.x / resolution.y;
+      float md = length(p - mp);
+      mouseGlow = 0.02 / (md * md + 0.03);
+    }
+
+    float brightness = rings + glow + mouseGlow;
+
+    // Click effect
+    if (click.z > 0.0 && clickType > 0) {
+      float clickAge = time - click.z;
+      if (clickAge < 1.5) {
+        vec2 cp = click.xy * 2.0 - 1.0;
+        cp.x *= resolution.x / resolution.y;
+        float cd = length(p - cp);
+        float fade = 1.0 - clickAge / 1.5;
+
+        if (clickType == 1) {
+          // Ripple — expanding thin ring
+          float ring = abs(cd - clickAge * 0.8) - 0.015;
+          brightness += smoothstep(0.025, 0.0, ring) * fade * 0.5;
+        } else if (clickType == 2) {
+          // Burst — rays exploding outward with bright center flash
+          float angle = atan(p.y - cp.y, p.x - cp.x);
+          float rays = pow(abs(sin(angle * 6.0)), 3.0);
+          float radial = smoothstep(clickAge * 1.2, 0.0, cd) * fade;
+          float flash = 0.3 / (cd + 0.05) * max(0.0, 1.0 - clickAge * 3.0);
+          brightness += (rays * radial * 0.6 + flash);
+        } else if (clickType == 3) {
+          // Shockwave — thick bright expanding disc
+          float radius = clickAge * 0.9;
+          float thickness = 0.08 + clickAge * 0.05;
+          float wave = smoothstep(radius + thickness, radius, cd) *
+                       smoothstep(radius - thickness, radius, cd);
+          brightness += wave * fade * 0.8;
+          brightness += 0.1 * fade / (abs(cd - radius) + 0.05);
+        }
+      }
+    }
+
+    brightness = clamp(brightness, 0.0, 1.0);
+    gl_FragColor = vec4(vec3(brightness), 1.0);
+  }
+`;
+
+// Mode 5: Grid — perspective tunnel grid
+const gridShader = uniformHeader + `
+  void main() {
+    vec2 uv = gl_FragCoord.xy / resolution;
+    vec2 p = uv * 2.0 - 1.0;
+    p.x *= resolution.x / resolution.y;
+
+    float t = time * 0.2;
+
+    // Polar coordinates for tunnel effect
+    float angle = atan(p.y, p.x);
+    float dist = length(p);
+
+    // Grid in polar space
+    float gridR = fract(1.0 / (dist + 0.01) * 0.3 - t + bass * 0.1);
+    float gridA = fract(angle / 0.3927); // 16 radial segments
+
+    float lineR = smoothstep(0.05, 0.0, abs(gridR - 0.5) - 0.45);
+    float lineA = smoothstep(0.05, 0.0, abs(gridA - 0.5) - 0.45);
+
+    float grid = max(lineR, lineA) * (0.1 + energy * 0.4) / (dist + 0.3);
+
+    // Mouse
+    float mouseGlow = 0.0;
+    if (mouse.x >= 0.0) {
+      vec2 mp = mouse * 2.0 - 1.0;
+      mp.x *= resolution.x / resolution.y;
+      float md = length(p - mp);
+      mouseGlow = 0.015 / (md * md + 0.03);
+    }
+
+    float brightness = grid + mouseGlow;
+
+    // Click effect
+    if (click.z > 0.0 && clickType > 0) {
+      float clickAge = time - click.z;
+      if (clickAge < 1.5) {
+        vec2 cp = click.xy * 2.0 - 1.0;
+        cp.x *= resolution.x / resolution.y;
+        float cd = length(p - cp);
+        float fade = 1.0 - clickAge / 1.5;
+
+        if (clickType == 1) {
           float ring = abs(cd - clickAge * 0.8) - 0.02;
           brightness += smoothstep(0.03, 0.0, ring) * fade * 0.4;
         } else if (clickType == 2) {
-          float angle = atan(p.y - cp.y, p.x - cp.x);
-          float rays = abs(sin(angle * 8.0));
+          float cAngle = atan(p.y - cp.y, p.x - cp.x);
+          float rays = abs(sin(cAngle * 8.0));
           float expand = smoothstep(clickAge * 0.6, clickAge * 0.6 + 0.1, cd) *
                          smoothstep(clickAge * 0.8, clickAge * 0.6, cd);
           brightness += rays * expand * fade * 0.5;
@@ -261,6 +413,71 @@ const particlesShader = uniformHeader + `
       }
     }
 
+    brightness = clamp(brightness, 0.0, 1.0);
+    gl_FragColor = vec4(vec3(brightness), 1.0);
+  }
+`;
+
+// Mode 6: Plasma — classic plasma with audio modulation
+const plasmaShader = uniformHeader + `
+  void main() {
+    vec2 uv = gl_FragCoord.xy / resolution;
+    vec2 p = uv * 2.0 - 1.0;
+    p.x *= resolution.x / resolution.y;
+
+    float t = time * 0.3;
+
+    float v = 0.0;
+    v += sin(p.x * 3.0 + t + bass * 2.0);
+    v += sin(p.y * 3.0 + t * 0.7 + mid);
+    v += sin((p.x + p.y) * 2.0 + t * 0.5);
+    v += sin(length(p) * 4.0 - t + high);
+    v = v * 0.25; // normalize to -1..1
+
+    float brightness = smoothstep(-0.5, 0.5, v) * (0.1 + energy * 0.5);
+
+    // Mouse
+    if (mouse.x >= 0.0) {
+      vec2 mp = mouse * 2.0 - 1.0;
+      mp.x *= resolution.x / resolution.y;
+      float md = length(p - mp);
+      brightness += 0.02 / (md * md + 0.03);
+      v += sin(md * 8.0 - t * 2.0) * 0.15 / (md + 0.3);
+    }
+
+    // Click effect
+    if (click.z > 0.0 && clickType > 0) {
+      float clickAge = time - click.z;
+      if (clickAge < 1.5) {
+        vec2 cp = click.xy * 2.0 - 1.0;
+        cp.x *= resolution.x / resolution.y;
+        float cd = length(p - cp);
+        float fade = 1.0 - clickAge / 1.5;
+
+        if (clickType == 1) {
+          // Ripple — expanding thin ring
+          float ring = abs(cd - clickAge * 0.8) - 0.015;
+          brightness += smoothstep(0.025, 0.0, ring) * fade * 0.5;
+        } else if (clickType == 2) {
+          // Burst — rays exploding outward with bright center flash
+          float angle = atan(p.y - cp.y, p.x - cp.x);
+          float rays = pow(abs(sin(angle * 6.0)), 3.0);
+          float radial = smoothstep(clickAge * 1.2, 0.0, cd) * fade;
+          float flash = 0.3 / (cd + 0.05) * max(0.0, 1.0 - clickAge * 3.0);
+          brightness += (rays * radial * 0.6 + flash);
+        } else if (clickType == 3) {
+          // Shockwave — thick bright expanding disc
+          float radius = clickAge * 0.9;
+          float thickness = 0.08 + clickAge * 0.05;
+          float wave = smoothstep(radius + thickness, radius, cd) *
+                       smoothstep(radius - thickness, radius, cd);
+          brightness += wave * fade * 0.8;
+          brightness += 0.1 * fade / (abs(cd - radius) + 0.05);
+        }
+      }
+    }
+
+    brightness = clamp(brightness, 0.0, 1.0);
     gl_FragColor = vec4(vec3(brightness), 1.0);
   }
 `;
@@ -269,6 +486,9 @@ export const VISUALIZER_MODES = [
   { id: 'noise', label: 'Noise Field', shader: noiseFieldShader },
   { id: 'waveform', label: 'Waveform', shader: waveformShader },
   { id: 'particles', label: 'Particles', shader: particlesShader },
+  { id: 'rings', label: 'Rings', shader: ringsShader },
+  { id: 'grid', label: 'Grid', shader: gridShader },
+  { id: 'plasma', label: 'Plasma', shader: plasmaShader },
 ];
 
 function getShaderForMode(mode: string): string {
@@ -433,7 +653,8 @@ export default function Visualizer({ analyser, isPlaying, mode, clickEffect }: V
       gl.uniform2f(gl.getUniformLocation(program, 'mouse'), mouseRef.current.x, mouseRef.current.y);
       gl.uniform3f(gl.getUniformLocation(program, 'click'),
         clickRef.current.x, clickRef.current.y, clickRef.current.time);
-      gl.uniform1i(gl.getUniformLocation(program, 'clickType'), clickTypeMap[clickEffectRef.current] || 1);
+      const ct = clickTypeMap[clickEffectRef.current];
+      gl.uniform1i(gl.getUniformLocation(program, 'clickType'), ct ?? 1);
 
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     };

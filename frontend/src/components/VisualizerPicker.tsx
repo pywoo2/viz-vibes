@@ -33,6 +33,30 @@ const icons: Record<string, React.ReactNode> = {
       <circle cx="8" cy="16" r="1" fill="rgba(255,255,255,0.6)" stroke="none" />
     </svg>
   ),
+  rings: (
+    <svg viewBox="0 0 20 20">
+      <circle cx="10" cy="10" r="2" />
+      <circle cx="10" cy="10" r="5" />
+      <circle cx="10" cy="10" r="8" />
+    </svg>
+  ),
+  grid: (
+    <svg viewBox="0 0 20 20">
+      <line x1="0" y1="5" x2="20" y2="5" />
+      <line x1="0" y1="10" x2="20" y2="10" />
+      <line x1="0" y1="15" x2="20" y2="15" />
+      <line x1="5" y1="0" x2="5" y2="20" />
+      <line x1="10" y1="0" x2="10" y2="20" />
+      <line x1="15" y1="0" x2="15" y2="20" />
+    </svg>
+  ),
+  plasma: (
+    <svg viewBox="0 0 20 20">
+      <path d="M2 10 C4 4, 8 16, 10 10 S16 4, 18 10" strokeLinecap="round" />
+      <path d="M2 13 C5 7, 9 17, 12 11 S17 6, 19 12" strokeLinecap="round" opacity="0.5" />
+      <path d="M1 7 C4 13, 8 3, 11 9 S15 14, 18 8" strokeLinecap="round" opacity="0.3" />
+    </svg>
+  ),
 };
 
 const CLICK_EFFECTS = [
