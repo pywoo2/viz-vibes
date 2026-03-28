@@ -26,8 +26,6 @@
   --grad-start: #fbf1c7;
   --grad-mid: #d79921;
   --grad-end: #fbf1c7;
-  --tag-bg: rgba(60, 56, 54, 0.6);
-  --tag-active-bg: #504945;
   --slider-thumb: #ebdbb2;
   --slider-thumb-hover: #fbf1c7;
   --glow: rgba(184, 187, 38, 0.4);
@@ -49,9 +47,6 @@ body {
   background: var(--bg);
   color: var(--fg);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  display: grid;
-  grid-template-columns: 280px 1fr;
-  grid-template-rows: 1fr 80px;
   opacity: 0;
   animation: fadeInPage 0.8s ease-out forwards;
   transition: background 0.4s ease, color 0.4s ease;
@@ -85,7 +80,39 @@ body::before {
   flex-direction: column;
   border-right: 1px solid var(--border);
   z-index: 2;
-  transition: background 0.4s ease, border-color 0.4s ease;
+  transition: background 0.4s ease, border-color 0.4s ease, width 0.3s ease, padding 0.3s ease;
+  overflow: hidden;
+}
+
+#sidebar.collapsed {
+  width: 56px;
+}
+
+#sidebar.collapsed #sidebar-header {
+  justify-content: center;
+  padding: 24px 0 12px;
+}
+
+/* Collapse toggle button */
+.collapse-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--fg-dim);
+  font-size: 0.55rem;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.collapse-btn:hover {
+  color: var(--fg-bright);
+  border-color: var(--fg-muted);
+  background: var(--bg-hover);
 }
 
 #sidebar-header {
@@ -266,18 +293,40 @@ body::before {
 }
 #track-list li.active .track-info .name { color: var(--accent); }
 
-#track-list li .track-info .tags { display: flex; gap: 4px; margin-top: 2px; }
-#track-list li .track-info .tag {
-  font-size: 0.55rem;
-  font-weight: 500;
-  color: var(--fg-dim);
-  background: var(--tag-bg);
-  padding: 1px 5px;
-  border-radius: 3px;
+/* Like button */
+.like-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 4px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
 }
-#track-list li.active .track-info .tag {
-  background: var(--tag-active-bg);
-  color: var(--accent);
+.like-btn svg {
+  fill: var(--fg-muted);
+  transition: fill 0.15s ease, transform 0.2s ease;
+}
+.like-btn:hover svg {
+  fill: var(--accent);
+}
+.like-btn.liked svg {
+  fill: var(--accent);
+  animation: likeScale 0.3s ease;
+}
+.like-count {
+  font-size: 0.65rem;
+  color: var(--fg-dim);
+  font-variant-numeric: tabular-nums;
+  font-family: "SF Mono", "Fira Code", "Cascadia Code", "Consolas", monospace;
+}
+@keyframes likeScale {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.3); }
+  100% { transform: scale(1); }
 }
 
 #empty-state {
@@ -370,15 +419,6 @@ body::before {
 .np-empty-state {
   font-style: italic;
   color: var(--fg-muted) !important;
-}
-#np-info .np-tags { display: flex; gap: 4px; margin-top: 2px; }
-#np-info .np-tags .tag {
-  font-size: 0.55rem;
-  font-weight: 500;
-  color: var(--fg-dim);
-  background: var(--bg-card);
-  padding: 1px 5px;
-  border-radius: 3px;
 }
 
 /* Player center */

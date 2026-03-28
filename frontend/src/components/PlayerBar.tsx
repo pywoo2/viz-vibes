@@ -97,15 +97,6 @@ export default function PlayerBar({
           >
             {currentTrack ? currentTrack.title : 'select a track'}
           </div>
-          {currentTrack?.tags && currentTrack.tags.length > 0 && (
-            <div className="np-tags" id="np-tags">
-              {currentTrack.tags.map((tag, i) => (
-                <span key={i} className="tag">
-                  {tag}
-                </span>
-              ))}
-            </div>
-          )}
         </div>
       </div>
 

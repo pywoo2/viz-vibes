@@ -6,7 +6,7 @@ export interface Track {
   title: string;
   file: string;
   url?: string;
-  tags?: string[];
+  likes?: number;
 }
 
 export interface AudioPlayerState {
@@ -31,6 +31,7 @@ export interface AudioPlayerActions {
   cycleRepeat: () => void;
   seek: (time: number) => void;
   setVolume: (vol: number) => void;
+  updateTrackLikes: (index: number, likes: number) => void;
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -229,6 +230,16 @@ export function useAudioPlayer(): AudioPlayerState & AudioPlayerActions {
     setVolumeState(vol);
   }, []);
 
+  const updateTrackLikes = useCallback((index: number, likes: number) => {
+    setTracks((prev) => {
+      const next = [...prev];
+      if (next[index]) {
+        next[index] = { ...next[index], likes };
+      }
+      return next;
+    });
+  }, []);
+
   // Keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -263,5 +274,6 @@ export function useAudioPlayer(): AudioPlayerState & AudioPlayerActions {
     cycleRepeat,
     seek,
     setVolume,
+    updateTrackLikes,
   };
 }
