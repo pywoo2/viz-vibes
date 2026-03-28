@@ -69,12 +69,13 @@ const fragmentShader = `
     float dist = length(p);
     float glow = energy * 0.5 / (dist + 0.5);
 
-    // Combine
-    float brightness = smoothstep(-0.2, 0.8, n) * (0.1 + energy * 0.6);
-    brightness += glow * 0.15;
+    // Combine — boosted for visibility
+    float brightness = smoothstep(-0.3, 0.6, n) * (0.15 + energy * 0.85);
+    brightness += glow * 0.3;
+    brightness = pow(brightness, 0.8); // gamma boost
 
-    // Monochrome output — slight warm tint
-    vec3 color = vec3(brightness * 0.95, brightness * 0.95, brightness);
+    // Monochrome output
+    vec3 color = vec3(brightness);
 
     gl_FragColor = vec4(color, 1.0);
   }
