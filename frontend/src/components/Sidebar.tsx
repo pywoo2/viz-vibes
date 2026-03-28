@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { Track } from '../hooks/useAudioPlayer';
+import { VISUALIZER_MODES } from './Visualizer';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -19,6 +20,10 @@ interface SidebarProps {
   onTouchStart?: (e: React.TouchEvent) => void;
   onTouchMove?: (e: React.TouchEvent) => void;
   onTouchEnd?: (e: React.TouchEvent) => void;
+  vizMode?: string;
+  onVizModeChange?: (mode: string) => void;
+  colorMode?: string;
+  onColorModeChange?: (mode: string) => void;
 }
 
 export default function Sidebar({
@@ -35,6 +40,10 @@ export default function Sidebar({
   onTouchStart,
   onTouchMove,
   onTouchEnd,
+  vizMode,
+  onVizModeChange,
+  colorMode,
+  onColorModeChange,
 }: SidebarProps) {
   const [likingTracks, setLikingTracks] = useState<Set<number>>(new Set());
   const [heartPulsingTracks, setHeartPulsingTracks] = useState<Set<number>>(new Set());
@@ -173,6 +182,28 @@ export default function Sidebar({
       <div className="mobile-drawer-handle">
         <div className="handle-pill" />
         <span className="mobile-drawer-label">{tracks.length > 0 ? `${tracks.length} songs` : 'Songs'}</span>
+      </div>
+      {/* Mobile viz picker — horizontal scroll row */}
+      <div className="mobile-viz-row">
+        <div className="mobile-viz-label">visualizer</div>
+        <div className="mobile-viz-options">
+          {VISUALIZER_MODES.map(m => (
+            <button
+              key={m.id}
+              className={`mobile-viz-btn ${vizMode === m.id ? 'active' : ''}`}
+              onClick={() => onVizModeChange?.(m.id)}
+            >
+              {m.label.toLowerCase()}
+            </button>
+          ))}
+        </div>
+        <div className="mobile-viz-label">color</div>
+        <div className="mobile-viz-options">
+          <button className={`mobile-viz-btn ${colorMode === 'mono' ? 'active' : ''}`} onClick={() => onColorModeChange?.('mono')}>mono</button>
+          <button className={`mobile-viz-btn ${colorMode === 'rainbow' ? 'active' : ''}`} onClick={() => onColorModeChange?.('rainbow')}>rainbow</button>
+          <button className={`mobile-viz-btn ${colorMode === 'inverted' ? 'active' : ''}`} onClick={() => onColorModeChange?.('inverted')}>inverted</button>
+          <button className={`mobile-viz-btn ${colorMode === 'red' ? 'active' : ''}`} onClick={() => onColorModeChange?.('red')}>red</button>
+        </div>
       </div>
       {isCollapsed ? (
         <div id="sidebar-header" style={{ justifyContent: 'center' }}>
