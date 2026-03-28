@@ -1220,12 +1220,13 @@ body {
     left: 0 !important;
     right: 0 !important;
     display: grid !important;
-    grid-template-columns: 1fr auto !important;
-    grid-template-rows: auto auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
     height: auto !important;
-    padding: 6px 12px;
-    padding-bottom: max(8px, env(safe-area-inset-bottom));
-    gap: 2px;
+    padding: 8px 16px;
+    padding-bottom: max(10px, env(safe-area-inset-bottom));
+    gap: 4px;
     background: rgba(0, 0, 0, 0.6) !important;
     -webkit-backdrop-filter: blur(30px) saturate(150%) !important;
     backdrop-filter: blur(30px) saturate(150%) !important;
@@ -1234,45 +1235,49 @@ body {
     z-index: 15;
   }
 
-  /* Row 1 left: song title */
+  /* Song title — full width, centered */
   #np-info {
-    grid-column: 1;
-    grid-row: 1;
+    width: 100%;
     display: flex;
     align-items: center;
+    justify-content: center;
     min-width: 0;
   }
+  #np-info .np-text {
+    text-align: center;
+    width: 100%;
+  }
   #np-info .np-title {
-    font-size: 0.75rem;
+    font-size: 0.8rem;
     color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
-  /* Row 1 right: play controls */
+  /* Controls — centered, spacious */
   #player-center {
-    grid-column: 2;
-    grid-row: 1;
     max-width: none;
-    width: auto;
-    gap: 0;
+    width: 100%;
+    gap: 2px;
   }
-
-  /* Controls: just prev/play/next, tight */
-  #controls { gap: 4px; }
-  #controls button { padding: 4px; }
-  #controls button svg { width: 18px; height: 18px; }
-  #play-btn { width: 36px !important; height: 36px !important; }
-  #play-btn svg { width: 18px !important; height: 18px !important; }
+  #controls { gap: 16px; }
+  #controls button { padding: 6px; }
+  #controls button svg { width: 20px; height: 20px; }
+  #play-btn { width: 44px !important; height: 44px !important; }
+  #play-btn svg { width: 20px !important; height: 20px !important; }
 
   /* Hide shuffle, repeat on mobile */
   #shuffle-btn, #repeat-btn { display: none; }
 
-  /* Row 2: progress bar full width */
+  /* Progress bar — full width */
   #progress-row {
-    grid-column: 1 / -1;
-    grid-row: 2;
+    width: 100%;
   }
   #progress-row .time {
-    display: none !important;
+    font-size: 9px;
+    min-width: 28px;
+    color: rgba(255, 255, 255, 0.35);
   }
 
   /* Hide volume on mobile */
@@ -1331,7 +1336,32 @@ body {
   #viz-picker { display: none !important; }
 
   /* Hide note input on mobile */
-  .note-input-container { display: none !important; }
+  .note-input-container {
+    position: fixed !important;
+    bottom: 76px !important;
+    right: 12px !important;
+    left: 12px !important;
+    flex-wrap: wrap !important;
+    gap: 4px !important;
+    z-index: 18 !important;
+  }
+  .note-input-container input {
+    flex: 1 !important;
+    min-width: 0 !important;
+    width: auto !important;
+    font-size: 0.75rem !important;
+    padding: 8px 10px !important;
+  }
+  .note-name-input {
+    width: 80px !important;
+    flex: 0 0 80px !important;
+  }
+  .note-submit-btn {
+    padding: 8px 12px !important;
+  }
+  .note-input-container .note-disclaimer {
+    font-size: 0.5rem !important;
+  }
 
   /* Hide AI disclaimer on mobile — takes up precious space */
   .ai-disclaimer { display: none; }
@@ -1365,6 +1395,85 @@ body {
   .epilepsy-btn {
     width: 100%;
     min-width: unset;
+  }
+
+  /* R6-1: Player bar top-edge glow line — premium glass feel */
+  #player-bar::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(255,255,255,0.15), transparent);
+    z-index: 3;
+  }
+
+  /* R6-2: Hide tracks pill when drawer is open */
+  .mobile-tracks-btn.hidden {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transform: translateX(-50%) translateY(10px) !important;
+    transition: opacity 0.3s ease, transform 0.3s ease !important;
+  }
+
+  /* R6-3: Drawer subtle inner glow at top — glass edge catch */
+  #sidebar::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(to right, transparent 10%, rgba(255,255,255,0.12) 50%, transparent 90%);
+    border-radius: 16px 16px 0 0;
+    z-index: 1;
+  }
+
+  /* R6-4: Active track in drawer — left accent + glow */
+  #track-list li.active {
+    background: rgba(255, 255, 255, 0.06) !important;
+    border-left: 2px solid rgba(255, 255, 255, 0.4) !important;
+    border-radius: 0 8px 8px 0 !important;
+  }
+
+  /* R6-5: Now playing text truncate with ellipsis, not wrap */
+  #np-info .np-title {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: calc(100vw - 160px);
+  }
+
+  /* R6-6: Subtle bounce animation when drawer opens */
+  #sidebar.mobile-open {
+    animation: drawerBounce 0.4s cubic-bezier(0.32, 0.72, 0, 1.1) forwards !important;
+  }
+
+  @keyframes drawerBounce {
+    0% { transform: translateY(100%); }
+    70% { transform: translateY(-2%); }
+    100% { transform: translateY(0); }
+  }
+
+  /* R6-7: Progress bar thumb glow when playing */
+  #player-bar.is-playing #progress-bar::after {
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.4) !important;
+  }
+
+  /* R6-8: Tracks pill entrance animation on page load */
+  .mobile-tracks-btn {
+    animation: pillFadeUp 0.8s ease-out 0.5s both;
+  }
+
+  @keyframes pillFadeUp {
+    from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
+  }
+
+  /* R6-9: Hide duplicate "14 songs" label in sidebar header on mobile */
+  #sidebar-header {
+    display: none !important;
   }
 }
 

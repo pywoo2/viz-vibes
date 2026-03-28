@@ -96,13 +96,8 @@ export default function Home() {
 
     // On mobile, disable figures/notes by default for performance
     // On desktop, respect localStorage (default true)
-    const isMobile = window.innerWidth < 768;
-    if (isMobile) {
-      setFiguresVisible(false);
-    } else {
-      const savedFigures = localStorage.getItem('figures-visible');
-      if (savedFigures === 'false') setFiguresVisible(false);
-    }
+    const savedFigures = localStorage.getItem('figures-visible');
+    if (savedFigures === 'false') setFiguresVisible(false);
   }, []);
 
   const startResize = useCallback((e: React.MouseEvent) => {
@@ -170,7 +165,7 @@ export default function Home() {
     <button className="mobile-menu-btn" onClick={() => setMobileDrawerOpen(!mobileDrawerOpen)}>
       {mobileDrawerOpen ? '\u2715' : '\u2630'}
     </button>
-    <button className="mobile-tracks-btn" onClick={() => setMobileDrawerOpen(!mobileDrawerOpen)}>
+    <button className={`mobile-tracks-btn ${mobileDrawerOpen ? 'hidden' : ''}`} onClick={() => setMobileDrawerOpen(!mobileDrawerOpen)}>
       &#9835; {player.tracks.length} tracks
     </button>
     <button className="mobile-about-btn" onClick={() => setShowAbout(prev => !prev)}>
