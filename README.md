@@ -106,6 +106,7 @@ railway up --detach
 - Equalizer bars on active track
 - Tags system for categorizing songs
 - Audio streamed from Cloudflare R2 (zero egress fees)
+- Download songs directly from the sidebar
 
 ## Tech Stack
 

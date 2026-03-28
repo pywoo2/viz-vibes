@@ -130,7 +130,8 @@ export default function Sidebar({
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = track.file || `${track.title}.mp3`;
+        const ext = track.url.split('.').pop()?.split('?')[0] || 'mp3';
+        a.download = track.file || `${track.title}.${ext}`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
