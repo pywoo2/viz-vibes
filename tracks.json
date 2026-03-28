@@ -1,0 +1,41 @@
+[
+  {
+    "title": "Falling Through the Frets",
+    "tags": [
+      "acoustic",
+      "chill"
+    ],
+    "file": "music/Falling Through the Frets.wav"
+  },
+  {
+    "title": "Glass Veins (Arcade Break Mix)",
+    "tags": [],
+    "file": "music/Glass Veins (Arcade Break Mix).wav"
+  },
+  {
+    "title": "Glass Veins (Burn Notice)",
+    "tags": [],
+    "file": "music/Glass Veins (Burn Notice).wav"
+  },
+  {
+    "title": "Salt in My Head",
+    "tags": [
+      "electronic",
+      "moody"
+    ],
+    "file": "music/Salt in My Head.wav"
+  },
+  {
+    "title": "Soft Polaroids",
+    "tags": [
+      "ambient",
+      "dreamy"
+    ],
+    "file": "music/Soft Polaroids.wav"
+  },
+  {
+    "title": "Tidal Overtones",
+    "tags": [],
+    "file": "music/Tidal Overtones.wav"
+  }
+]
