@@ -27,6 +27,7 @@ export default function Home() {
   const [noteText, setNoteText] = useState('');
   const [noteName, setNoteName] = useState('');
   const [notesRefreshKey, setNotesRefreshKey] = useState(0);
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
   const submitNote = useCallback(() => {
     const text = noteText.trim();
@@ -124,10 +125,13 @@ export default function Home() {
 
   return (
     <>
-    <div className="mobile-block">
-      <p>viz-vibes</p>
-      <p className="mobile-sub">best experienced on desktop</p>
-    </div>
+    <button className="mobile-menu-btn" onClick={() => setMobileDrawerOpen(!mobileDrawerOpen)}>
+      {mobileDrawerOpen ? '\u2715' : '\u2630'}
+    </button>
+    <div
+      className={`mobile-overlay ${mobileDrawerOpen ? 'visible' : ''}`}
+      onClick={() => setMobileDrawerOpen(false)}
+    />
     <div className="ai-disclaimer">all music was created using ai</div>
     <div
       className="desktop-only"
@@ -170,10 +174,11 @@ export default function Home() {
         isPlaying={player.isPlaying}
         loading={player.loading}
         error={player.error}
-        onPlayTrack={player.playTrack}
+        onPlayTrack={(i: number) => { player.playTrack(i); setMobileDrawerOpen(false); }}
         onUpdateTrackLikes={player.updateTrackLikes}
         isCollapsed={isCollapsed}
         onCollapse={handleDoubleClick}
+        className={mobileDrawerOpen ? 'mobile-open' : ''}
       />
 
       <div

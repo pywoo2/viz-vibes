@@ -1010,44 +1010,117 @@ body {
   background: var(--glass-hover);
 }
 
-/* ========== MOBILE BLOCK ========== */
-.mobile-block {
+/* ========== MOBILE MENU BUTTON (hidden on desktop) ========== */
+.mobile-menu-btn {
   display: none;
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
-  background: #0a0a0a;
-  color: rgba(255, 255, 255, 0.7);
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  font-size: 1.2rem;
-  font-weight: 300;
-  letter-spacing: 0.08em;
-  text-transform: lowercase;
 }
 
-.mobile-block .mobile-sub {
-  font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.3);
+/* ========== MOBILE OVERLAY (hidden on desktop) ========== */
+.mobile-overlay {
+  display: none;
 }
 
 .desktop-only {
   display: grid;
 }
 
+/* ========== MOBILE LAYOUT (< 768px) ========== */
 @media (max-width: 768px) {
-  .mobile-block {
-    display: flex;
-  }
+  /* Single column, no sidebar in grid */
   .desktop-only {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: 1fr auto !important;
+    transition: none !important;
+  }
+
+  /* Sidebar as a slide-in drawer */
+  #sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 80vw;
+    max-width: 320px;
+    height: calc(100vh - 56px);
+    z-index: 30;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    border-right: 1px solid var(--glass-border);
+  }
+
+  #sidebar.mobile-open {
+    transform: translateX(0);
+  }
+
+  /* Overlay when drawer is open */
+  .mobile-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 25;
+    display: none;
+  }
+
+  .mobile-overlay.visible {
+    display: block;
+  }
+
+  /* Hide resize handle on mobile */
+  .resize-handle {
     display: none !important;
   }
-  .expand-sidebar-btn,
-  #viz-picker {
+
+  /* Hide expand button on mobile */
+  .expand-sidebar-btn {
     display: none !important;
   }
+
+  /* Compact player bar */
+  #player-bar {
+    height: 56px;
+    padding: 0 10px;
+  }
+
+  /* Smaller controls */
+  #controls { gap: 12px; }
+  #controls button svg { width: 18px; height: 18px; }
+  #play-btn { width: 36px; height: 36px; }
+  #play-btn svg { width: 18px; height: 18px; }
+
+  /* Hide volume on mobile */
+  #player-right { display: none; }
+
+  /* Now playing text smaller */
+  #np-info .np-title { font-size: 0.72rem; }
+
+  /* Show hamburger/menu button on mobile */
+  .mobile-menu-btn {
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    z-index: 20;
+    background: var(--glass-bg);
+    -webkit-backdrop-filter: blur(40px) saturate(180%);
+    backdrop-filter: blur(40px) saturate(180%);
+    border: 1px solid var(--glass-border);
+    color: var(--fg);
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1.2rem;
+  }
+
+  /* Hide RHS picker on mobile */
+  #viz-picker { display: none !important; }
+
+  /* Hide note input on mobile */
+  .note-input-container { display: none !important; }
+
+  /* AI disclaimer smaller */
+  .ai-disclaimer { font-size: 0.5rem; top: 4px; }
 }
 
 /* ========== NOTES LAYER ========== */

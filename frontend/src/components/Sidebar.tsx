@@ -15,6 +15,7 @@ interface SidebarProps {
   onUpdateTrackLikes: (index: number, likes: number) => void;
   isCollapsed: boolean;
   onCollapse: () => void;
+  className?: string;
 }
 
 export default function Sidebar({
@@ -27,6 +28,7 @@ export default function Sidebar({
   onUpdateTrackLikes,
   isCollapsed,
   onCollapse,
+  className,
 }: SidebarProps) {
   const [likingTracks, setLikingTracks] = useState<Set<number>>(new Set());
   const [heartPulsingTracks, setHeartPulsingTracks] = useState<Set<number>>(new Set());
@@ -152,6 +154,7 @@ export default function Sidebar({
   return (
     <div
       id="sidebar"
+      className={className || undefined}
       style={isCollapsed ? { overflow: 'hidden' } : undefined}
       ref={sidebarRef}
       onMouseMove={isCollapsed ? undefined : handleSidebarMouseMove}
