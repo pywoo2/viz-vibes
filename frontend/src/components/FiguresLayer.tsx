@@ -4,7 +4,6 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 
 const R2_BASE = 'https://pub-7f15cc5f085b475bbeca640a22ea6d7f.r2.dev/art';
 
-// Your personal photos (skipping HEIC — browsers can't display them)
 const ART_IMAGES = [
   { src: `${R2_BASE}/325C5B5B-51A5-45B4-B0C6-F4B22C64A812.jpg`, alt: 'Photo' },
   { src: `${R2_BASE}/52D65897-3742-4A5A-AA57-DD809D372053.jpg`, alt: 'Photo' },
@@ -16,6 +15,9 @@ const ART_IMAGES = [
   { src: `${R2_BASE}/IMG_0381.jpg`, alt: 'Photo' },
   { src: `${R2_BASE}/IMG_0384.JPG`, alt: 'Photo' },
   { src: `${R2_BASE}/IMG_0409.JPG`, alt: 'Photo' },
+  { src: `${R2_BASE}/IMG_0413.jpg`, alt: 'Photo' },
+  { src: `${R2_BASE}/IMG_0530.jpg`, alt: 'Photo' },
+  { src: `${R2_BASE}/IMG_0757.jpg`, alt: 'Photo' },
   { src: `${R2_BASE}/IMG_0878.JPG`, alt: 'Photo' },
   { src: `${R2_BASE}/IMG_0933.jpg`, alt: 'Photo' },
   { src: `${R2_BASE}/IMG_1111.PNG`, alt: 'Photo' },
@@ -23,8 +25,11 @@ const ART_IMAGES = [
   { src: `${R2_BASE}/IMG_1129.PNG`, alt: 'Photo' },
   { src: `${R2_BASE}/IMG_1358.PNG`, alt: 'Photo' },
   { src: `${R2_BASE}/IMG_1700.jpg`, alt: 'Photo' },
+  { src: `${R2_BASE}/IMG_1769.jpg`, alt: 'Photo' },
   { src: `${R2_BASE}/IMG_1897.JPG`, alt: 'Photo' },
+  { src: `${R2_BASE}/IMG_1914.jpg`, alt: 'Photo' },
   { src: `${R2_BASE}/IMG_1966.jpg`, alt: 'Photo' },
+  { src: `${R2_BASE}/IMG_2250.jpg`, alt: 'Photo' },
 ];
 
 interface FiguresLayerProps {

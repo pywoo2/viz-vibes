@@ -1,11 +1,13 @@
 import json
 import os
 import urllib.parse
+from datetime import datetime, timezone
 
 import boto3
 from botocore.config import Config
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
 app = FastAPI(title="Viz Vibes API")
 
@@ -27,6 +29,11 @@ R2_BUCKET = os.environ.get("R2_BUCKET", "peters-music")
 
 AUDIO_EXTENSIONS = {".wav", ".mp3", ".ogg", ".flac", ".aac", ".m4a"}
 LIKES_KEY = "_likes.json"
+NOTES_KEY = "_notes.json"
+
+
+class NoteBody(BaseModel):
+    text: str
 
 
 def get_r2_client():
@@ -68,6 +75,32 @@ def load_likes() -> dict[str, int]:
         return json.loads(response["Body"].read().decode("utf-8"))
     except Exception:
         return {}
+
+
+def load_notes() -> list[dict]:
+    """Load notes from _notes.json in the R2 bucket."""
+    try:
+        s3 = get_r2_client()
+        response = s3.get_object(Bucket=R2_BUCKET, Key=NOTES_KEY)
+        return json.loads(response["Body"].read().decode("utf-8"))
+    except Exception:
+        return []
+
+
+def save_notes(notes: list[dict]) -> bool:
+    """Save notes to _notes.json in the R2 bucket. Returns True on success."""
+    try:
+        s3 = get_r2_client()
+        s3.put_object(
+            Bucket=R2_BUCKET,
+            Key=NOTES_KEY,
+            Body=json.dumps(notes, indent=2).encode("utf-8"),
+            ContentType="application/json",
+        )
+        return True
+    except Exception as e:
+        print(f"[save_notes] Failed to write _notes.json to R2: {e}")
+        return False
 
 
 def save_likes(likes: dict[str, int]) -> bool:
@@ -134,3 +167,26 @@ def unlike_track(title: str):
     if not save_likes(likes):
         raise HTTPException(status_code=500, detail="Failed to persist unlike")
     return {"title": title, "likes": likes[title]}
+
+
+@app.get("/api/notes")
+def get_notes():
+    return load_notes()
+
+
+@app.post("/api/notes")
+def add_note(body: NoteBody):
+    text = body.text.strip()
+    if not text or len(text) > 140:
+        raise HTTPException(
+            status_code=400, detail="Note must be 1-140 characters"
+        )
+    notes = load_notes()
+    new_note = {
+        "text": text,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+    notes.append(new_note)
+    if not save_notes(notes):
+        raise HTTPException(status_code=500, detail="Failed to persist note")
+    return new_note

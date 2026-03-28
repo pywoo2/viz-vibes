@@ -8,6 +8,9 @@ import PlayerBar from '../components/PlayerBar';
 import Visualizer from '../components/Visualizer';
 import VisualizerPicker from '../components/VisualizerPicker';
 import FiguresLayer from '../components/FiguresLayer';
+import NotesLayer from '../components/NotesLayer';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 export default function Home() {
   const player = useAudioPlayer();
@@ -20,6 +23,25 @@ export default function Home() {
   const [colorMode, setColorMode] = useState('mono');
   const [clickEffect, setClickEffect] = useState('ripple');
   const [showAbout, setShowAbout] = useState(false);
+  const [noteText, setNoteText] = useState('');
+  const [notesRefreshKey, setNotesRefreshKey] = useState(0);
+
+  const submitNote = useCallback(() => {
+    const text = noteText.trim();
+    if (!text) return;
+    fetch(`${API_URL}/api/notes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text }),
+    })
+      .then((r) => {
+        if (r.ok) {
+          setNoteText('');
+          setNotesRefreshKey((k) => k + 1);
+        }
+      })
+      .catch(() => {});
+  }, [noteText]);
 
   useEffect(() => {
     const stored = localStorage.getItem('sidebar-width');
@@ -125,6 +147,8 @@ export default function Home() {
         visible={figuresVisible}
       />
 
+      <NotesLayer visible={figuresVisible} refreshKey={notesRefreshKey} />
+
       <VisualizerPicker
         mode={vizMode}
         onModeChange={handleVizModeChange}
@@ -174,6 +198,20 @@ export default function Home() {
         onSetVolume={player.setVolume}
         onAboutClick={() => { setShowAbout(prev => !prev); }}
       />
+
+      <div className="note-input-container">
+        <input
+          type="text"
+          placeholder="leave a note..."
+          maxLength={140}
+          value={noteText}
+          onChange={(e) => setNoteText(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') submitNote();
+          }}
+        />
+        <button className="note-submit-btn" onClick={submitNote} title="Submit note">&rarr;</button>
+      </div>
 
       {showAbout && (
         <div className="about-overlay" onClick={() => setShowAbout(false)}>

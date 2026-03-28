@@ -1018,6 +1018,51 @@ body {
   }
 }
 
+/* ========== NOTES LAYER ========== */
+#notes-layer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* ========== NOTE INPUT ========== */
+.note-input-container {
+  position: fixed;
+  bottom: 96px;
+  right: 80px;
+  z-index: 20;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.note-input-container input {
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  backdrop-filter: blur(40px) saturate(180%);
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  color: var(--fg);
+  padding: 10px 16px;
+  font-size: 0.85rem;
+  font-family: inherit;
+  width: 280px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.note-input-container input:focus {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.note-input-container input::placeholder {
+  color: rgba(255, 255, 255, 0.25);
+}
+
 /* ========== AI DISCLAIMER ========== */
 .ai-disclaimer {
   position: fixed;
@@ -1032,4 +1077,29 @@ body {
   text-transform: lowercase;
   pointer-events: none;
   user-select: none;
+}
+
+/* ========== SORT HINT ========== */
+.sort-hint {
+  font-size: 0.6rem;
+  color: rgba(255, 255, 255, 0.25);
+  text-align: center;
+  padding: 4px 12px 8px;
+  letter-spacing: 0.03em;
+}
+
+.note-submit-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--glass-border);
+  color: rgba(255, 255, 255, 0.5);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+  flex-shrink: 0;
+}
+.note-submit-btn:hover {
+  color: var(--fg-bright);
+  background: rgba(255, 255, 255, 0.12);
 }

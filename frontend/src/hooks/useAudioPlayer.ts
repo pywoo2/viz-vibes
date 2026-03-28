@@ -272,11 +272,27 @@ export function useAudioPlayer(): AudioPlayerState & AudioPlayerActions & { anal
   }, []);
 
   const updateTrackLikes = useCallback((index: number, likes: number) => {
+    // Get current track title before sorting
+    const currentTitle = currentIndexRef.current >= 0 ? tracksRef.current[currentIndexRef.current]?.title : null;
+
     setTracks((prev) => {
       const next = [...prev];
       if (next[index]) {
         next[index] = { ...next[index], likes };
       }
+      // Re-sort by most liked, then alphabetical
+      next.sort((a, b) => (b.likes || 0) - (a.likes || 0) || a.title.localeCompare(b.title));
+      tracksRef.current = next;
+
+      // Fix currentIndex to follow the playing track
+      if (currentTitle) {
+        const newIndex = next.findIndex(t => t.title === currentTitle);
+        if (newIndex >= 0) {
+          setCurrentIndex(newIndex);
+          currentIndexRef.current = newIndex;
+        }
+      }
+
       return next;
     });
   }, []);

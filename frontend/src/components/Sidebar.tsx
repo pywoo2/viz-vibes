@@ -141,6 +141,8 @@ export default function Sidebar({
         </div>
       <div id="track-list-wrapper">
         {!loading && tracks.length > 0 && (
+          <>
+          <div className="sort-hint">sorted by most liked — tap the heart</div>
           <ul id="track-list">
             {tracks.map((track, i) => (
               <li
@@ -185,6 +187,7 @@ export default function Sidebar({
               </li>
             ))}
           </ul>
+          </>
         )}
         {!loading && tracks.length === 0 && (
           <div id="empty-state">
