@@ -166,7 +166,7 @@ export default function Home() {
       {mobileDrawerOpen ? '\u2715' : '\u2630'}
     </button>
     <button className={`mobile-tracks-btn ${mobileDrawerOpen ? 'hidden' : ''}`} onClick={() => setMobileDrawerOpen(!mobileDrawerOpen)}>
-      &#9835; {player.tracks.length} tracks
+      {player.tracks.length === 0 ? 'loading...' : `\u266B ${player.tracks.length} tracks`}
     </button>
     <button className="mobile-about-btn" onClick={() => setShowAbout(prev => !prev)}>
       i

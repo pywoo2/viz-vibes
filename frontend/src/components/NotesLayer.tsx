@@ -125,9 +125,11 @@ export default function NotesLayer({ visible, refreshKey }: NotesLayerProps) {
     return () => timers.forEach(clearTimeout);
   }, [visible, allNotes]);
 
-  // Cycle notes every 15 seconds
+  // Cycle notes — 25s on mobile, 15s on desktop to reduce DOM updates
   useEffect(() => {
     if (!visible) return;
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+    const cycleMs = isMobile ? 25000 : 15000;
     const interval = setInterval(() => {
       setDisplayed((prev) => {
         if (prev.length === 0) return prev;
@@ -165,7 +167,7 @@ export default function NotesLayer({ visible, refreshKey }: NotesLayerProps) {
           );
         }, 100);
       }, 2200);
-    }, 15000);
+    }, cycleMs);
     return () => clearInterval(interval);
   }, [visible]);
 

@@ -213,20 +213,24 @@ const waveformShader = uniformHeader + `
 `;
 
 // Mode 3: Particles — count and velocity scale with volume
-const particlesShader = uniformHeader + `
+// Mobile-aware particle shader: fewer particles on small screens
+function getParticlesShader(mobile: boolean): string {
+  const maxLoop = mobile ? 15 : 25;
+  const maxEnergy = mobile ? 7.0 : 17.0;
+  return uniformHeader + `
   void main() {
     vec2 uv = gl_FragCoord.xy / resolution;
     vec2 p = uv * 2.0 - 1.0;
     p.x *= resolution.x / resolution.y;
 
-    // Energy controls how many particles are visible (up to 25)
-    float maxParticles = 8.0 + energy * 17.0;
+    // Energy controls how many particles are visible (up to ${maxLoop})
+    float maxParticles = 8.0 + energy * ${maxEnergy.toFixed(1)};
     // Energy controls speed
     float speed = 0.12 + energy * 0.12;
 
     float brightness = 0.0;
     vec3 colorAccum = vec3(0.0);
-    for (int i = 0; i < 25; i++) {
+    for (int i = 0; i < ${maxLoop}; i++) {
       float fi = float(i);
       // Skip particles beyond the energy-driven count
       if (fi >= maxParticles) break;
@@ -256,7 +260,7 @@ const particlesShader = uniformHeader + `
       float particleGlow = size / (d * d + 0.001);
       float contrib = particleGlow * (0.1 + energy * 0.4);
       brightness += contrib;
-      colorAccum += rainbow(fi / 25.0) * contrib;
+      colorAccum += rainbow(fi / ${maxLoop.toFixed(1)}) * contrib;
     }
 
     // Mouse cursor glow
@@ -312,6 +316,7 @@ const particlesShader = uniformHeader + `
     }
   }
 `;
+}
 
 // Mode 4: Rings — concentric rings pulsing outward
 const ringsShader = uniformHeader + `
@@ -750,12 +755,18 @@ export const VISUALIZER_MODES = [
   { id: 'none', label: 'None', shader: noneShader },
   { id: 'noise', label: 'Noise Field', shader: noiseFieldShader },
   { id: 'waveform', label: 'Waveform', shader: waveformShader },
-  { id: 'particles', label: 'Particles', shader: particlesShader },
+  { id: 'particles', label: 'Particles', shader: getParticlesShader(false) },
   { id: 'grid', label: 'Grid', shader: gridShader },
   { id: 'plasma', label: 'Plasma', shader: plasmaShader },
 ];
 
+const isMobileDevice = typeof window !== 'undefined' && window.innerWidth < 768;
+
 function getShaderForMode(mode: string): string {
+  // On mobile, use reduced-complexity particles shader
+  if (mode === 'particles' && isMobileDevice) {
+    return getParticlesShader(true);
+  }
   const found = VISUALIZER_MODES.find((m) => m.id === mode);
   return found ? found.shader : noiseFieldShader;
 }

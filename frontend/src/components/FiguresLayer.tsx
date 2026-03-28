@@ -105,8 +105,11 @@ export default function FiguresLayer({ visible }: FiguresLayerProps) {
     return () => timers.forEach(clearTimeout);
   }, [visible]);
 
+  // Cycle figures — 25s on mobile, 15s on desktop to reduce DOM updates
   useEffect(() => {
     if (!visible) return;
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+    const cycleMs = isMobile ? 25000 : 15000;
     const interval = setInterval(() => {
       setImages((prev) => {
         if (prev.length === 0) return prev;
@@ -134,7 +137,7 @@ export default function FiguresLayer({ visible }: FiguresLayerProps) {
           );
         }, 100);
       }, 2200);
-    }, 15000);
+    }, cycleMs);
     return () => clearInterval(interval);
   }, [visible]);
 
