@@ -1475,6 +1475,68 @@ body {
   #sidebar-header {
     display: none !important;
   }
+
+  /* R7-1: Track tap feedback — brief highlight flash */
+  #track-list li:active {
+    background: rgba(255, 255, 255, 0.12) !important;
+    transition: background 0.05s;
+  }
+
+  /* R7-2: Play button tap feedback — scale down briefly */
+  #play-btn:active {
+    transform: scale(0.9) !important;
+    transition: transform 0.08s !important;
+  }
+
+  /* R7-3: Smooth progress bar interaction — larger thumb on touch */
+  #progress-container:active #progress-bar::after {
+    width: 20px !important;
+    height: 20px !important;
+    box-shadow: 0 0 12px rgba(255, 255, 255, 0.5) !important;
+  }
+
+  /* R7-4: Note input focus state — glass glow */
+  .note-input-container input:focus {
+    border-color: rgba(255, 255, 255, 0.3) !important;
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.1);
+  }
+
+  /* R7-5: Heart button tap animation — scale pulse */
+  .like-btn:active svg {
+    transform: scale(1.3);
+    transition: transform 0.1s;
+  }
+
+  /* R7-6: Drawer viz picker pill tap feedback */
+  .mobile-viz-btn:active {
+    transform: scale(0.95);
+    transition: transform 0.08s;
+  }
+
+  /* R7-8: Tracks pill tap feedback */
+  .mobile-tracks-btn:active {
+    transform: translateX(-50%) scale(0.95);
+    transition: transform 0.08s;
+  }
+
+  /* R7-9: Play button haptic-hint ripple on tap */
+  #play-btn {
+    position: relative;
+    overflow: visible;
+  }
+  #play-btn:active::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.15);
+    animation: tapFlash 0.2s ease-out forwards;
+  }
+
+  @keyframes tapFlash {
+    from { opacity: 1; transform: scale(1); }
+    to { opacity: 0; transform: scale(1.3); }
+  }
 }
 
 /* ========== NOTES LAYER ========== */
@@ -1883,10 +1945,12 @@ body {
 @media (max-width: 768px) {
   .about-card {
     max-width: 90vw;
-    padding: 24px 20px;
+    padding: 28px 20px;
+    padding-top: 48px; /* room for larger close button */
     max-height: 80vh;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
   }
 
   .about-title {
@@ -1896,11 +1960,28 @@ body {
 
   .about-section p {
     font-size: 0.8rem;
+    line-height: 1.6;
   }
 
+  .about-section {
+    margin-bottom: 16px;
+  }
+
+  .about-link {
+    display: inline-block;
+    margin-top: 8px;
+    margin-bottom: 12px;
+  }
+
+  /* R7-7: Close button — 44px tap target for mobile */
   .about-close {
-    top: 12px;
-    right: 12px;
+    top: 8px;
+    right: 8px;
+    width: 44px !important;
+    height: 44px !important;
+    font-size: 1.5rem;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
   }
 }
 
