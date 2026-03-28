@@ -55,11 +55,27 @@ export default function NotesLayer({ visible, refreshKey }: NotesLayerProps) {
     allNotesRef.current = allNotes;
   }, [allNotes]);
 
-  // Fetch notes
+  // Fetch notes — and swap in the newest note on refresh
   useEffect(() => {
     fetch(`${API_URL}/api/notes`)
       .then((r) => r.json())
-      .then((data: Note[]) => setAllNotes(data))
+      .then((data: Note[]) => {
+        setAllNotes(data);
+        // If this is a refresh (not initial load), show the newest note immediately
+        if (refreshKey > 0 && data.length > 0) {
+          const newest = data[data.length - 1];
+          const pos = randomPosition();
+          setDisplayed((prev) => {
+            if (prev.length === 0) return prev;
+            const replaceIdx = Math.floor(Math.random() * prev.length);
+            return prev.map((n, i) =>
+              i === replaceIdx
+                ? { x: pos.x, y: pos.y, rotateX: 0, rotateY: 0, scale: 1, opacity: 1, text: newest.text, name: newest.name }
+                : n
+            );
+          });
+        }
+      })
       .catch(() => {});
   }, [refreshKey]);
 
