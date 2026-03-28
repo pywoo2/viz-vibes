@@ -1,8 +1,6 @@
 'use client';
 
 import { useRef, useEffect } from 'react';
-import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 interface VisualizerProps {
   analyser: AnalyserNode | null;
@@ -10,45 +8,46 @@ interface VisualizerProps {
   mode: string;
 }
 
-// Shared vertex shader for all modes
-const vertexShader = `
-  varying vec2 vUv;
+const vertexShaderSource = `
+  attribute vec2 position;
   void main() {
-    vUv = uv;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    gl_Position = vec4(position, 0.0, 1.0);
   }
 `;
 
-// Shared uniform header for all fragment shaders
 const uniformHeader = `
   precision highp float;
-  varying vec2 vUv;
   uniform float time;
   uniform float bass;
   uniform float mid;
   uniform float high;
   uniform float energy;
   uniform vec2 resolution;
-  uniform vec2 mouse; // 0-1 normalized, (-1,-1) when inactive
+  uniform vec2 mouse;
 `;
 
-// Mode 1: Noise Field
-const noiseFieldShader = uniformHeader + `
-  vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
-  vec2 mod289(vec2 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
-  vec3 permute(vec3 x) { return mod289(((x*34.0)+1.0)*x); }
+// 2D simplex noise
+const noise2DFunctions = `
+  vec3 mod289_3(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+  vec2 mod289_2(vec2 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+  vec3 permute(vec3 x) { return mod289_3(((x*34.0)+1.0)*x); }
 
   float snoise(vec2 v) {
-    const vec4 C = vec4(0.211324865405187, 0.366025403784439, -0.577350269189626, 0.024390243902439);
+    const vec4 C = vec4(0.211324865405187, 0.366025403784439,
+                       -0.577350269189626, 0.024390243902439);
     vec2 i = floor(v + dot(v, C.yy));
     vec2 x0 = v - i + dot(i, C.xx);
-    vec2 i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
+    vec2 i1;
+    i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
     vec4 x12 = x0.xyxy + C.xxzz;
     x12.xy -= i1;
-    i = mod289(i);
-    vec3 p = permute(permute(i.y + vec3(0.0, i1.y, 1.0)) + i.x + vec3(0.0, i1.x, 1.0));
-    vec3 m = max(0.5 - vec3(dot(x0,x0), dot(x12.xy,x12.xy), dot(x12.zw,x12.zw)), 0.0);
-    m = m*m; m = m*m;
+    i = mod289_2(i);
+    vec3 p = permute(permute(i.y + vec3(0.0, i1.y, 1.0))
+           + i.x + vec3(0.0, i1.x, 1.0));
+    vec3 m = max(0.5 - vec3(dot(x0,x0), dot(x12.xy,x12.xy),
+                             dot(x12.zw,x12.zw)), 0.0);
+    m = m * m;
+    m = m * m;
     vec3 x = 2.0 * fract(p * C.www) - 1.0;
     vec3 h = abs(x) - 0.5;
     vec3 ox = floor(x + 0.5);
@@ -59,69 +58,41 @@ const noiseFieldShader = uniformHeader + `
     g.yz = a0.yz * x12.xz + h.yz * x12.yw;
     return 130.0 * dot(m, g);
   }
+`;
 
+// Mode 1: Noise Field
+const noiseFieldShader = uniformHeader + noise2DFunctions + `
   void main() {
-    vec2 uv = vUv;
-    vec2 p = uv * 2.0 - 1.0;
-    p.x *= resolution.x / resolution.y;
-
+    vec2 uv = gl_FragCoord.xy / resolution;
     float t = time * 0.3;
 
-    float n = 0.0;
-    n += snoise(p * 1.5 + t * 0.5 + bass * 0.3) * (0.3 + bass * 0.4);
-    n += snoise(p * 3.0 - t * 0.3 + mid * 0.2) * (0.2 + mid * 0.3);
-    n += snoise(p * 6.0 + t * 0.8) * (0.1 + high * 0.3);
+    float noise = 0.0;
+    noise += snoise(uv * 3.0 + t * 0.5 + bass * 0.3) * (0.3 + bass * 0.4);
+    noise += snoise(uv * 6.0 - t * 0.3 + mid * 0.2) * (0.2 + mid * 0.3);
+    noise += snoise(uv * 12.0 + t * 0.8) * (0.1 + high * 0.3);
 
-    float dist = length(p);
-    float glow = energy * 0.5 / (dist + 0.5);
-
-    // Mouse -- bright attractor that distorts noise
-    float mouseGlow = 0.0;
-    if (mouse.x >= 0.0) {
-      vec2 mp = mouse * 2.0 - 1.0;
-      mp.x *= resolution.x / resolution.y;
-      float md = length(p - mp);
-      mouseGlow = 0.02 / (md * md + 0.03);
-      n += snoise(p * 2.0 + mp * 0.5 + t) * 0.06 / (md + 0.5);
-    }
-
-    float brightness = smoothstep(-0.3, 0.6, n) * (0.15 + energy * 0.85);
-    brightness += glow * 0.3 + mouseGlow;
+    float brightness = smoothstep(-0.3, 0.6, noise) * (0.15 + energy * 0.85);
     brightness = pow(brightness, 0.8);
 
-    vec3 color = vec3(brightness);
-    gl_FragColor = vec4(color, 1.0);
+    gl_FragColor = vec4(vec3(brightness), 1.0);
   }
 `;
 
 // Mode 2: Waveform
 const waveformShader = uniformHeader + `
   void main() {
-    vec2 uv = vUv;
-    float wave = 0.0;
-    wave += sin(uv.x * 6.28 * 2.0 + time) * bass * 0.3;
-    wave += sin(uv.x * 6.28 * 4.0 + time * 1.5) * mid * 0.2;
-    wave += sin(uv.x * 6.28 * 8.0 + time * 2.0) * high * 0.1;
+    vec2 uv = gl_FragCoord.xy / resolution;
 
-    // Mouse pulls the wave toward cursor
-    if (mouse.x >= 0.0) {
-      float dx = uv.x - mouse.x;
-      float proximity = exp(-dx * dx * 20.0);
-      wave += (mouse.y - 0.5) * proximity * 0.25;
-    }
+    float wave = sin(uv.x * 6.0 + time) * bass * 0.3
+               + sin(uv.x * 12.0 + time * 1.5) * mid * 0.2
+               + sin(uv.x * 24.0 + time * 2.0) * high * 0.1;
 
-    float dist = abs(uv.y - 0.5 - wave * 0.3);
-    float line = smoothstep(0.02, 0.0, dist);
-    float glow = smoothstep(0.1, 0.0, dist) * 0.3;
+    float dist = abs(uv.y - 0.5 - wave * 0.5);
+    float line = smoothstep(0.01, 0.0, dist);
+    float glow = smoothstep(0.15, 0.0, dist) * 0.3;
 
-    // Mouse glow at cursor
-    float mouseGlow = 0.0;
-    if (mouse.x >= 0.0) {
-      float md = length(uv - mouse);
-      mouseGlow = 0.008 / (md * md + 0.008);
-    }
-
-    float brightness = line + glow + mouseGlow;
+    float brightness = (line + glow) * (0.3 + energy * 0.7);
+    brightness = clamp(brightness, 0.0, 1.0);
 
     gl_FragColor = vec4(vec3(brightness), 1.0);
   }
@@ -130,9 +101,8 @@ const waveformShader = uniformHeader + `
 // Mode 3: Particles
 const particlesShader = uniformHeader + `
   void main() {
-    vec2 uv = vUv;
-    vec2 p = uv * 2.0 - 1.0;
-    p.x *= resolution.x / resolution.y;
+    vec2 uv = gl_FragCoord.xy / resolution;
+    float aspect = resolution.x / resolution.y;
 
     float maxParticles = 8.0 + energy * 17.0;
     float speed = 0.12 + energy * 0.12;
@@ -142,36 +112,13 @@ const particlesShader = uniformHeader + `
       float fi = float(i);
       if (fi >= maxParticles) break;
 
-      float angle1 = fi * 2.399 + time * speed * (0.5 + fract(fi * 0.37) * 0.5);
-      float angle2 = fi * 1.673 + time * speed * (0.3 + fract(fi * 0.61) * 0.7);
-      float radius = 0.3 + fract(fi * 0.71) * 0.6 + bass * 0.2;
+      float px = fract(sin(fi * 43.758) * 0.5 + 0.5 + time * speed * (0.3 + fract(fi * 0.17) * 0.4));
+      float py = fract(cos(fi * 27.619) * 0.5 + 0.5 + time * speed * (0.2 + fract(fi * 0.31) * 0.3));
 
-      vec2 pos = vec2(
-        sin(angle1) * radius,
-        cos(angle2) * radius
-      );
-
-      // Mouse attracts particles toward cursor
-      if (mouse.x >= 0.0) {
-        vec2 mp = mouse * 2.0 - 1.0;
-        mp.x *= resolution.x / resolution.y;
-        vec2 toMouse = mp - pos;
-        float md = length(toMouse);
-        pos += toMouse * 0.1 / (md + 0.8);
-      }
-
-      float size = (0.006 + bass * 0.015) * (1.0 - fract(fi * 0.71) * 0.5);
-      float d = length(p - pos);
-      float glow = size / (d * d + 0.001);
-      brightness += glow * (0.1 + energy * 0.4);
-    }
-
-    // Mouse cursor glow
-    if (mouse.x >= 0.0) {
-      vec2 mp = mouse * 2.0 - 1.0;
-      mp.x *= resolution.x / resolution.y;
-      float md = length(p - mp);
-      brightness += 0.004 / (md * md + 0.008);
+      vec2 delta = vec2((uv.x - px) * aspect, uv.y - py);
+      float d = length(delta);
+      float size = 0.01 + bass * 0.02;
+      brightness += size / (d * d + 0.001) * energy * 0.3;
     }
 
     brightness = clamp(brightness, 0.0, 1.0);
@@ -184,35 +131,24 @@ const particlesShader = uniformHeader + `
 // Mode 4: Rings
 const ringsShader = uniformHeader + `
   void main() {
-    vec2 uv = vUv;
-    vec2 p = uv * 2.0 - 1.0;
-    p.x *= resolution.x / resolution.y;
-
-    float dist = length(p);
-    float t = time * 0.5;
+    vec2 uv = gl_FragCoord.xy / resolution;
+    vec2 center = vec2(0.5);
+    float dist = length(uv - center);
 
     float rings = 0.0;
     for (int i = 0; i < 5; i++) {
       float fi = float(i);
-      float radius = mod(t * 0.3 + fi * 0.2, 1.5);
-      float ring = abs(dist - radius);
-      float thickness = 0.008 + energy * 0.015;
-      rings += smoothstep(thickness, 0.0, ring) * (1.0 - radius / 1.5) * (0.3 + energy * 0.7);
+      float ringR = 0.1 + fi * 0.08 + sin(time * 0.3 + fi * 1.2) * 0.05;
+      float d = abs(dist - ringR);
+      float thickness = 0.005 + energy * 0.008;
+      rings += smoothstep(thickness, 0.0, d) * (0.3 + energy * 0.7);
     }
 
     float glow = (0.02 + bass * 0.04) / (dist + 0.1);
 
-    float mouseGlow = 0.0;
-    if (mouse.x >= 0.0) {
-      vec2 mp = mouse * 2.0 - 1.0;
-      mp.x *= resolution.x / resolution.y;
-      float md = length(p - mp);
-      mouseGlow = 0.02 / (md * md + 0.03);
-    }
-
-    float brightness = rings + glow + mouseGlow;
-
+    float brightness = rings + glow;
     brightness = clamp(brightness, 0.0, 1.0);
+
     gl_FragColor = vec4(vec3(brightness), 1.0);
   }
 `;
@@ -220,34 +156,19 @@ const ringsShader = uniformHeader + `
 // Mode 5: Grid
 const gridShader = uniformHeader + `
   void main() {
-    vec2 uv = vUv;
-    vec2 p = uv * 2.0 - 1.0;
-    p.x *= resolution.x / resolution.y;
+    vec2 uv = gl_FragCoord.xy / resolution;
 
-    float t = time * 0.2;
+    float gridX = fract(uv.x * 10.0 + time * 0.1);
+    float gridY = fract(uv.y * 10.0);
 
-    float angle = atan(p.y, p.x);
-    float dist = length(p);
+    float lineX = smoothstep(0.03, 0.0, abs(gridX - 0.5) - 0.47);
+    float lineY = smoothstep(0.03, 0.0, abs(gridY - 0.5) - 0.47);
 
-    float gridR = fract(1.0 / (dist + 0.01) * 0.3 - t + bass * 0.1);
-    float gridA = fract(angle / 0.3927);
+    float grid = max(lineX, lineY) * (0.1 + energy * 0.4);
+    grid += lineY * bass * 0.3 + lineX * mid * 0.2;
 
-    float lineR = smoothstep(0.05, 0.0, abs(gridR - 0.5) - 0.45);
-    float lineA = smoothstep(0.05, 0.0, abs(gridA - 0.5) - 0.45);
+    float brightness = clamp(grid, 0.0, 1.0);
 
-    float grid = max(lineR, lineA) * (0.1 + energy * 0.4) / (dist + 0.3);
-
-    float mouseGlow = 0.0;
-    if (mouse.x >= 0.0) {
-      vec2 mp = mouse * 2.0 - 1.0;
-      mp.x *= resolution.x / resolution.y;
-      float md = length(p - mp);
-      mouseGlow = 0.015 / (md * md + 0.03);
-    }
-
-    float brightness = grid + mouseGlow;
-
-    brightness = clamp(brightness, 0.0, 1.0);
     gl_FragColor = vec4(vec3(brightness), 1.0);
   }
 `;
@@ -255,31 +176,18 @@ const gridShader = uniformHeader + `
 // Mode 6: Plasma
 const plasmaShader = uniformHeader + `
   void main() {
-    vec2 uv = vUv;
-    vec2 p = uv * 2.0 - 1.0;
-    p.x *= resolution.x / resolution.y;
-
+    vec2 uv = gl_FragCoord.xy / resolution;
     float t = time * 0.3;
 
-    float v = 0.0;
-    v += sin(p.x * 3.0 + t + bass * 2.0);
-    v += sin(p.y * 3.0 + t * 0.7 + mid);
-    v += sin((p.x + p.y) * 2.0 + t * 0.5);
-    v += sin(length(p) * 4.0 - t + high);
-    v = v * 0.25;
+    float v = sin(uv.x * 6.0 + t + bass * 2.0)
+            + sin(uv.y * 6.0 + t * 0.7 + mid)
+            + sin((uv.x + uv.y) * 4.0 + t * 0.5)
+            + sin(length(uv - 0.5) * 8.0 - t + high);
+    v *= 0.25;
 
     float brightness = smoothstep(-0.5, 0.5, v) * (0.1 + energy * 0.5);
-
-    // Mouse
-    if (mouse.x >= 0.0) {
-      vec2 mp = mouse * 2.0 - 1.0;
-      mp.x *= resolution.x / resolution.y;
-      float md = length(p - mp);
-      brightness += 0.02 / (md * md + 0.03);
-      v += sin(md * 8.0 - t * 2.0) * 0.15 / (md + 0.3);
-    }
-
     brightness = clamp(brightness, 0.0, 1.0);
+
     gl_FragColor = vec4(vec3(brightness), 1.0);
   }
 `;
@@ -298,131 +206,143 @@ function getShaderForMode(mode: string): string {
   return found ? found.shader : noiseFieldShader;
 }
 
+function compileShader(gl: WebGLRenderingContext, type: number, source: string): WebGLShader | null {
+  const shader = gl.createShader(type);
+  if (!shader) return null;
+  gl.shaderSource(shader, source);
+  gl.compileShader(shader);
+  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+    console.error('Shader compile error:', gl.getShaderInfoLog(shader));
+    gl.deleteShader(shader);
+    return null;
+  }
+  return shader;
+}
+
+function createProgram(gl: WebGLRenderingContext, fragSource: string): WebGLProgram | null {
+  const vs = compileShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
+  const fs = compileShader(gl, gl.FRAGMENT_SHADER, fragSource);
+  if (!vs || !fs) return null;
+
+  const program = gl.createProgram();
+  if (!program) return null;
+  gl.attachShader(program, vs);
+  gl.attachShader(program, fs);
+  gl.linkProgram(program);
+
+  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+    console.error('Program link error:', gl.getProgramInfoLog(program));
+    gl.deleteProgram(program);
+    return null;
+  }
+
+  gl.deleteShader(vs);
+  gl.deleteShader(fs);
+  return program;
+}
+
 export default function Visualizer({ analyser, isPlaying, mode }: VisualizerProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
-  const sceneRef = useRef<THREE.Scene | null>(null);
-  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
-  const controlsRef = useRef<OrbitControls | null>(null);
-  const meshRef = useRef<THREE.Mesh | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const glRef = useRef<WebGLRenderingContext | null>(null);
+  const programRef = useRef<WebGLProgram | null>(null);
   const animRef = useRef<number>(0);
   const startTimeRef = useRef(Date.now());
   const mouseRef = useRef({ x: -1, y: -1 });
-  const uniformsRef = useRef<Record<string, THREE.IUniform>>({
-    time: { value: 0 },
-    bass: { value: 0 },
-    mid: { value: 0 },
-    high: { value: 0 },
-    energy: { value: 0 },
-    resolution: { value: new THREE.Vector2(1, 1) },
-    mouse: { value: new THREE.Vector2(-1, -1) },
-  });
+  const modeRef = useRef(mode);
 
-  // Initialize Three.js scene (once)
+  // Keep modeRef in sync
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
+    modeRef.current = mode;
+  }, [mode]);
 
-    // Renderer
-    const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setClearColor(0x000000, 1);
-    const canvas = renderer.domElement;
-    canvas.id = 'visualizer-canvas';
-    canvas.style.width = '100%';
-    canvas.style.height = '100%';
-    canvas.style.pointerEvents = 'auto';
-    container.appendChild(canvas);
-    rendererRef.current = renderer;
+  // Initialize WebGL (once)
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-    // Scene
-    const scene = new THREE.Scene();
-    sceneRef.current = scene;
+    const gl = canvas.getContext('webgl', { antialias: false, alpha: false });
+    if (!gl) {
+      console.error('WebGL not supported');
+      return;
+    }
+    glRef.current = gl;
 
-    // Camera — inside the sphere looking out
-    const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
-    camera.position.set(0, 0, 0.1); // slightly off center so OrbitControls works
-    cameraRef.current = camera;
+    // Full-screen quad (two triangles)
+    const buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+      -1, -1, 1, -1, -1, 1,
+      -1, 1, 1, -1, 1, 1,
+    ]), gl.STATIC_DRAW);
 
-    // OrbitControls
-    const controls = new OrbitControls(camera, canvas);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
-    controls.enableZoom = false;
-    controls.enablePan = false;
-    controls.rotateSpeed = 0.5;
-    controls.autoRotate = true;
-    controls.autoRotateSpeed = 0.5;
-    controlsRef.current = controls;
+    // Initial program
+    const program = createProgram(gl, getShaderForMode(mode));
+    if (program) {
+      programRef.current = program;
+      gl.useProgram(program);
+      const posAttr = gl.getAttribLocation(program, 'position');
+      gl.enableVertexAttribArray(posAttr);
+      gl.vertexAttribPointer(posAttr, 2, gl.FLOAT, false, 0, 0);
+    }
 
-    // Sphere geometry — camera is inside, render BackSide
-    const geometry = new THREE.SphereGeometry(50, 64, 64);
-    const material = new THREE.ShaderMaterial({
-      uniforms: uniformsRef.current,
-      vertexShader,
-      fragmentShader: getShaderForMode('noise'),
-      side: THREE.BackSide,
-    });
-    const mesh = new THREE.Mesh(geometry, material);
-    scene.add(mesh);
-    meshRef.current = mesh;
-
-    // Resize
+    // Resize handler
     const resize = () => {
-      const rect = container.getBoundingClientRect();
-      renderer.setSize(rect.width, rect.height);
-      camera.aspect = rect.width / rect.height;
-      camera.updateProjectionMatrix();
-      uniformsRef.current.resolution.value.set(
-        rect.width * renderer.getPixelRatio(),
-        rect.height * renderer.getPixelRatio()
-      );
+      const rect = canvas.parentElement?.getBoundingClientRect();
+      if (!rect) return;
+      const dpr = Math.min(window.devicePixelRatio, 2);
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      canvas.style.width = rect.width + 'px';
+      canvas.style.height = rect.height + 'px';
+      gl.viewport(0, 0, canvas.width, canvas.height);
     };
     resize();
-    const observer = new ResizeObserver(resize);
-    observer.observe(container);
+
+    const parent = canvas.parentElement;
+    let observer: ResizeObserver | null = null;
+    if (parent) {
+      observer = new ResizeObserver(resize);
+      observer.observe(parent);
+    }
 
     return () => {
-      observer.disconnect();
+      if (observer) observer.disconnect();
       cancelAnimationFrame(animRef.current);
-      controls.dispose();
-      renderer.dispose();
-      geometry.dispose();
-      material.dispose();
-      if (container.contains(canvas)) {
-        container.removeChild(canvas);
-      }
+      if (buffer) gl.deleteBuffer(buffer);
+      if (programRef.current) gl.deleteProgram(programRef.current);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Update shader when mode changes
+  // Recompile shader when mode changes
   useEffect(() => {
-    const mesh = meshRef.current;
-    if (!mesh) return;
+    const gl = glRef.current;
+    if (!gl) return;
 
-    const oldMaterial = mesh.material as THREE.ShaderMaterial;
-    const newMaterial = new THREE.ShaderMaterial({
-      uniforms: uniformsRef.current,
-      vertexShader,
-      fragmentShader: getShaderForMode(mode),
-      side: THREE.BackSide,
-    });
-    mesh.material = newMaterial;
-    oldMaterial.dispose();
+    const newProgram = createProgram(gl, getShaderForMode(mode));
+    if (newProgram) {
+      if (programRef.current) gl.deleteProgram(programRef.current);
+      programRef.current = newProgram;
+      gl.useProgram(newProgram);
+      const posAttr = gl.getAttribLocation(newProgram, 'position');
+      gl.enableVertexAttribArray(posAttr);
+      gl.vertexAttribPointer(posAttr, 2, gl.FLOAT, false, 0, 0);
+    }
   }, [mode]);
 
   // Render loop
   useEffect(() => {
-    const renderer = rendererRef.current;
-    const scene = sceneRef.current;
-    const camera = cameraRef.current;
-    const controls = controlsRef.current;
-    if (!renderer || !scene || !camera || !controls) return;
+    const gl = glRef.current;
+    const canvas = canvasRef.current;
+    if (!gl || !canvas) return;
 
     const frequencyData = new Uint8Array(analyser?.frequencyBinCount || 128);
 
     const render = () => {
       animRef.current = requestAnimationFrame(render);
+
+      const program = programRef.current;
+      if (!program) return;
 
       // Audio analysis
       let bass = 0, mid = 0, high = 0, energy = 0;
@@ -440,17 +360,19 @@ export default function Visualizer({ analyser, isPlaying, mode }: VisualizerProp
 
       const time = (Date.now() - startTimeRef.current) / 1000;
 
-      // Update uniforms
-      const u = uniformsRef.current;
-      u.time.value = time;
-      u.bass.value = bass;
-      u.mid.value = mid;
-      u.high.value = high;
-      u.energy.value = energy;
-      u.mouse.value.set(mouseRef.current.x, mouseRef.current.y);
+      gl.useProgram(program);
 
-      controls.update();
-      renderer.render(scene, camera);
+      // Set uniforms
+      const loc = (name: string) => gl.getUniformLocation(program, name);
+      gl.uniform1f(loc('time'), time);
+      gl.uniform1f(loc('bass'), bass);
+      gl.uniform1f(loc('mid'), mid);
+      gl.uniform1f(loc('high'), high);
+      gl.uniform1f(loc('energy'), energy);
+      gl.uniform2f(loc('resolution'), canvas.width, canvas.height);
+      gl.uniform2f(loc('mouse'), mouseRef.current.x, mouseRef.current.y);
+
+      gl.drawArrays(gl.TRIANGLES, 0, 6);
     };
 
     render();
@@ -459,11 +381,13 @@ export default function Visualizer({ analyser, isPlaying, mode }: VisualizerProp
 
   // Mouse tracking
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const parent = canvas.parentElement;
+    if (!parent) return;
 
     const onMove = (e: MouseEvent) => {
-      const rect = container.getBoundingClientRect();
+      const rect = parent.getBoundingClientRect();
       mouseRef.current = {
         x: (e.clientX - rect.left) / rect.width,
         y: 1.0 - (e.clientY - rect.top) / rect.height,
@@ -474,12 +398,20 @@ export default function Visualizer({ analyser, isPlaying, mode }: VisualizerProp
     };
 
     window.addEventListener('mousemove', onMove);
-    container.addEventListener('mouseleave', onLeave);
+    parent.addEventListener('mouseleave', onLeave);
     return () => {
       window.removeEventListener('mousemove', onMove);
-      container.removeEventListener('mouseleave', onLeave);
+      parent.removeEventListener('mouseleave', onLeave);
     };
   }, []);
 
-  return <div ref={containerRef} style={{ width: '100%', height: '100%' }} />;
+  return (
+    <div style={{ width: '100%', height: '100%' }}>
+      <canvas
+        ref={canvasRef}
+        id="visualizer-canvas"
+        style={{ width: '100%', height: '100%', display: 'block' }}
+      />
+    </div>
+  );
 }

@@ -91,12 +91,16 @@ export default function Sidebar({
       setLikingTracks((prev) => new Set(prev).add(index));
 
       try {
-        await fetch(
+        const res = await fetch(
           `${API_URL}/api/tracks/${encodeURIComponent(track.title)}/like`,
           { method: 'POST' }
         );
+        if (!res.ok) {
+          // Server returned an error — revert optimistic update
+          onUpdateTrackLikes(index, prevLikes);
+        }
       } catch {
-        // Revert on error
+        // Network error — revert optimistic update
         onUpdateTrackLikes(index, prevLikes);
       } finally {
         setLikingTracks((prev) => {

@@ -66,21 +66,24 @@ def load_likes() -> dict[str, int]:
         s3 = get_r2_client()
         response = s3.get_object(Bucket=R2_BUCKET, Key=LIKES_KEY)
         return json.loads(response["Body"].read().decode("utf-8"))
-    except s3.exceptions.NoSuchKey:
-        return {}
     except Exception:
         return {}
 
 
-def save_likes(likes: dict[str, int]) -> None:
-    """Save likes to _likes.json in the R2 bucket."""
-    s3 = get_r2_client()
-    s3.put_object(
-        Bucket=R2_BUCKET,
-        Key=LIKES_KEY,
-        Body=json.dumps(likes, indent=2).encode("utf-8"),
-        ContentType="application/json",
-    )
+def save_likes(likes: dict[str, int]) -> bool:
+    """Save likes to _likes.json in the R2 bucket. Returns True on success."""
+    try:
+        s3 = get_r2_client()
+        s3.put_object(
+            Bucket=R2_BUCKET,
+            Key=LIKES_KEY,
+            Body=json.dumps(likes, indent=2).encode("utf-8"),
+            ContentType="application/json",
+        )
+        return True
+    except Exception as e:
+        print(f"[save_likes] Failed to write _likes.json to R2: {e}")
+        return False
 
 
 @app.get("/api/health")
@@ -105,25 +108,29 @@ def get_tracks():
     return result
 
 
-@app.post("/api/tracks/{title}/like")
+@app.post("/api/tracks/{title:path}/like")
 def like_track(title: str):
+    title = urllib.parse.unquote(title)
     tracks = list_tracks_from_r2()
     titles = [t["title"] for t in tracks]
     if title not in titles:
         raise HTTPException(status_code=404, detail="Track not found")
     likes = load_likes()
     likes[title] = likes.get(title, 0) + 1
-    save_likes(likes)
+    if not save_likes(likes):
+        raise HTTPException(status_code=500, detail="Failed to persist like")
     return {"title": title, "likes": likes[title]}
 
 
-@app.post("/api/tracks/{title}/unlike")
+@app.post("/api/tracks/{title:path}/unlike")
 def unlike_track(title: str):
+    title = urllib.parse.unquote(title)
     tracks = list_tracks_from_r2()
     titles = [t["title"] for t in tracks]
     if title not in titles:
         raise HTTPException(status_code=404, detail="Track not found")
     likes = load_likes()
     likes[title] = max(likes.get(title, 0) - 1, 0)
-    save_likes(likes)
+    if not save_likes(likes):
+        raise HTTPException(status_code=500, detail="Failed to persist unlike")
     return {"title": title, "likes": likes[title]}

@@ -8,8 +8,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Peter's Corner Of the Internet",
-  description: "Music player with visualizer",
+  title: "viz-vibes",
+  description: "AI music + interactive visualizer",
 };
 
 export default function RootLayout({
