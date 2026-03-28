@@ -202,6 +202,7 @@ export default function Home() {
       />
 
       <div className="note-input-container">
+        <div className="note-disclaimer">* all notes are public on the site</div>
         <input
           type="text"
           placeholder="your name"
@@ -221,7 +222,6 @@ export default function Home() {
           }}
         />
         <button className="note-submit-btn" onClick={submitNote} title="Submit note">&rarr;</button>
-        <span className="note-disclaimer">public &amp; visible to all</span>
       </div>
 
       {showAbout && (

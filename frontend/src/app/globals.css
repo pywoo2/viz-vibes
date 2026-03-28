@@ -1036,8 +1036,16 @@ body {
   right: 80px;
   z-index: 20;
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
   align-items: center;
+}
+
+.note-input-container .note-disclaimer {
+  width: 100%;
+  font-size: 0.75rem;
+  font-family: inherit;
+  color: rgba(255, 255, 255, 0.25);
 }
 
 .note-input-container input {
