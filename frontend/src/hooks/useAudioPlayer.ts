@@ -70,6 +70,7 @@ export function useAudioPlayer(): AudioPlayerState & AudioPlayerActions & { anal
   // Initialize audio element
   useEffect(() => {
     const audio = new Audio();
+    audio.crossOrigin = 'anonymous';
     audio.volume = 0.8;
     audioRef.current = audio;
 
@@ -127,9 +128,22 @@ export function useAudioPlayer(): AudioPlayerState & AudioPlayerActions & { anal
   }, []);
 
   const initAudioContext = useCallback(() => {
-    // Skip AudioContext — createMediaElementSource silences audio
-    // without crossOrigin on cross-origin sources (R2).
-    // The visualizer will use ambient animation instead.
+    const audio = audioRef.current;
+    if (!audio || audioContextRef.current) return;
+    try {
+      const ctx = new AudioContext();
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 256;
+      analyser.smoothingTimeConstant = 0.8;
+      const source = ctx.createMediaElementSource(audio);
+      source.connect(analyser);
+      analyser.connect(ctx.destination);
+      audioContextRef.current = ctx;
+      analyserRef.current = analyser;
+      sourceRef.current = source;
+    } catch (err) {
+      console.warn('Audio context init failed:', err);
+    }
   }, []);
 
   const playTrack = useCallback((index: number) => {

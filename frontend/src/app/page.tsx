@@ -17,7 +17,6 @@ export default function Home() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [vizMode, setVizMode] = useState('noise');
   const [figuresVisible, setFiguresVisible] = useState(false);
-  const [clickEffect, setClickEffect] = useState('ripple');
   const [showAbout, setShowAbout] = useState(false);
 
   useEffect(() => {
@@ -29,8 +28,6 @@ export default function Home() {
     if (savedVizMode) setVizMode(savedVizMode);
     const savedFigures = localStorage.getItem('figures-visible');
     if (savedFigures === 'true') setFiguresVisible(true);
-    const savedClickEffect = localStorage.getItem('click-effect');
-    if (savedClickEffect) setClickEffect(savedClickEffect);
   }, []);
 
   const startResize = useCallback((e: React.MouseEvent) => {
@@ -72,11 +69,6 @@ export default function Home() {
     localStorage.setItem('viz-mode', mode);
   }, []);
 
-  const handleClickEffectChange = useCallback((effect: string) => {
-    setClickEffect(effect);
-    localStorage.setItem('click-effect', effect);
-  }, []);
-
   const handleToggleFigures = useCallback(() => {
     setFiguresVisible(prev => {
       const next = !prev;
@@ -101,7 +93,7 @@ export default function Home() {
     >
       {/* Visualizer spans full viewport behind everything */}
       <div id="visualizer-bg">
-        <Visualizer analyser={player.analyserRef?.current ?? null} isPlaying={player.isPlaying} mode={vizMode} clickEffect={clickEffect} />
+        <Visualizer analyser={player.analyserRef?.current ?? null} isPlaying={player.isPlaying} mode={vizMode} />
       </div>
 
       <FiguresLayer
@@ -113,8 +105,6 @@ export default function Home() {
       <VisualizerPicker
         mode={vizMode}
         onModeChange={handleVizModeChange}
-        clickEffect={clickEffect}
-        onClickEffectChange={handleClickEffectChange}
         figuresVisible={figuresVisible}
         onToggleFigures={handleToggleFigures}
       />

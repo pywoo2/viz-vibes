@@ -1,37 +1,38 @@
 'use client';
 
 import { useRef, useEffect } from 'react';
+import * as THREE from 'three';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 interface VisualizerProps {
   analyser: AnalyserNode | null;
   isPlaying: boolean;
   mode: string;
-  clickEffect: string;
 }
 
-// Vertex shader — full screen quad (shared across all modes)
+// Shared vertex shader for all modes
 const vertexShader = `
-  attribute vec2 position;
+  varying vec2 vUv;
   void main() {
-    gl_Position = vec4(position, 0.0, 1.0);
+    vUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
   }
 `;
 
 // Shared uniform header for all fragment shaders
 const uniformHeader = `
   precision highp float;
-  uniform vec2 resolution;
+  varying vec2 vUv;
   uniform float time;
   uniform float bass;
   uniform float mid;
   uniform float high;
   uniform float energy;
+  uniform vec2 resolution;
   uniform vec2 mouse; // 0-1 normalized, (-1,-1) when inactive
-  uniform vec3 click; // xy = position (0-1), z = time of click
-  uniform int clickType; // 0=none, 1=ripple, 2=burst, 3=shockwave
 `;
 
-// Mode 1: Noise Field (original)
+// Mode 1: Noise Field
 const noiseFieldShader = uniformHeader + `
   vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
   vec2 mod289(vec2 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
@@ -60,7 +61,7 @@ const noiseFieldShader = uniformHeader + `
   }
 
   void main() {
-    vec2 uv = gl_FragCoord.xy / resolution;
+    vec2 uv = vUv;
     vec2 p = uv * 2.0 - 1.0;
     p.x *= resolution.x / resolution.y;
 
@@ -74,7 +75,7 @@ const noiseFieldShader = uniformHeader + `
     float dist = length(p);
     float glow = energy * 0.5 / (dist + 0.5);
 
-    // Mouse — bright attractor that distorts noise
+    // Mouse -- bright attractor that distorts noise
     float mouseGlow = 0.0;
     if (mouse.x >= 0.0) {
       vec2 mp = mouse * 2.0 - 1.0;
@@ -88,47 +89,15 @@ const noiseFieldShader = uniformHeader + `
     brightness += glow * 0.3 + mouseGlow;
     brightness = pow(brightness, 0.8);
 
-    // Click effect
-    if (click.z > 0.0 && clickType > 0) {
-      float clickAge = time - click.z;
-      if (clickAge < 1.5) {
-        vec2 cp = click.xy * 2.0 - 1.0;
-        cp.x *= resolution.x / resolution.y;
-        float cd = length(p - cp);
-        float fade = 1.0 - clickAge / 1.5;
-
-        if (clickType == 1) {
-          // Ripple — expanding thin ring
-          float ring = abs(cd - clickAge * 0.8) - 0.015;
-          brightness += smoothstep(0.025, 0.0, ring) * fade * 0.5;
-        } else if (clickType == 2) {
-          // Burst — rays exploding outward with bright center flash
-          float angle = atan(p.y - cp.y, p.x - cp.x);
-          float rays = pow(abs(sin(angle * 6.0)), 3.0);
-          float radial = smoothstep(clickAge * 1.2, 0.0, cd) * fade;
-          float flash = 0.3 / (cd + 0.05) * max(0.0, 1.0 - clickAge * 3.0);
-          brightness += (rays * radial * 0.6 + flash);
-        } else if (clickType == 3) {
-          // Shockwave — thick bright expanding disc
-          float radius = clickAge * 0.9;
-          float thickness = 0.08 + clickAge * 0.05;
-          float wave = smoothstep(radius + thickness, radius, cd) *
-                       smoothstep(radius - thickness, radius, cd);
-          brightness += wave * fade * 0.8;
-          brightness += 0.1 * fade / (abs(cd - radius) + 0.05);
-        }
-      }
-    }
-
     vec3 color = vec3(brightness);
     gl_FragColor = vec4(color, 1.0);
   }
 `;
 
-// Mode 2: Waveform — mouse bends the wave
+// Mode 2: Waveform
 const waveformShader = uniformHeader + `
   void main() {
-    vec2 uv = gl_FragCoord.xy / resolution;
+    vec2 uv = vUv;
     float wave = 0.0;
     wave += sin(uv.x * 6.28 * 2.0 + time) * bass * 0.3;
     wave += sin(uv.x * 6.28 * 4.0 + time * 1.5) * mid * 0.2;
@@ -137,7 +106,7 @@ const waveformShader = uniformHeader + `
     // Mouse pulls the wave toward cursor
     if (mouse.x >= 0.0) {
       float dx = uv.x - mouse.x;
-      float proximity = exp(-dx * dx * 20.0); // gaussian falloff
+      float proximity = exp(-dx * dx * 20.0);
       wave += (mouse.y - 0.5) * proximity * 0.25;
     }
 
@@ -154,63 +123,25 @@ const waveformShader = uniformHeader + `
 
     float brightness = line + glow + mouseGlow;
 
-    // Click effect
-    if (click.z > 0.0 && clickType > 0) {
-      float clickAge = time - click.z;
-      if (clickAge < 1.5) {
-        vec2 p = uv * 2.0 - 1.0;
-        p.x *= resolution.x / resolution.y;
-        vec2 cp = click.xy * 2.0 - 1.0;
-        cp.x *= resolution.x / resolution.y;
-        float cd = length(p - cp);
-        float fade = 1.0 - clickAge / 1.5;
-
-        if (clickType == 1) {
-          // Ripple — expanding thin ring
-          float ring = abs(cd - clickAge * 0.8) - 0.015;
-          brightness += smoothstep(0.025, 0.0, ring) * fade * 0.5;
-        } else if (clickType == 2) {
-          // Burst — rays exploding outward with bright center flash
-          float angle = atan(p.y - cp.y, p.x - cp.x);
-          float rays = pow(abs(sin(angle * 6.0)), 3.0);
-          float radial = smoothstep(clickAge * 1.2, 0.0, cd) * fade;
-          float flash = 0.3 / (cd + 0.05) * max(0.0, 1.0 - clickAge * 3.0);
-          brightness += (rays * radial * 0.6 + flash);
-        } else if (clickType == 3) {
-          // Shockwave — thick bright expanding disc
-          float radius = clickAge * 0.9;
-          float thickness = 0.08 + clickAge * 0.05;
-          float wave = smoothstep(radius + thickness, radius, cd) *
-                       smoothstep(radius - thickness, radius, cd);
-          brightness += wave * fade * 0.8;
-          brightness += 0.1 * fade / (abs(cd - radius) + 0.05);
-        }
-      }
-    }
-
     gl_FragColor = vec4(vec3(brightness), 1.0);
   }
 `;
 
-// Mode 3: Particles — count and velocity scale with volume
+// Mode 3: Particles
 const particlesShader = uniformHeader + `
   void main() {
-    vec2 uv = gl_FragCoord.xy / resolution;
+    vec2 uv = vUv;
     vec2 p = uv * 2.0 - 1.0;
     p.x *= resolution.x / resolution.y;
 
-    // Energy controls how many particles are visible (up to 25)
     float maxParticles = 8.0 + energy * 17.0;
-    // Energy controls speed
     float speed = 0.12 + energy * 0.12;
 
     float brightness = 0.0;
     for (int i = 0; i < 25; i++) {
       float fi = float(i);
-      // Skip particles beyond the energy-driven count
       if (fi >= maxParticles) break;
 
-      // Each particle has a unique orbit
       float angle1 = fi * 2.399 + time * speed * (0.5 + fract(fi * 0.37) * 0.5);
       float angle2 = fi * 1.673 + time * speed * (0.3 + fract(fi * 0.61) * 0.7);
       float radius = 0.3 + fract(fi * 0.71) * 0.6 + bass * 0.2;
@@ -229,7 +160,6 @@ const particlesShader = uniformHeader + `
         pos += toMouse * 0.1 / (md + 0.8);
       }
 
-      // Size pulses with bass, smaller particles further from center
       float size = (0.006 + bass * 0.015) * (1.0 - fract(fi * 0.71) * 0.5);
       float d = length(p - pos);
       float glow = size / (d * d + 0.001);
@@ -247,53 +177,20 @@ const particlesShader = uniformHeader + `
     brightness = clamp(brightness, 0.0, 1.0);
     brightness = pow(brightness, 0.85);
 
-    // Click effect
-    if (click.z > 0.0 && clickType > 0) {
-      float clickAge = time - click.z;
-      if (clickAge < 1.5) {
-        vec2 cp = click.xy * 2.0 - 1.0;
-        cp.x *= resolution.x / resolution.y;
-        float cd = length(p - cp);
-        float fade = 1.0 - clickAge / 1.5;
-
-        if (clickType == 1) {
-          // Ripple — expanding thin ring
-          float ring = abs(cd - clickAge * 0.8) - 0.015;
-          brightness += smoothstep(0.025, 0.0, ring) * fade * 0.5;
-        } else if (clickType == 2) {
-          // Burst — rays exploding outward with bright center flash
-          float angle = atan(p.y - cp.y, p.x - cp.x);
-          float rays = pow(abs(sin(angle * 6.0)), 3.0);
-          float radial = smoothstep(clickAge * 1.2, 0.0, cd) * fade;
-          float flash = 0.3 / (cd + 0.05) * max(0.0, 1.0 - clickAge * 3.0);
-          brightness += (rays * radial * 0.6 + flash);
-        } else if (clickType == 3) {
-          // Shockwave — thick bright expanding disc
-          float radius = clickAge * 0.9;
-          float thickness = 0.08 + clickAge * 0.05;
-          float wave = smoothstep(radius + thickness, radius, cd) *
-                       smoothstep(radius - thickness, radius, cd);
-          brightness += wave * fade * 0.8;
-          brightness += 0.1 * fade / (abs(cd - radius) + 0.05);
-        }
-      }
-    }
-
     gl_FragColor = vec4(vec3(brightness), 1.0);
   }
 `;
 
-// Mode 4: Rings — concentric rings pulsing outward
+// Mode 4: Rings
 const ringsShader = uniformHeader + `
   void main() {
-    vec2 uv = gl_FragCoord.xy / resolution;
+    vec2 uv = vUv;
     vec2 p = uv * 2.0 - 1.0;
     p.x *= resolution.x / resolution.y;
 
     float dist = length(p);
     float t = time * 0.5;
 
-    // Multiple rings expanding outward
     float rings = 0.0;
     for (int i = 0; i < 5; i++) {
       float fi = float(i);
@@ -303,10 +200,8 @@ const ringsShader = uniformHeader + `
       rings += smoothstep(thickness, 0.0, ring) * (1.0 - radius / 1.5) * (0.3 + energy * 0.7);
     }
 
-    // Center glow
     float glow = (0.02 + bass * 0.04) / (dist + 0.1);
 
-    // Mouse interaction
     float mouseGlow = 0.0;
     if (mouse.x >= 0.0) {
       vec2 mp = mouse * 2.0 - 1.0;
@@ -317,66 +212,31 @@ const ringsShader = uniformHeader + `
 
     float brightness = rings + glow + mouseGlow;
 
-    // Click effect
-    if (click.z > 0.0 && clickType > 0) {
-      float clickAge = time - click.z;
-      if (clickAge < 1.5) {
-        vec2 cp = click.xy * 2.0 - 1.0;
-        cp.x *= resolution.x / resolution.y;
-        float cd = length(p - cp);
-        float fade = 1.0 - clickAge / 1.5;
-
-        if (clickType == 1) {
-          // Ripple — expanding thin ring
-          float ring = abs(cd - clickAge * 0.8) - 0.015;
-          brightness += smoothstep(0.025, 0.0, ring) * fade * 0.5;
-        } else if (clickType == 2) {
-          // Burst — rays exploding outward with bright center flash
-          float angle = atan(p.y - cp.y, p.x - cp.x);
-          float rays = pow(abs(sin(angle * 6.0)), 3.0);
-          float radial = smoothstep(clickAge * 1.2, 0.0, cd) * fade;
-          float flash = 0.3 / (cd + 0.05) * max(0.0, 1.0 - clickAge * 3.0);
-          brightness += (rays * radial * 0.6 + flash);
-        } else if (clickType == 3) {
-          // Shockwave — thick bright expanding disc
-          float radius = clickAge * 0.9;
-          float thickness = 0.08 + clickAge * 0.05;
-          float wave = smoothstep(radius + thickness, radius, cd) *
-                       smoothstep(radius - thickness, radius, cd);
-          brightness += wave * fade * 0.8;
-          brightness += 0.1 * fade / (abs(cd - radius) + 0.05);
-        }
-      }
-    }
-
     brightness = clamp(brightness, 0.0, 1.0);
     gl_FragColor = vec4(vec3(brightness), 1.0);
   }
 `;
 
-// Mode 5: Grid — perspective tunnel grid
+// Mode 5: Grid
 const gridShader = uniformHeader + `
   void main() {
-    vec2 uv = gl_FragCoord.xy / resolution;
+    vec2 uv = vUv;
     vec2 p = uv * 2.0 - 1.0;
     p.x *= resolution.x / resolution.y;
 
     float t = time * 0.2;
 
-    // Polar coordinates for tunnel effect
     float angle = atan(p.y, p.x);
     float dist = length(p);
 
-    // Grid in polar space
     float gridR = fract(1.0 / (dist + 0.01) * 0.3 - t + bass * 0.1);
-    float gridA = fract(angle / 0.3927); // 16 radial segments
+    float gridA = fract(angle / 0.3927);
 
     float lineR = smoothstep(0.05, 0.0, abs(gridR - 0.5) - 0.45);
     float lineA = smoothstep(0.05, 0.0, abs(gridA - 0.5) - 0.45);
 
     float grid = max(lineR, lineA) * (0.1 + energy * 0.4) / (dist + 0.3);
 
-    // Mouse
     float mouseGlow = 0.0;
     if (mouse.x >= 0.0) {
       vec2 mp = mouse * 2.0 - 1.0;
@@ -387,41 +247,15 @@ const gridShader = uniformHeader + `
 
     float brightness = grid + mouseGlow;
 
-    // Click effect
-    if (click.z > 0.0 && clickType > 0) {
-      float clickAge = time - click.z;
-      if (clickAge < 1.5) {
-        vec2 cp = click.xy * 2.0 - 1.0;
-        cp.x *= resolution.x / resolution.y;
-        float cd = length(p - cp);
-        float fade = 1.0 - clickAge / 1.5;
-
-        if (clickType == 1) {
-          float ring = abs(cd - clickAge * 0.8) - 0.02;
-          brightness += smoothstep(0.03, 0.0, ring) * fade * 0.4;
-        } else if (clickType == 2) {
-          float cAngle = atan(p.y - cp.y, p.x - cp.x);
-          float rays = abs(sin(cAngle * 8.0));
-          float expand = smoothstep(clickAge * 0.6, clickAge * 0.6 + 0.1, cd) *
-                         smoothstep(clickAge * 0.8, clickAge * 0.6, cd);
-          brightness += rays * expand * fade * 0.5;
-        } else if (clickType == 3) {
-          float wave = smoothstep(clickAge * 0.7 + 0.05, clickAge * 0.7, cd) *
-                       smoothstep(clickAge * 0.7 - 0.15, clickAge * 0.7, cd);
-          brightness += wave * fade * 0.6;
-        }
-      }
-    }
-
     brightness = clamp(brightness, 0.0, 1.0);
     gl_FragColor = vec4(vec3(brightness), 1.0);
   }
 `;
 
-// Mode 6: Plasma — classic plasma with audio modulation
+// Mode 6: Plasma
 const plasmaShader = uniformHeader + `
   void main() {
-    vec2 uv = gl_FragCoord.xy / resolution;
+    vec2 uv = vUv;
     vec2 p = uv * 2.0 - 1.0;
     p.x *= resolution.x / resolution.y;
 
@@ -432,7 +266,7 @@ const plasmaShader = uniformHeader + `
     v += sin(p.y * 3.0 + t * 0.7 + mid);
     v += sin((p.x + p.y) * 2.0 + t * 0.5);
     v += sin(length(p) * 4.0 - t + high);
-    v = v * 0.25; // normalize to -1..1
+    v = v * 0.25;
 
     float brightness = smoothstep(-0.5, 0.5, v) * (0.1 + energy * 0.5);
 
@@ -443,38 +277,6 @@ const plasmaShader = uniformHeader + `
       float md = length(p - mp);
       brightness += 0.02 / (md * md + 0.03);
       v += sin(md * 8.0 - t * 2.0) * 0.15 / (md + 0.3);
-    }
-
-    // Click effect
-    if (click.z > 0.0 && clickType > 0) {
-      float clickAge = time - click.z;
-      if (clickAge < 1.5) {
-        vec2 cp = click.xy * 2.0 - 1.0;
-        cp.x *= resolution.x / resolution.y;
-        float cd = length(p - cp);
-        float fade = 1.0 - clickAge / 1.5;
-
-        if (clickType == 1) {
-          // Ripple — expanding thin ring
-          float ring = abs(cd - clickAge * 0.8) - 0.015;
-          brightness += smoothstep(0.025, 0.0, ring) * fade * 0.5;
-        } else if (clickType == 2) {
-          // Burst — rays exploding outward with bright center flash
-          float angle = atan(p.y - cp.y, p.x - cp.x);
-          float rays = pow(abs(sin(angle * 6.0)), 3.0);
-          float radial = smoothstep(clickAge * 1.2, 0.0, cd) * fade;
-          float flash = 0.3 / (cd + 0.05) * max(0.0, 1.0 - clickAge * 3.0);
-          brightness += (rays * radial * 0.6 + flash);
-        } else if (clickType == 3) {
-          // Shockwave — thick bright expanding disc
-          float radius = clickAge * 0.9;
-          float thickness = 0.08 + clickAge * 0.05;
-          float wave = smoothstep(radius + thickness, radius, cd) *
-                       smoothstep(radius - thickness, radius, cd);
-          brightness += wave * fade * 0.8;
-          brightness += 0.1 * fade / (abs(cd - radius) + 0.05);
-        }
-      }
     }
 
     brightness = clamp(brightness, 0.0, 1.0);
@@ -496,139 +298,133 @@ function getShaderForMode(mode: string): string {
   return found ? found.shader : noiseFieldShader;
 }
 
-function compileProgram(gl: WebGLRenderingContext, fragSource: string): WebGLProgram | null {
-  const vs = gl.createShader(gl.VERTEX_SHADER)!;
-  gl.shaderSource(vs, vertexShader);
-  gl.compileShader(vs);
-  if (!gl.getShaderParameter(vs, gl.COMPILE_STATUS)) {
-    console.error('Vertex shader error:', gl.getShaderInfoLog(vs));
-    gl.deleteShader(vs);
-    return null;
-  }
-
-  const fs = gl.createShader(gl.FRAGMENT_SHADER)!;
-  gl.shaderSource(fs, fragSource);
-  gl.compileShader(fs);
-  if (!gl.getShaderParameter(fs, gl.COMPILE_STATUS)) {
-    console.error('Fragment shader error:', gl.getShaderInfoLog(fs));
-    gl.deleteShader(vs);
-    gl.deleteShader(fs);
-    return null;
-  }
-
-  const program = gl.createProgram()!;
-  gl.attachShader(program, vs);
-  gl.attachShader(program, fs);
-  gl.linkProgram(program);
-  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-    console.error('Program link error:', gl.getProgramInfoLog(program));
-    gl.deleteProgram(program);
-    gl.deleteShader(vs);
-    gl.deleteShader(fs);
-    return null;
-  }
-
-  // Clean up shaders (they're linked into the program now)
-  gl.deleteShader(vs);
-  gl.deleteShader(fs);
-
-  return program;
-}
-
-const clickTypeMap: Record<string, number> = { none: 0, ripple: 1, burst: 2, shockwave: 3 };
-
-export default function Visualizer({ analyser, isPlaying, mode, clickEffect }: VisualizerProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const glRef = useRef<WebGLRenderingContext | null>(null);
-  const programRef = useRef<WebGLProgram | null>(null);
-  const bufferRef = useRef<WebGLBuffer | null>(null);
+export default function Visualizer({ analyser, isPlaying, mode }: VisualizerProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
+  const sceneRef = useRef<THREE.Scene | null>(null);
+  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
+  const controlsRef = useRef<OrbitControls | null>(null);
+  const meshRef = useRef<THREE.Mesh | null>(null);
   const animRef = useRef<number>(0);
   const startTimeRef = useRef(Date.now());
   const mouseRef = useRef({ x: -1, y: -1 });
-  const clickRef = useRef({ x: -1, y: -1, time: 0 });
-  const clickEffectRef = useRef(clickEffect);
-  clickEffectRef.current = clickEffect;
+  const uniformsRef = useRef<Record<string, THREE.IUniform>>({
+    time: { value: 0 },
+    bass: { value: 0 },
+    mid: { value: 0 },
+    high: { value: 0 },
+    energy: { value: 0 },
+    resolution: { value: new THREE.Vector2(1, 1) },
+    mouse: { value: new THREE.Vector2(-1, -1) },
+  });
 
-  // Initialize WebGL context (once)
+  // Initialize Three.js scene (once)
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    const container = containerRef.current;
+    if (!container) return;
 
-    const gl = canvas.getContext('webgl');
-    if (!gl) return;
-    glRef.current = gl;
+    // Renderer
+    const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setClearColor(0x000000, 1);
+    const canvas = renderer.domElement;
+    canvas.id = 'visualizer-canvas';
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
+    canvas.style.pointerEvents = 'auto';
+    container.appendChild(canvas);
+    rendererRef.current = renderer;
 
-    // Create vertex buffer (shared across all programs)
-    const buffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
-    bufferRef.current = buffer;
+    // Scene
+    const scene = new THREE.Scene();
+    sceneRef.current = scene;
 
-    return () => {
-      cancelAnimationFrame(animRef.current);
-    };
-  }, []);
+    // Camera — inside the sphere looking out
+    const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+    camera.position.set(0, 0, 0.1); // slightly off center so OrbitControls works
+    cameraRef.current = camera;
 
-  // Compile shader program when mode changes
-  useEffect(() => {
-    const gl = glRef.current;
-    if (!gl) return;
+    // OrbitControls
+    const controls = new OrbitControls(camera, canvas);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.enableZoom = false;
+    controls.enablePan = false;
+    controls.rotateSpeed = 0.5;
+    controls.autoRotate = true;
+    controls.autoRotateSpeed = 0.5;
+    controlsRef.current = controls;
 
-    // Delete old program
-    if (programRef.current) {
-      gl.deleteProgram(programRef.current);
-      programRef.current = null;
-    }
+    // Sphere geometry — camera is inside, render BackSide
+    const geometry = new THREE.SphereGeometry(50, 64, 64);
+    const material = new THREE.ShaderMaterial({
+      uniforms: uniformsRef.current,
+      vertexShader,
+      fragmentShader: getShaderForMode('noise'),
+      side: THREE.BackSide,
+    });
+    const mesh = new THREE.Mesh(geometry, material);
+    scene.add(mesh);
+    meshRef.current = mesh;
 
-    const fragSource = getShaderForMode(mode);
-    const program = compileProgram(gl, fragSource);
-    if (!program) return;
-
-    gl.useProgram(program);
-    programRef.current = program;
-
-    // Re-bind vertex buffer attributes
-    if (bufferRef.current) {
-      gl.bindBuffer(gl.ARRAY_BUFFER, bufferRef.current);
-      const pos = gl.getAttribLocation(program, 'position');
-      gl.enableVertexAttribArray(pos);
-      gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, 0, 0);
-    }
-  }, [mode]);
-
-  // Resize handler
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
+    // Resize
     const resize = () => {
-      const rect = canvas.getBoundingClientRect();
-      const dpr = Math.min(window.devicePixelRatio, 2);
-      canvas.width = rect.width * dpr;
-      canvas.height = rect.height * dpr;
-      glRef.current?.viewport(0, 0, canvas.width, canvas.height);
+      const rect = container.getBoundingClientRect();
+      renderer.setSize(rect.width, rect.height);
+      camera.aspect = rect.width / rect.height;
+      camera.updateProjectionMatrix();
+      uniformsRef.current.resolution.value.set(
+        rect.width * renderer.getPixelRatio(),
+        rect.height * renderer.getPixelRatio()
+      );
     };
-
     resize();
     const observer = new ResizeObserver(resize);
-    observer.observe(canvas);
-    return () => observer.disconnect();
+    observer.observe(container);
+
+    return () => {
+      observer.disconnect();
+      cancelAnimationFrame(animRef.current);
+      controls.dispose();
+      renderer.dispose();
+      geometry.dispose();
+      material.dispose();
+      if (container.contains(canvas)) {
+        container.removeChild(canvas);
+      }
+    };
   }, []);
+
+  // Update shader when mode changes
+  useEffect(() => {
+    const mesh = meshRef.current;
+    if (!mesh) return;
+
+    const oldMaterial = mesh.material as THREE.ShaderMaterial;
+    const newMaterial = new THREE.ShaderMaterial({
+      uniforms: uniformsRef.current,
+      vertexShader,
+      fragmentShader: getShaderForMode(mode),
+      side: THREE.BackSide,
+    });
+    mesh.material = newMaterial;
+    oldMaterial.dispose();
+  }, [mode]);
 
   // Render loop
   useEffect(() => {
-    const gl = glRef.current;
-    if (!gl) return;
+    const renderer = rendererRef.current;
+    const scene = sceneRef.current;
+    const camera = cameraRef.current;
+    const controls = controlsRef.current;
+    if (!renderer || !scene || !camera || !controls) return;
 
     const frequencyData = new Uint8Array(analyser?.frequencyBinCount || 128);
 
     const render = () => {
       animRef.current = requestAnimationFrame(render);
 
-      const program = programRef.current;
-      if (!program) return;
-
-      // Get audio data
+      // Audio analysis
       let bass = 0, mid = 0, high = 0, energy = 0;
       if (analyser && isPlaying) {
         analyser.getByteFrequencyData(frequencyData);
@@ -639,24 +435,22 @@ export default function Visualizer({ analyser, isPlaying, mode, clickEffect }: V
         mid = mid / (bins / 3) / 255;
         for (let i = Math.floor(bins / 2); i < bins; i++) high += frequencyData[i];
         high = high / (bins / 2) / 255;
-        energy = (bass * 0.5 + mid * 0.3 + high * 0.2);
+        energy = bass * 0.5 + mid * 0.3 + high * 0.2;
       }
 
       const time = (Date.now() - startTimeRef.current) / 1000;
 
-      gl.uniform2f(gl.getUniformLocation(program, 'resolution'), gl.canvas.width, gl.canvas.height);
-      gl.uniform1f(gl.getUniformLocation(program, 'time'), time);
-      gl.uniform1f(gl.getUniformLocation(program, 'bass'), bass);
-      gl.uniform1f(gl.getUniformLocation(program, 'mid'), mid);
-      gl.uniform1f(gl.getUniformLocation(program, 'high'), high);
-      gl.uniform1f(gl.getUniformLocation(program, 'energy'), energy);
-      gl.uniform2f(gl.getUniformLocation(program, 'mouse'), mouseRef.current.x, mouseRef.current.y);
-      gl.uniform3f(gl.getUniformLocation(program, 'click'),
-        clickRef.current.x, clickRef.current.y, clickRef.current.time);
-      const ct = clickTypeMap[clickEffectRef.current];
-      gl.uniform1i(gl.getUniformLocation(program, 'clickType'), ct ?? 1);
+      // Update uniforms
+      const u = uniformsRef.current;
+      u.time.value = time;
+      u.bass.value = bass;
+      u.mid.value = mid;
+      u.high.value = high;
+      u.energy.value = energy;
+      u.mouse.value.set(mouseRef.current.x, mouseRef.current.y);
 
-      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      controls.update();
+      renderer.render(scene, camera);
     };
 
     render();
@@ -665,37 +459,27 @@ export default function Visualizer({ analyser, isPlaying, mode, clickEffect }: V
 
   // Mouse tracking
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    const container = containerRef.current;
+    if (!container) return;
 
     const onMove = (e: MouseEvent) => {
-      const rect = canvas.getBoundingClientRect();
+      const rect = container.getBoundingClientRect();
       mouseRef.current = {
         x: (e.clientX - rect.left) / rect.width,
-        y: 1.0 - (e.clientY - rect.top) / rect.height, // flip Y for GL
+        y: 1.0 - (e.clientY - rect.top) / rect.height,
       };
     };
     const onLeave = () => {
       mouseRef.current = { x: -1, y: -1 };
     };
-    const onClick = (e: MouseEvent) => {
-      const rect = canvas.getBoundingClientRect();
-      clickRef.current = {
-        x: (e.clientX - rect.left) / rect.width,
-        y: 1.0 - (e.clientY - rect.top) / rect.height,
-        time: (Date.now() - startTimeRef.current) / 1000,
-      };
-    };
 
     window.addEventListener('mousemove', onMove);
-    canvas.addEventListener('mouseleave', onLeave);
-    canvas.addEventListener('click', onClick);
+    container.addEventListener('mouseleave', onLeave);
     return () => {
       window.removeEventListener('mousemove', onMove);
-      canvas.removeEventListener('mouseleave', onLeave);
-      canvas.removeEventListener('click', onClick);
+      container.removeEventListener('mouseleave', onLeave);
     };
   }, []);
 
-  return <canvas ref={canvasRef} id="visualizer-canvas" style={{ width: '100%', height: '100%' }} />;
+  return <div ref={containerRef} style={{ width: '100%', height: '100%' }} />;
 }
