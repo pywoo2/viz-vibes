@@ -124,7 +124,7 @@ export default function Sidebar({
         style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 1, willChange: 'background' }}
       />
       <div id="sidebar-header">
-        <h2>Songs</h2>
+        <h2>{tracks.length > 0 ? `${tracks.length} songs` : 'songs'}</h2>
       </div>
       <div id="track-list-wrapper">
         {!loading && tracks.length > 0 && (
@@ -147,7 +147,12 @@ export default function Sidebar({
                     <div className="bar" />
                   </div>
                 ) : (
-                  <span className="track-num">{i + 1}</span>
+                  <div className="track-num-wrap">
+                    <span className="track-num">{i + 1}</span>
+                    <span className="play-hover-icon">
+                      <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                    </span>
+                  </div>
                 )}
                 <div className="track-info">
                   <div className="name">{track.title}</div>
@@ -176,7 +181,11 @@ export default function Sidebar({
           </div>
         )}
         {loading && !error && (
-          <div id="empty-state">Loading tracks...</div>
+          <div>
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="skeleton-row" style={{ animationDelay: `${i * 0.1}s` }} />
+            ))}
+          </div>
         )}
         {error && (
           <div id="empty-state">

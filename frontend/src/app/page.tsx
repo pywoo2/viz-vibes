@@ -88,7 +88,7 @@ export default function Home() {
       />
 
       <div id="main-area">
-        <Visualizer />
+        <Visualizer analyser={player.analyserRef?.current ?? null} isPlaying={player.isPlaying} />
       </div>
 
       <PlayerBar

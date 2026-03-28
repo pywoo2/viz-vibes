@@ -36,8 +36,11 @@ export interface AudioPlayerActions {
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
-export function useAudioPlayer(): AudioPlayerState & AudioPlayerActions {
+export function useAudioPlayer(): AudioPlayerState & AudioPlayerActions & { analyserRef: React.RefObject<AnalyserNode | null> } {
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
   const [tracks, setTracks] = useState<Track[]>([]);
   const [currentIndex, setCurrentIndex] = useState(-1);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -117,9 +120,25 @@ export function useAudioPlayer(): AudioPlayerState & AudioPlayerActions {
     shufflePosRef.current = 0;
   }, []);
 
+  const initAudioContext = useCallback(() => {
+    const audio = audioRef.current;
+    if (!audio || audioContextRef.current) return;
+    const ctx = new AudioContext();
+    const analyser = ctx.createAnalyser();
+    analyser.fftSize = 256;
+    analyser.smoothingTimeConstant = 0.8;
+    const source = ctx.createMediaElementSource(audio);
+    source.connect(analyser);
+    analyser.connect(ctx.destination);
+    audioContextRef.current = ctx;
+    analyserRef.current = analyser;
+    sourceRef.current = source;
+  }, []);
+
   const playTrack = useCallback((index: number) => {
     const audio = audioRef.current;
     if (!audio || !tracksRef.current[index]) return;
+    initAudioContext();
     setCurrentIndex(index);
     currentIndexRef.current = index;
     const track = tracksRef.current[index];
@@ -127,7 +146,7 @@ export function useAudioPlayer(): AudioPlayerState & AudioPlayerActions {
     audio.play().catch(() => {});
     setIsPlaying(true);
     isPlayingRef.current = true;
-  }, []);
+  }, [initAudioContext]);
 
   const playNextInternal = useCallback(() => {
     const t = tracksRef.current;
@@ -180,11 +199,12 @@ export function useAudioPlayer(): AudioPlayerState & AudioPlayerActions {
       setIsPlaying(false);
       isPlayingRef.current = false;
     } else {
+      initAudioContext();
       audio.play().catch(() => {});
       setIsPlaying(true);
       isPlayingRef.current = true;
     }
-  }, [playTrack]);
+  }, [playTrack, initAudioContext]);
 
   const nextTrack = useCallback(() => {
     playNextInternal();
@@ -279,5 +299,6 @@ export function useAudioPlayer(): AudioPlayerState & AudioPlayerActions {
     seek,
     setVolume,
     updateTrackLikes,
+    analyserRef,
   };
 }
