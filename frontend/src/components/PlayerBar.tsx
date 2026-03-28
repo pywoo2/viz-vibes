@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useCallback, useEffect } from 'react';
+import Link from 'next/link';
 import { Track } from '../hooks/useAudioPlayer';
 
 interface PlayerBarProps {
@@ -247,6 +248,36 @@ export default function PlayerBar({
           value={volume}
           onChange={(e) => onSetVolume(parseFloat(e.target.value))}
         />
+        <Link
+          href="/about"
+          title="About"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 24,
+            height: 24,
+            borderRadius: '50%',
+            border: '1px solid var(--glass-border)',
+            color: 'var(--fg-subtle)',
+            fontSize: '0.7rem',
+            fontWeight: 500,
+            textDecoration: 'none',
+            marginLeft: 4,
+            transition: 'color 0.15s, border-color 0.15s',
+            flexShrink: 0,
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = 'var(--fg-bright)';
+            e.currentTarget.style.borderColor = 'var(--fg-muted)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = 'var(--fg-subtle)';
+            e.currentTarget.style.borderColor = 'var(--glass-border)';
+          }}
+        >
+          i
+        </Link>
       </div>
     </div>
   );

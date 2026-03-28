@@ -416,20 +416,26 @@ body {
   font-size: 0.75rem;
 }
 
+/* ========== VISUALIZER BACKGROUND (full viewport) ========== */
+#visualizer-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  pointer-events: none;
+}
+
+#visualizer-bg #visualizer-canvas {
+  width: 100%;
+  height: 100%;
+}
+
 /* ========== MAIN AREA ========== */
 #main-area {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  justify-content: stretch;
-  padding: 0;
   position: relative;
-  overflow: hidden;
-  background:
-    radial-gradient(ellipse 120% 80% at 10% 80%, rgba(var(--accent-rgb), 0.12) 0%, transparent 50%),
-    radial-gradient(ellipse 100% 60% at 90% 20%, rgba(var(--accent2-rgb), 0.08) 0%, transparent 50%),
-    radial-gradient(ellipse 80% 80% at 50% 50%, rgba(var(--accent-rgb), 0.04) 0%, transparent 60%),
-    var(--bg);
+  z-index: 1;
 }
 
 #main-header {

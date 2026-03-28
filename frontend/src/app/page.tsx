@@ -69,6 +69,11 @@ export default function Home() {
         position: 'relative',
       }}
     >
+      {/* Visualizer spans full viewport behind everything */}
+      <div id="visualizer-bg">
+        <Visualizer analyser={player.analyserRef?.current ?? null} isPlaying={player.isPlaying} />
+      </div>
+
       <Sidebar
         tracks={player.tracks}
         currentIndex={player.currentIndex}
@@ -87,9 +92,7 @@ export default function Home() {
         style={{ left: isCollapsed ? 0 : sidebarWidth }}
       />
 
-      <div id="main-area">
-        <Visualizer analyser={player.analyserRef?.current ?? null} isPlaying={player.isPlaying} />
-      </div>
+      <div id="main-area"></div>
 
       <PlayerBar
         currentTrack={currentTrack}
