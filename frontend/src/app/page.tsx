@@ -15,7 +15,7 @@ export default function Home() {
   const [sidebarWidth, setSidebarWidth] = useState(280);
   const [isResizing, setIsResizing] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [vizMode, setVizMode] = useState('noise');
+  const [vizMode, setVizMode] = useState('waveform');
   const [figuresVisible, setFiguresVisible] = useState(true);
   const [colorMode, setColorMode] = useState('mono');
   const [clickEffect, setClickEffect] = useState('ripple');
@@ -102,6 +102,7 @@ export default function Home() {
       <p>viz-vibes</p>
       <p className="mobile-sub">best experienced on desktop</p>
     </div>
+    <div className="ai-disclaimer">all music was created using ai</div>
     <div
       className="desktop-only"
       style={{
