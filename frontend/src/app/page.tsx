@@ -29,6 +29,16 @@ export default function Home() {
   const [notesRefreshKey, setNotesRefreshKey] = useState(0);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
+  // Prevent body scroll when mobile drawer is open
+  useEffect(() => {
+    if (mobileDrawerOpen) {
+      document.body.classList.add('drawer-open');
+    } else {
+      document.body.classList.remove('drawer-open');
+    }
+    return () => document.body.classList.remove('drawer-open');
+  }, [mobileDrawerOpen]);
+
   const submitNote = useCallback(() => {
     const text = noteText.trim();
     if (!text) return;

@@ -160,6 +160,11 @@ export default function Sidebar({
       onMouseMove={isCollapsed ? undefined : handleSidebarMouseMove}
       onMouseLeave={isCollapsed ? undefined : handleSidebarMouseLeave}
     >
+      {/* Mobile drawer handle — visible only on small screens via CSS */}
+      <div className="mobile-drawer-handle">
+        <div className="handle-pill" />
+        <span className="mobile-drawer-label">{tracks.length > 0 ? `${tracks.length} songs` : 'Songs'}</span>
+      </div>
       {isCollapsed ? (
         <div id="sidebar-header" style={{ justifyContent: 'center' }}>
           <button className="collapse-sidebar-btn" onClick={onCollapse} title="Expand sidebar">{'\u25B6'}</button>

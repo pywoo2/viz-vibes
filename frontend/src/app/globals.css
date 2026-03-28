@@ -1015,6 +1015,11 @@ body {
   display: none;
 }
 
+/* ========== MOBILE DRAWER HANDLE (hidden on desktop) ========== */
+.mobile-drawer-handle {
+  display: none;
+}
+
 /* ========== MOBILE OVERLAY (hidden on desktop) ========== */
 .mobile-overlay {
   display: none;
@@ -1043,12 +1048,51 @@ body {
     height: calc(100vh - 56px);
     z-index: 30;
     transform: translateX(-100%);
-    transition: transform 0.3s ease;
+    transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1);
     border-right: 1px solid var(--glass-border);
   }
 
   #sidebar.mobile-open {
     transform: translateX(0);
+  }
+
+  /* Show drag handle on mobile */
+  .mobile-drawer-handle {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 0 4px;
+    flex-shrink: 0;
+  }
+  .mobile-drawer-handle .handle-pill {
+    width: 36px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.25);
+    border-radius: 2px;
+  }
+  .mobile-drawer-label {
+    font-size: 0.65rem;
+    color: rgba(255, 255, 255, 0.35);
+    letter-spacing: 0.04em;
+    text-transform: lowercase;
+    margin-top: 8px;
+  }
+
+  /* Mobile track items: taller for easier tapping */
+  #track-list li {
+    min-height: 52px !important;
+    padding: 14px 12px !important;
+  }
+
+  /* Bigger heart button on mobile */
+  .like-btn {
+    padding: 8px !important;
+    min-width: 36px;
+    min-height: 36px;
+  }
+  .like-btn svg {
+    width: 18px !important;
+    height: 18px !important;
   }
 
   /* Overlay when drawer is open */
@@ -1058,10 +1102,18 @@ body {
     background: rgba(0, 0, 0, 0.5);
     z-index: 25;
     display: none;
+    opacity: 0;
+    transition: opacity 0.4s cubic-bezier(0.32, 0.72, 0, 1);
   }
 
   .mobile-overlay.visible {
     display: block;
+    opacity: 1;
+  }
+
+  /* Prevent body scroll when drawer is open */
+  body.drawer-open {
+    overflow: hidden !important;
   }
 
   /* Hide resize handle on mobile */
@@ -1074,11 +1126,32 @@ body {
     display: none !important;
   }
 
-  /* Compact player bar */
+  /* Compact player bar — 2 rows: now-playing title on top, controls below */
   #player-bar {
-    height: 56px;
-    padding: 0 10px;
-    padding-bottom: env(safe-area-inset-bottom, 0px);
+    height: auto;
+    padding: 6px 10px;
+    padding-bottom: max(6px, env(safe-area-inset-bottom, 0px));
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto;
+    gap: 2px;
+  }
+
+  /* Now-playing info visible on mobile, centered above controls */
+  #np-info {
+    grid-column: 1;
+    grid-row: 1;
+    justify-content: center;
+    text-align: center;
+  }
+  #np-info .np-title {
+    font-size: 0.7rem;
+    text-align: center;
+  }
+
+  /* Player center as second row */
+  #player-center {
+    grid-column: 1;
+    grid-row: 2;
   }
 
   /* Smaller controls */
@@ -1090,8 +1163,17 @@ body {
   /* Hide volume on mobile */
   #player-right { display: none; }
 
-  /* Now playing text smaller */
-  #np-info .np-title { font-size: 0.72rem; }
+  /* Mobile progress bar: taller for easier tap */
+  #progress-container {
+    height: 6px !important;
+  }
+  /* Always show seek thumb on mobile */
+  #progress-bar::after {
+    transform: translateY(-50%) scale(1) !important;
+    width: 14px !important;
+    height: 14px !important;
+    right: -7px !important;
+  }
 
   /* Show hamburger/menu button on mobile */
   .mobile-menu-btn {
@@ -1523,6 +1605,66 @@ body {
   .resize-handle:hover,
   .resize-handle:active {
     background: none;
+  }
+}
+
+/* ========== ABOUT MODAL — MOBILE ========== */
+@media (max-width: 768px) {
+  .about-card {
+    max-width: 90vw;
+    padding: 24px 20px;
+    max-height: 80vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .about-title {
+    font-size: 1.1rem;
+    margin-bottom: 16px;
+  }
+
+  .about-section p {
+    font-size: 0.8rem;
+  }
+
+  .about-close {
+    top: 12px;
+    right: 12px;
+  }
+}
+
+/* ========== LANDSCAPE PHONE ========== */
+@media (max-height: 500px) and (max-width: 768px) {
+  #player-bar {
+    padding: 2px 10px;
+    padding-bottom: max(2px, env(safe-area-inset-bottom, 0px));
+    gap: 0;
+    min-height: 48px;
+  }
+
+  /* Hide now-playing title in landscape to save space */
+  #np-info {
+    display: none;
+  }
+
+  #controls { gap: 8px; }
+  #play-btn { width: 32px !important; height: 32px !important; }
+  #play-btn svg { width: 16px !important; height: 16px !important; }
+  #controls button svg { width: 16px !important; height: 16px !important; }
+
+  #progress-row .time { font-size: 8px; }
+
+  /* Sidebar shorter in landscape */
+  #sidebar {
+    height: 100vh !important;
+  }
+
+  .mobile-menu-btn {
+    top: 6px !important;
+    left: 6px !important;
+    width: 30px !important;
+    height: 30px !important;
+    font-size: 1rem !important;
   }
 }
 
