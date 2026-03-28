@@ -369,7 +369,7 @@ body {
   transition: transform 0.15s ease;
 }
 .like-btn svg {
-  fill: var(--fg-muted);
+  fill: rgba(255, 255, 255, 0.5);
   transition: fill 0.15s ease, transform 0.2s ease;
 }
 .like-btn:hover svg {
@@ -498,7 +498,7 @@ body {
 #player-bar {
   grid-column: 1 / -1;
   grid-row: 2 / 3;
-  background: var(--glass-bg);
+  background: rgba(10, 10, 10, 0.88);
   -webkit-backdrop-filter: blur(40px) saturate(180%);
   backdrop-filter: blur(40px) saturate(180%);
   border-top: 1px solid var(--glass-border);

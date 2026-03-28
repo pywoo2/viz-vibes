@@ -4,40 +4,27 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 
 const R2_BASE = 'https://pub-7f15cc5f085b475bbeca640a22ea6d7f.r2.dev/art';
 
+// Your personal photos (skipping HEIC — browsers can't display them)
 const ART_IMAGES = [
-  { src: `${R2_BASE}/vitruvian-man.jpg`, alt: 'Vitruvian Man — Da Vinci' },
-  { src: `${R2_BASE}/fibonacci-spiral.svg`, alt: 'Fibonacci Spiral' },
-  { src: `${R2_BASE}/classical-orders.png`, alt: 'Classical Architectural Orders' },
-  { src: `${R2_BASE}/paradiso-canto31.jpg`, alt: 'Paradiso — Gustave Doré' },
-  { src: `${R2_BASE}/euler-identity.svg`, alt: "Euler's Identity" },
-  { src: `${R2_BASE}/circuit-schematic.svg`, alt: 'Circuit Schematic' },
-  { src: `${R2_BASE}/cyclopaedia-architecture.jpg`, alt: 'Cyclopædia Table of Architecture (1728)' },
-  { src: `${R2_BASE}/binary-search-tree.svg`, alt: 'Binary Search Tree' },
-  { src: `${R2_BASE}/merge-sort.svg`, alt: 'Merge Sort Algorithm' },
-  { src: `${R2_BASE}/quicksort-diagram.svg`, alt: 'Quicksort Diagram' },
-  { src: `${R2_BASE}/turing-machine.svg`, alt: 'Turing Machine' },
-  { src: `${R2_BASE}/dfa-example.svg`, alt: 'Deterministic Finite Automaton' },
-  { src: `${R2_BASE}/konigsberg-graph.svg`, alt: 'Königsberg Bridges Graph' },
-  { src: `${R2_BASE}/big-o-complexity.svg`, alt: 'Big O Complexity Comparison' },
-  { src: `${R2_BASE}/logic-gates.svg`, alt: 'Logic Gates' },
-  { src: `${R2_BASE}/hash-table.svg`, alt: 'Hash Table with Chaining' },
-  { src: `${R2_BASE}/neural-network.svg`, alt: 'Artificial Neural Network' },
-  { src: `${R2_BASE}/stack-lifo.svg`, alt: 'Stack (LIFO) Data Structure' },
-  { src: `${R2_BASE}/von-neumann-architecture.svg`, alt: 'Von Neumann Architecture' },
-  { src: `${R2_BASE}/osi-model.svg`, alt: 'OSI Model Layers' },
-  { src: `${R2_BASE}/tcp-state-diagram.svg`, alt: 'TCP State Diagram' },
-  { src: `${R2_BASE}/mandelbrot-components.svg`, alt: 'Mandelbrot Set Components' },
-  { src: `${R2_BASE}/penrose-tiling.svg`, alt: 'Penrose Tiling' },
-  { src: `${R2_BASE}/voronoi-diagram.svg`, alt: 'Voronoi Diagram' },
-  { src: `${R2_BASE}/game-of-life-glider-gun.svg`, alt: "Conway's Game of Life — Gosper Glider Gun" },
-  { src: `${R2_BASE}/lambda-calculus.svg`, alt: 'Lambda Calculus Symbol' },
-  { src: `${R2_BASE}/ada-lovelace-note-g.jpg`, alt: "Ada Lovelace's Note G — First Algorithm" },
-  { src: `${R2_BASE}/babbage-difference-engine.gif`, alt: 'Babbage Difference Engine' },
-  { src: `${R2_BASE}/eniac-programming.jpg`, alt: 'ENIAC Programming (c. 1947)' },
-  { src: `${R2_BASE}/jacquard-loom-cards.jpg`, alt: 'Jacquard Loom Punch Cards' },
-  { src: `${R2_BASE}/tesla-coil-patent.png`, alt: 'Tesla Coil Patent Drawing' },
-  { src: `${R2_BASE}/triode-schematic.svg`, alt: 'Vacuum Tube Triode Schematic' },
-  { src: `${R2_BASE}/automata-theory.png`, alt: 'Automata Theory Overview' },
+  { src: `${R2_BASE}/325C5B5B-51A5-45B4-B0C6-F4B22C64A812.jpg`, alt: 'Photo' },
+  { src: `${R2_BASE}/52D65897-3742-4A5A-AA57-DD809D372053.jpg`, alt: 'Photo' },
+  { src: `${R2_BASE}/IMG_0076.JPG`, alt: 'Photo' },
+  { src: `${R2_BASE}/IMG_0107.JPG`, alt: 'Photo' },
+  { src: `${R2_BASE}/IMG_0181.jpg`, alt: 'Photo' },
+  { src: `${R2_BASE}/IMG_0244.jpg`, alt: 'Photo' },
+  { src: `${R2_BASE}/IMG_0338.PNG`, alt: 'Photo' },
+  { src: `${R2_BASE}/IMG_0381.jpg`, alt: 'Photo' },
+  { src: `${R2_BASE}/IMG_0384.JPG`, alt: 'Photo' },
+  { src: `${R2_BASE}/IMG_0409.JPG`, alt: 'Photo' },
+  { src: `${R2_BASE}/IMG_0878.JPG`, alt: 'Photo' },
+  { src: `${R2_BASE}/IMG_0933.jpg`, alt: 'Photo' },
+  { src: `${R2_BASE}/IMG_1111.PNG`, alt: 'Photo' },
+  { src: `${R2_BASE}/IMG_1114.jpg`, alt: 'Photo' },
+  { src: `${R2_BASE}/IMG_1129.PNG`, alt: 'Photo' },
+  { src: `${R2_BASE}/IMG_1358.PNG`, alt: 'Photo' },
+  { src: `${R2_BASE}/IMG_1700.jpg`, alt: 'Photo' },
+  { src: `${R2_BASE}/IMG_1897.JPG`, alt: 'Photo' },
+  { src: `${R2_BASE}/IMG_1966.jpg`, alt: 'Photo' },
 ];
 
 interface FiguresLayerProps {
@@ -111,7 +98,6 @@ export default function FiguresLayer({ visible }: FiguresLayerProps) {
     return () => timers.forEach(clearTimeout);
   }, [visible]);
 
-  // Cycle images
   useEffect(() => {
     if (!visible) return;
     const interval = setInterval(() => {
@@ -145,7 +131,6 @@ export default function FiguresLayer({ visible }: FiguresLayerProps) {
     return () => clearInterval(interval);
   }, [visible]);
 
-  // Drag to rotate
   const handleMouseDown = useCallback(
     (e: React.MouseEvent, index: number) => {
       e.preventDefault();
@@ -161,7 +146,6 @@ export default function FiguresLayer({ visible }: FiguresLayerProps) {
     [images]
   );
 
-  // Scroll to zoom
   const handleWheel = useCallback(
     (e: React.WheelEvent, index: number) => {
       e.stopPropagation();

@@ -118,7 +118,7 @@ export default function Sidebar({
   return (
     <div
       id="sidebar"
-      style={isCollapsed ? { overflow: 'hidden', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', paddingTop: '20px' } : undefined}
+      style={isCollapsed ? { overflow: 'hidden', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', paddingTop: '24px' } : undefined}
       ref={sidebarRef}
       onMouseMove={isCollapsed ? undefined : handleSidebarMouseMove}
       onMouseLeave={isCollapsed ? undefined : handleSidebarMouseLeave}

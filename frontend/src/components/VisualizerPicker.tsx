@@ -163,6 +163,25 @@ export default function VisualizerPicker({ mode, onModeChange, figuresVisible, o
           <circle cx="10" cy="10" r="7" fill="url(#rainbow-grad)" stroke="none" />
         </svg>
       </button>
+      <button
+        className={`viz-mode-btn${colorMode === 'inverted' ? ' active' : ''}`}
+        onClick={() => onColorModeChange('inverted')}
+        title="Inverted"
+      >
+        <svg viewBox="0 0 20 20">
+          <circle cx="10" cy="10" r="7" fill="white" stroke="none" />
+          <circle cx="10" cy="10" r="4" fill="black" stroke="none" />
+        </svg>
+      </button>
+      <button
+        className={`viz-mode-btn${colorMode === 'red' ? ' active' : ''}`}
+        onClick={() => onColorModeChange('red')}
+        title="Deep Red"
+      >
+        <svg viewBox="0 0 20 20">
+          <circle cx="10" cy="10" r="7" fill="#8b0000" stroke="none" />
+        </svg>
+      </button>
       <div className="viz-picker-separator" />
       {clickEffects.map((effect) => (
         <button

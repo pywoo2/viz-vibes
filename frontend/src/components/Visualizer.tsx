@@ -125,6 +125,10 @@ const noiseFieldShader = uniformHeader + `
 
     if (colorMode == 0) {
       gl_FragColor = vec4(vec3(brightness), 1.0);
+    } else if (colorMode == 2) {
+      gl_FragColor = vec4(vec3(1.0 - brightness), 1.0);
+    } else if (colorMode == 3) {
+      gl_FragColor = vec4(brightness * 0.7, brightness * 0.05, brightness * 0.05, 1.0);
     } else {
       float hue = n * 0.3 + time * 0.05;
       gl_FragColor = vec4(rainbow(hue) * brightness, 1.0);
@@ -192,6 +196,10 @@ const waveformShader = uniformHeader + `
 
     if (colorMode == 0) {
       gl_FragColor = vec4(vec3(brightness), 1.0);
+    } else if (colorMode == 2) {
+      gl_FragColor = vec4(vec3(1.0 - brightness), 1.0);
+    } else if (colorMode == 3) {
+      gl_FragColor = vec4(brightness * 0.7, brightness * 0.05, brightness * 0.05, 1.0);
     } else {
       float hue = uv.x + time * 0.02;
       gl_FragColor = vec4(rainbow(hue) * brightness, 1.0);
@@ -288,6 +296,10 @@ const particlesShader = uniformHeader + `
 
     if (colorMode == 0) {
       gl_FragColor = vec4(vec3(brightness), 1.0);
+    } else if (colorMode == 2) {
+      gl_FragColor = vec4(vec3(1.0 - brightness), 1.0);
+    } else if (colorMode == 3) {
+      gl_FragColor = vec4(brightness * 0.7, brightness * 0.05, brightness * 0.05, 1.0);
     } else {
       colorAccum = clamp(colorAccum, 0.0, 1.0);
       colorAccum = pow(colorAccum, vec3(0.85));
@@ -363,6 +375,10 @@ const ringsShader = uniformHeader + `
 
     if (colorMode == 0) {
       gl_FragColor = vec4(vec3(brightness), 1.0);
+    } else if (colorMode == 2) {
+      gl_FragColor = vec4(vec3(1.0 - brightness), 1.0);
+    } else if (colorMode == 3) {
+      gl_FragColor = vec4(brightness * 0.7, brightness * 0.05, brightness * 0.05, 1.0);
     } else {
       colorAccum += rainbow(0.6) * glow;
       colorAccum += vec3(mouseGlow);
@@ -449,6 +465,10 @@ const gridShader = uniformHeader + `
 
     if (colorMode == 0) {
       gl_FragColor = vec4(vec3(brightness), 1.0);
+    } else if (colorMode == 2) {
+      gl_FragColor = vec4(vec3(1.0 - brightness), 1.0);
+    } else if (colorMode == 3) {
+      gl_FragColor = vec4(brightness * 0.7, brightness * 0.05, brightness * 0.05, 1.0);
     } else {
       float hue = angle / 6.28318 + dist * 0.3 + time * 0.05;
       gl_FragColor = vec4(rainbow(hue) * brightness, 1.0);
@@ -526,6 +546,10 @@ const plasmaShader = uniformHeader + `
 
     if (colorMode == 0) {
       gl_FragColor = vec4(vec3(brightness), 1.0);
+    } else if (colorMode == 2) {
+      gl_FragColor = vec4(vec3(1.0 - brightness), 1.0);
+    } else if (colorMode == 3) {
+      gl_FragColor = vec4(brightness * 0.7, brightness * 0.05, brightness * 0.05, 1.0);
     } else {
       float hue = v * 0.5 + 0.5 + time * 0.03;
       gl_FragColor = vec4(rainbow(hue) * brightness, 1.0);
@@ -581,7 +605,7 @@ function createProgram(gl: WebGLRenderingContext, fragSource: string): WebGLProg
   return program;
 }
 
-const colorModeMap: Record<string, number> = { mono: 0, rainbow: 1 };
+const colorModeMap: Record<string, number> = { mono: 0, rainbow: 1, inverted: 2, red: 3 };
 const clickEffectMap: Record<string, number> = { none: 0, ripple: 1, burst: 2, shockwave: 3 };
 
 export default function Visualizer({ analyser, isPlaying, mode, colorMode, clickEffect }: VisualizerProps) {
