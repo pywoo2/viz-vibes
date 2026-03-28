@@ -2215,3 +2215,62 @@ body {
     font-size: 0.55rem !important;
   }
 }
+
+/* ===== Round 10: Final Mobile Polish ===== */
+@media (max-width: 767px) {
+  /* R10-1: Drawer shadow for depth when open */
+  #sidebar.mobile-open {
+    box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.5) !important;
+  }
+
+  /* R10-2: Track separator lines in drawer */
+  #track-list li {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04) !important;
+  }
+  #track-list li:last-child {
+    border-bottom: none !important;
+  }
+
+  /* R10-3: Equalizer bars — slightly bigger for mobile */
+  .now-playing-indicator {
+    width: 20px !important;
+    height: 16px !important;
+  }
+  .now-playing-indicator .bar {
+    width: 3.5px !important;
+  }
+
+  /* R10-4: Note input — subtle glass border when not focused */
+  .note-input-container input {
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    background: rgba(0, 0, 0, 0.4) !important;
+  }
+
+  /* R10-5: Player bar — vertically center controls */
+  #player-center #controls {
+    justify-content: center !important;
+  }
+
+  /* R10-6: Prevent scroll bounce in drawer track list */
+  #track-list-wrapper {
+    overscroll-behavior: contain !important;
+  }
+
+  /* R10-7: Subtle separator between viz picker and track list */
+  .mobile-viz-row {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+    margin-bottom: 4px;
+  }
+
+  /* R10-8: Fade bottom of track list in drawer */
+  #track-list-wrapper::after {
+    content: '';
+    position: sticky;
+    bottom: 0;
+    display: block;
+    height: 30px;
+    background: linear-gradient(to bottom, transparent, rgba(10, 10, 10, 0.95));
+    pointer-events: none;
+    margin-top: -30px;
+  }
+}
