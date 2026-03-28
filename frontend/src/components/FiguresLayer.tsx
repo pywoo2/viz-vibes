@@ -5,7 +5,6 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 const R2_BASE = 'https://pub-7f15cc5f085b475bbeca640a22ea6d7f.r2.dev/art';
 
 const ART_IMAGES = [
-  // Original collection
   { src: `${R2_BASE}/vitruvian-man.jpg`, alt: 'Vitruvian Man — Da Vinci' },
   { src: `${R2_BASE}/fibonacci-spiral.svg`, alt: 'Fibonacci Spiral' },
   { src: `${R2_BASE}/classical-orders.png`, alt: 'Classical Architectural Orders' },
@@ -13,7 +12,6 @@ const ART_IMAGES = [
   { src: `${R2_BASE}/euler-identity.svg`, alt: "Euler's Identity" },
   { src: `${R2_BASE}/circuit-schematic.svg`, alt: 'Circuit Schematic' },
   { src: `${R2_BASE}/cyclopaedia-architecture.jpg`, alt: 'Cyclopædia Table of Architecture (1728)' },
-  // Computer Science collection
   { src: `${R2_BASE}/binary-search-tree.svg`, alt: 'Binary Search Tree' },
   { src: `${R2_BASE}/merge-sort.svg`, alt: 'Merge Sort Algorithm' },
   { src: `${R2_BASE}/quicksort-diagram.svg`, alt: 'Quicksort Diagram' },
@@ -51,6 +49,9 @@ interface FiguresLayerProps {
 interface ImageState {
   x: number;
   y: number;
+  rotateX: number;
+  rotateY: number;
+  scale: number;
   opacity: number;
   src: string;
   alt: string;
@@ -72,12 +73,11 @@ export default function FiguresLayer({ visible }: FiguresLayerProps) {
     index: number;
     startX: number;
     startY: number;
-    startPosX: number;
-    startPosY: number;
+    startRotX: number;
+    startRotY: number;
   } | null>(null);
   const initializedRef = useRef(false);
 
-  // Initialize images when becoming visible
   useEffect(() => {
     if (!visible) {
       setImages([]);
@@ -93,11 +93,10 @@ export default function FiguresLayer({ visible }: FiguresLayerProps) {
       const img = pickRandomImage(usedSrcs);
       usedSrcs.push(img.src);
       const pos = randomPosition();
-      initial.push({ x: pos.x, y: pos.y, opacity: 0, src: img.src, alt: img.alt });
+      initial.push({ x: pos.x, y: pos.y, rotateX: 0, rotateY: 0, scale: 1, opacity: 0, src: img.src, alt: img.alt });
     }
     setImages(initial);
 
-    // Staggered fade-in
     const timers: ReturnType<typeof setTimeout>[] = [];
     initial.forEach((_, i) => {
       timers.push(
@@ -112,36 +111,30 @@ export default function FiguresLayer({ visible }: FiguresLayerProps) {
     return () => timers.forEach(clearTimeout);
   }, [visible]);
 
-  // Staggered cycling: every ~15 seconds, replace one image
+  // Cycle images
   useEffect(() => {
     if (!visible) return;
-
     const interval = setInterval(() => {
       setImages((prev) => {
         if (prev.length === 0) return prev;
-        // Pick a random image to fade out
         const fadeIndex = Math.floor(Math.random() * prev.length);
         return prev.map((img, i) => (i === fadeIndex ? { ...img, opacity: 0 } : img));
       });
 
-      // After fade-out transition (2s), replace with new image
       setTimeout(() => {
         setImages((prev) => {
           if (prev.length === 0) return prev;
           const fadedIndex = prev.findIndex((img) => img.opacity === 0);
           if (fadedIndex === -1) return prev;
-
           const usedSrcs = prev.map((img) => img.src);
           const newImg = pickRandomImage(usedSrcs);
           const pos = randomPosition();
           return prev.map((img, i) =>
             i === fadedIndex
-              ? { x: pos.x, y: pos.y, opacity: 0, src: newImg.src, alt: newImg.alt }
+              ? { x: pos.x, y: pos.y, rotateX: 0, rotateY: 0, scale: 1, opacity: 0, src: newImg.src, alt: newImg.alt }
               : img
           );
         });
-
-        // Fade in the new image
         setTimeout(() => {
           setImages((prev) =>
             prev.map((img) => (img.opacity === 0 ? { ...img, opacity: 1 } : img))
@@ -149,24 +142,39 @@ export default function FiguresLayer({ visible }: FiguresLayerProps) {
         }, 100);
       }, 2200);
     }, 15000);
-
     return () => clearInterval(interval);
   }, [visible]);
 
-  // Drag handlers (document-level mousemove/mouseup)
+  // Drag to rotate
   const handleMouseDown = useCallback(
     (e: React.MouseEvent, index: number) => {
       e.preventDefault();
+      e.stopPropagation();
       dragRef.current = {
         index,
         startX: e.clientX,
         startY: e.clientY,
-        startPosX: images[index].x,
-        startPosY: images[index].y,
+        startRotX: images[index].rotateX,
+        startRotY: images[index].rotateY,
       };
-      document.body.style.cursor = 'grabbing';
     },
     [images]
+  );
+
+  // Scroll to zoom
+  const handleWheel = useCallback(
+    (e: React.WheelEvent, index: number) => {
+      e.stopPropagation();
+      const delta = e.deltaY > 0 ? -0.1 : 0.1;
+      setImages((prev) =>
+        prev.map((img, i) =>
+          i === index
+            ? { ...img, scale: Math.max(0.3, Math.min(3, img.scale + delta)) }
+            : img
+        )
+      );
+    },
+    []
   );
 
   useEffect(() => {
@@ -175,22 +183,21 @@ export default function FiguresLayer({ visible }: FiguresLayerProps) {
       if (!drag) return;
       const dx = e.clientX - drag.startX;
       const dy = e.clientY - drag.startY;
-      const pctX = (dx / window.innerWidth) * 100;
-      const pctY = (dy / window.innerHeight) * 100;
       setImages((prev) =>
         prev.map((img, i) =>
           i === drag.index
-            ? { ...img, x: drag.startPosX + pctX, y: drag.startPosY + pctY }
+            ? {
+                ...img,
+                rotateY: drag.startRotY + dx * 0.3,
+                rotateX: drag.startRotX - dy * 0.3,
+              }
             : img
         )
       );
     };
 
     const onMouseUp = () => {
-      if (dragRef.current) {
-        dragRef.current = null;
-        document.body.style.cursor = '';
-      }
+      dragRef.current = null;
     };
 
     document.addEventListener('mousemove', onMouseMove);
@@ -212,8 +219,8 @@ export default function FiguresLayer({ visible }: FiguresLayerProps) {
         left: 0,
         width: '100vw',
         height: '100vh',
-        zIndex: 1,
         pointerEvents: 'none',
+        perspective: '1000px',
       }}
     >
       {images.map((img, index) => (
@@ -226,18 +233,20 @@ export default function FiguresLayer({ visible }: FiguresLayerProps) {
             position: 'absolute',
             left: `${img.x}%`,
             top: `${img.y}%`,
-            transform: 'translate(-50%, -50%)',
+            transform: `translate(-50%, -50%) rotateX(${img.rotateX}deg) rotateY(${img.rotateY}deg) scale(${img.scale})`,
             maxWidth: '30vw',
             maxHeight: '35vh',
-            opacity: img.opacity * 0.07,
+            opacity: img.opacity * 0.12,
             filter: 'grayscale(100%) brightness(3) contrast(0.6)',
             mixBlendMode: 'screen',
             cursor: dragRef.current?.index === index ? 'grabbing' : 'grab',
             pointerEvents: 'auto',
-            transition: 'opacity 2s ease',
+            transition: dragRef.current?.index === index ? 'none' : 'opacity 2s ease, transform 0.15s ease-out',
             userSelect: 'none',
+            transformStyle: 'preserve-3d',
           }}
           onMouseDown={(e) => handleMouseDown(e, index)}
+          onWheel={(e) => handleWheel(e, index)}
           draggable={false}
         />
       ))}

@@ -18,6 +18,7 @@ export default function Home() {
   const [vizMode, setVizMode] = useState('noise');
   const [figuresVisible, setFiguresVisible] = useState(false);
   const [colorMode, setColorMode] = useState('mono');
+  const [clickEffect, setClickEffect] = useState('ripple');
   const [showAbout, setShowAbout] = useState(false);
 
   useEffect(() => {
@@ -31,6 +32,8 @@ export default function Home() {
     if (savedFigures === 'true') setFiguresVisible(true);
     const savedColorMode = localStorage.getItem('color-mode');
     if (savedColorMode) setColorMode(savedColorMode);
+    const savedClickEffect = localStorage.getItem('click-effect');
+    if (savedClickEffect) setClickEffect(savedClickEffect);
   }, []);
 
   const startResize = useCallback((e: React.MouseEvent) => {
@@ -77,6 +80,11 @@ export default function Home() {
     localStorage.setItem('color-mode', mode);
   }, []);
 
+  const handleClickEffectChange = useCallback((effect: string) => {
+    setClickEffect(effect);
+    localStorage.setItem('click-effect', effect);
+  }, []);
+
   const handleToggleFigures = useCallback(() => {
     setFiguresVisible(prev => {
       const next = !prev;
@@ -89,10 +97,11 @@ export default function Home() {
     player.currentIndex >= 0 ? player.tracks[player.currentIndex] : null;
 
   return (
+    <>
     <div
       style={{
         display: 'grid',
-        gridTemplateColumns: `${isCollapsed ? '0px' : `${sidebarWidth}px`} 1fr`,
+        gridTemplateColumns: `${isCollapsed ? '40px' : `${sidebarWidth}px`} 1fr`,
         gridTemplateRows: 'minmax(0, 1fr) 80px',
         height: '100vh',
         transition: isResizing ? 'none' : 'grid-template-columns 0.3s ease',
@@ -101,7 +110,7 @@ export default function Home() {
     >
       {/* Visualizer spans full viewport behind everything */}
       <div id="visualizer-bg">
-        <Visualizer analyser={player.analyserRef?.current ?? null} isPlaying={player.isPlaying} mode={vizMode} colorMode={colorMode} />
+        <Visualizer analyser={player.analyserRef?.current ?? null} isPlaying={player.isPlaying} mode={vizMode} colorMode={colorMode} clickEffect={clickEffect} />
       </div>
 
       <FiguresLayer
@@ -117,6 +126,8 @@ export default function Home() {
         onToggleFigures={handleToggleFigures}
         colorMode={colorMode}
         onColorModeChange={handleColorModeChange}
+        clickEffect={clickEffect}
+        onClickEffectChange={handleClickEffectChange}
       />
 
       <Sidebar
@@ -128,6 +139,7 @@ export default function Home() {
         onPlayTrack={player.playTrack}
         onUpdateTrackLikes={player.updateTrackLikes}
         isCollapsed={isCollapsed}
+        onCollapse={handleDoubleClick}
       />
 
       <div
@@ -181,5 +193,6 @@ export default function Home() {
         </div>
       )}
     </div>
+    </>
   );
 }

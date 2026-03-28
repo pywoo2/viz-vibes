@@ -439,14 +439,8 @@ body {
   left: 0;
   width: 100vw;
   height: 100vh;
-  z-index: 0;
+  z-index: 2;
   pointer-events: none;
-  opacity: 0;
-  transition: opacity 1s ease;
-}
-
-#figures-layer.visible {
-  opacity: 1;
 }
 
 /* ========== VISUALIZER PICKER SEPARATOR ========== */
@@ -933,4 +927,52 @@ body {
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+/* ========== SIDEBAR COLLAPSE / EXPAND BUTTONS ========== */
+.collapse-sidebar-btn {
+  background: none;
+  border: 1px solid var(--glass-border);
+  color: var(--fg-dim);
+  width: 24px;
+  height: 24px;
+  border-radius: 5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.5rem;
+  transition: color 0.15s, background 0.15s;
+  flex-shrink: 0;
+}
+.collapse-sidebar-btn:hover {
+  color: var(--fg-bright);
+  background: var(--bg-hover);
+}
+
+.expand-sidebar-btn {
+  position: fixed;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 50;
+  z-index: 10;
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  backdrop-filter: blur(40px) saturate(180%);
+  border: 1px solid var(--glass-border);
+  color: var(--fg-dim);
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6rem;
+  transition: color 0.15s, background 0.15s;
+}
+.expand-sidebar-btn:hover {
+  color: var(--fg-bright);
+  background: var(--glass-hover);
 }

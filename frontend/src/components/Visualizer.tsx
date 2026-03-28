@@ -7,6 +7,7 @@ interface VisualizerProps {
   isPlaying: boolean;
   mode: string;
   colorMode: string;
+  clickEffect: string;
 }
 
 const vertexShaderSource = `
@@ -26,6 +27,8 @@ const uniformHeader = `
   uniform float energy;
   uniform vec2 mouse;
   uniform int colorMode;
+  uniform vec3 click; // xy = position (0-1), z = time of click
+  uniform int clickType; // 0=none, 1=ripple, 2=burst, 3=shockwave
 
   vec3 rainbow(float t) {
     return vec3(
@@ -93,6 +96,33 @@ const noiseFieldShader = uniformHeader + `
     brightness += glow * 0.3 + mouseGlow;
     brightness = pow(brightness, 0.8);
 
+    // Click effect
+    if (click.z > 0.0 && clickType > 0) {
+      float clickAge = time - click.z;
+      if (clickAge < 1.5) {
+        vec2 cp = click.xy * 2.0 - 1.0;
+        cp.x *= resolution.x / resolution.y;
+        float cd = length(p - cp);
+        float fade = 1.0 - clickAge / 1.5;
+        if (clickType == 1) {
+          float ring = abs(cd - clickAge * 0.35) - 0.01;
+          brightness += smoothstep(0.02, 0.0, ring) * fade * 0.4;
+        } else if (clickType == 2) {
+          float cAngle = atan(p.y - cp.y, p.x - cp.x);
+          float rays = pow(abs(sin(cAngle * 6.0)), 3.0);
+          float radial = smoothstep(clickAge * 0.5, 0.0, cd) * fade;
+          float flash = 0.15 / (cd + 0.05) * max(0.0, 1.0 - clickAge * 3.0);
+          brightness += (rays * radial * 0.5 + flash);
+        } else if (clickType == 3) {
+          float radius = clickAge * 0.4;
+          float thickness = 0.05 + clickAge * 0.03;
+          float wave = smoothstep(radius + thickness, radius, cd) * smoothstep(radius - thickness, radius, cd);
+          brightness += wave * fade * 0.8;
+          brightness += 0.1 * fade / (abs(cd - radius) + 0.05);
+        }
+      }
+    }
+
     if (colorMode == 0) {
       gl_FragColor = vec4(vec3(brightness), 1.0);
     } else {
@@ -130,6 +160,35 @@ const waveformShader = uniformHeader + `
     }
 
     float brightness = line + glow + mouseGlow;
+
+    // Click effect
+    if (click.z > 0.0 && clickType > 0) {
+      vec2 p = uv * 2.0 - 1.0;
+      p.x *= resolution.x / resolution.y;
+      float clickAge = time - click.z;
+      if (clickAge < 1.5) {
+        vec2 cp = click.xy * 2.0 - 1.0;
+        cp.x *= resolution.x / resolution.y;
+        float cd = length(p - cp);
+        float fade = 1.0 - clickAge / 1.5;
+        if (clickType == 1) {
+          float ring = abs(cd - clickAge * 0.35) - 0.01;
+          brightness += smoothstep(0.02, 0.0, ring) * fade * 0.4;
+        } else if (clickType == 2) {
+          float cAngle = atan(p.y - cp.y, p.x - cp.x);
+          float rays = pow(abs(sin(cAngle * 6.0)), 3.0);
+          float radial = smoothstep(clickAge * 0.5, 0.0, cd) * fade;
+          float flash = 0.15 / (cd + 0.05) * max(0.0, 1.0 - clickAge * 3.0);
+          brightness += (rays * radial * 0.5 + flash);
+        } else if (clickType == 3) {
+          float radius = clickAge * 0.4;
+          float thickness = 0.05 + clickAge * 0.03;
+          float wave = smoothstep(radius + thickness, radius, cd) * smoothstep(radius - thickness, radius, cd);
+          brightness += wave * fade * 0.8;
+          brightness += 0.1 * fade / (abs(cd - radius) + 0.05);
+        }
+      }
+    }
 
     if (colorMode == 0) {
       gl_FragColor = vec4(vec3(brightness), 1.0);
@@ -200,6 +259,33 @@ const particlesShader = uniformHeader + `
     brightness = clamp(brightness, 0.0, 1.0);
     brightness = pow(brightness, 0.85);
 
+    // Click effect
+    if (click.z > 0.0 && clickType > 0) {
+      float clickAge = time - click.z;
+      if (clickAge < 1.5) {
+        vec2 cp = click.xy * 2.0 - 1.0;
+        cp.x *= resolution.x / resolution.y;
+        float cd = length(p - cp);
+        float fade = 1.0 - clickAge / 1.5;
+        if (clickType == 1) {
+          float ring = abs(cd - clickAge * 0.35) - 0.01;
+          brightness += smoothstep(0.02, 0.0, ring) * fade * 0.4;
+        } else if (clickType == 2) {
+          float cAngle = atan(p.y - cp.y, p.x - cp.x);
+          float rays = pow(abs(sin(cAngle * 6.0)), 3.0);
+          float radial = smoothstep(clickAge * 0.5, 0.0, cd) * fade;
+          float flash = 0.15 / (cd + 0.05) * max(0.0, 1.0 - clickAge * 3.0);
+          brightness += (rays * radial * 0.5 + flash);
+        } else if (clickType == 3) {
+          float radius = clickAge * 0.4;
+          float thickness = 0.05 + clickAge * 0.03;
+          float wave = smoothstep(radius + thickness, radius, cd) * smoothstep(radius - thickness, radius, cd);
+          brightness += wave * fade * 0.8;
+          brightness += 0.1 * fade / (abs(cd - radius) + 0.05);
+        }
+      }
+    }
+
     if (colorMode == 0) {
       gl_FragColor = vec4(vec3(brightness), 1.0);
     } else {
@@ -247,6 +333,33 @@ const ringsShader = uniformHeader + `
 
     float brightness = rings + glow + mouseGlow;
     brightness = clamp(brightness, 0.0, 1.0);
+
+    // Click effect
+    if (click.z > 0.0 && clickType > 0) {
+      float clickAge = time - click.z;
+      if (clickAge < 1.5) {
+        vec2 cp = click.xy * 2.0 - 1.0;
+        cp.x *= resolution.x / resolution.y;
+        float cd = length(p - cp);
+        float fade = 1.0 - clickAge / 1.5;
+        if (clickType == 1) {
+          float ring = abs(cd - clickAge * 0.35) - 0.01;
+          brightness += smoothstep(0.02, 0.0, ring) * fade * 0.4;
+        } else if (clickType == 2) {
+          float cAngle = atan(p.y - cp.y, p.x - cp.x);
+          float rays = pow(abs(sin(cAngle * 6.0)), 3.0);
+          float radial = smoothstep(clickAge * 0.5, 0.0, cd) * fade;
+          float flash = 0.15 / (cd + 0.05) * max(0.0, 1.0 - clickAge * 3.0);
+          brightness += (rays * radial * 0.5 + flash);
+        } else if (clickType == 3) {
+          float radius = clickAge * 0.4;
+          float thickness = 0.05 + clickAge * 0.03;
+          float wave = smoothstep(radius + thickness, radius, cd) * smoothstep(radius - thickness, radius, cd);
+          brightness += wave * fade * 0.8;
+          brightness += 0.1 * fade / (abs(cd - radius) + 0.05);
+        }
+      }
+    }
 
     if (colorMode == 0) {
       gl_FragColor = vec4(vec3(brightness), 1.0);
@@ -307,6 +420,33 @@ const gridShader = uniformHeader + `
     float brightness = grid + glow + scan + mouseGlow;
     brightness = clamp(brightness, 0.0, 1.0);
 
+    // Click effect
+    if (click.z > 0.0 && clickType > 0) {
+      float clickAge = time - click.z;
+      if (clickAge < 1.5) {
+        vec2 cp = click.xy * 2.0 - 1.0;
+        cp.x *= resolution.x / resolution.y;
+        float cd = length(p - cp);
+        float fade = 1.0 - clickAge / 1.5;
+        if (clickType == 1) {
+          float ring = abs(cd - clickAge * 0.35) - 0.01;
+          brightness += smoothstep(0.02, 0.0, ring) * fade * 0.4;
+        } else if (clickType == 2) {
+          float cAngle = atan(p.y - cp.y, p.x - cp.x);
+          float rays = pow(abs(sin(cAngle * 6.0)), 3.0);
+          float radial = smoothstep(clickAge * 0.5, 0.0, cd) * fade;
+          float flash = 0.15 / (cd + 0.05) * max(0.0, 1.0 - clickAge * 3.0);
+          brightness += (rays * radial * 0.5 + flash);
+        } else if (clickType == 3) {
+          float radius = clickAge * 0.4;
+          float thickness = 0.05 + clickAge * 0.03;
+          float wave = smoothstep(radius + thickness, radius, cd) * smoothstep(radius - thickness, radius, cd);
+          brightness += wave * fade * 0.8;
+          brightness += 0.1 * fade / (abs(cd - radius) + 0.05);
+        }
+      }
+    }
+
     if (colorMode == 0) {
       gl_FragColor = vec4(vec3(brightness), 1.0);
     } else {
@@ -356,6 +496,33 @@ const plasmaShader = uniformHeader + `
 
     brightness = clamp(brightness, 0.0, 1.0);
     brightness = pow(brightness, 0.85);
+
+    // Click effect
+    if (click.z > 0.0 && clickType > 0) {
+      float clickAge = time - click.z;
+      if (clickAge < 1.5) {
+        vec2 cp = click.xy * 2.0 - 1.0;
+        cp.x *= resolution.x / resolution.y;
+        float cd = length(p - cp);
+        float fade = 1.0 - clickAge / 1.5;
+        if (clickType == 1) {
+          float ring = abs(cd - clickAge * 0.35) - 0.01;
+          brightness += smoothstep(0.02, 0.0, ring) * fade * 0.4;
+        } else if (clickType == 2) {
+          float cAngle = atan(p.y - cp.y, p.x - cp.x);
+          float rays = pow(abs(sin(cAngle * 6.0)), 3.0);
+          float radial = smoothstep(clickAge * 0.5, 0.0, cd) * fade;
+          float flash = 0.15 / (cd + 0.05) * max(0.0, 1.0 - clickAge * 3.0);
+          brightness += (rays * radial * 0.5 + flash);
+        } else if (clickType == 3) {
+          float radius = clickAge * 0.4;
+          float thickness = 0.05 + clickAge * 0.03;
+          float wave = smoothstep(radius + thickness, radius, cd) * smoothstep(radius - thickness, radius, cd);
+          brightness += wave * fade * 0.8;
+          brightness += 0.1 * fade / (abs(cd - radius) + 0.05);
+        }
+      }
+    }
 
     if (colorMode == 0) {
       gl_FragColor = vec4(vec3(brightness), 1.0);
@@ -415,14 +582,17 @@ function createProgram(gl: WebGLRenderingContext, fragSource: string): WebGLProg
 }
 
 const colorModeMap: Record<string, number> = { mono: 0, rainbow: 1 };
+const clickEffectMap: Record<string, number> = { none: 0, ripple: 1, burst: 2, shockwave: 3 };
 
-export default function Visualizer({ analyser, isPlaying, mode, colorMode }: VisualizerProps) {
+export default function Visualizer({ analyser, isPlaying, mode, colorMode, clickEffect }: VisualizerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const glRef = useRef<WebGLRenderingContext | null>(null);
   const programRef = useRef<WebGLProgram | null>(null);
   const animRef = useRef<number>(0);
   const startTimeRef = useRef(Date.now());
   const mouseRef = useRef({ x: -1, y: -1 });
+  const clickRef = useRef({ x: 0, y: 0, z: 0 });
+  const clickEffectRef = useRef(clickEffect);
   const modeRef = useRef(mode);
   const colorModeRef = useRef(colorMode);
 
@@ -434,6 +604,10 @@ export default function Visualizer({ analyser, isPlaying, mode, colorMode }: Vis
   useEffect(() => {
     colorModeRef.current = colorMode;
   }, [colorMode]);
+
+  useEffect(() => {
+    clickEffectRef.current = clickEffect;
+  }, [clickEffect]);
 
   // Initialize WebGL (once)
   useEffect(() => {
@@ -552,6 +726,8 @@ export default function Visualizer({ analyser, isPlaying, mode, colorMode }: Vis
       gl.uniform2f(loc('resolution'), canvas.width, canvas.height);
       gl.uniform2f(loc('mouse'), mouseRef.current.x, mouseRef.current.y);
       gl.uniform1i(loc('colorMode'), colorModeMap[colorModeRef.current] ?? 0);
+      gl.uniform3f(loc('click'), clickRef.current.x, clickRef.current.y, clickRef.current.z);
+      gl.uniform1i(loc('clickType'), clickEffectMap[clickEffectRef.current] ?? 0);
 
       gl.drawArrays(gl.TRIANGLES, 0, 6);
     };
@@ -578,11 +754,21 @@ export default function Visualizer({ analyser, isPlaying, mode, colorMode }: Vis
       mouseRef.current = { x: -1, y: -1 };
     };
 
+    const onClick = (e: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = (e.clientX - rect.left) / rect.width;
+      const y = 1.0 - (e.clientY - rect.top) / rect.height;
+      const time = (Date.now() - startTimeRef.current) / 1000;
+      clickRef.current = { x, y, z: time };
+    };
+
     window.addEventListener('mousemove', onMove);
     parent.addEventListener('mouseleave', onLeave);
+    canvas.addEventListener('click', onClick);
     return () => {
       window.removeEventListener('mousemove', onMove);
       parent.removeEventListener('mouseleave', onLeave);
+      canvas.removeEventListener('click', onClick);
     };
   }, []);
 

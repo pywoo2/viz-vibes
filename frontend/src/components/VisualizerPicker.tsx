@@ -9,6 +9,8 @@ interface VisualizerPickerProps {
   onToggleFigures: () => void;
   colorMode: string;
   onColorModeChange: (mode: string) => void;
+  clickEffect: string;
+  onClickEffectChange: (effect: string) => void;
 }
 
 const icons: Record<string, React.ReactNode> = {
@@ -59,7 +61,42 @@ const icons: Record<string, React.ReactNode> = {
   ),
 };
 
-export default function VisualizerPicker({ mode, onModeChange, figuresVisible, onToggleFigures, colorMode, onColorModeChange }: VisualizerPickerProps) {
+const clickEffects = [
+  { id: 'ripple', label: 'Ripple', icon: (
+    <svg viewBox="0 0 20 20">
+      <circle cx="10" cy="10" r="3" />
+      <circle cx="10" cy="10" r="6" />
+      <circle cx="10" cy="10" r="9" />
+    </svg>
+  )},
+  { id: 'burst', label: 'Burst', icon: (
+    <svg viewBox="0 0 20 20">
+      <line x1="10" y1="2" x2="10" y2="6" />
+      <line x1="10" y1="14" x2="10" y2="18" />
+      <line x1="2" y1="10" x2="6" y2="10" />
+      <line x1="14" y1="10" x2="18" y2="10" />
+      <line x1="4.3" y1="4.3" x2="7.1" y2="7.1" />
+      <line x1="12.9" y1="12.9" x2="15.7" y2="15.7" />
+      <line x1="15.7" y1="4.3" x2="12.9" y2="7.1" />
+      <line x1="7.1" y1="12.9" x2="4.3" y2="15.7" />
+    </svg>
+  )},
+  { id: 'shockwave', label: 'Shockwave', icon: (
+    <svg viewBox="0 0 20 20">
+      <path d="M3 10 A7 7 0 0 1 17 10" fill="none" />
+      <path d="M5 10 A5 5 0 0 1 15 10" fill="none" />
+      <path d="M7 10 A3 3 0 0 1 13 10" fill="none" />
+    </svg>
+  )},
+  { id: 'none', label: 'None', icon: (
+    <svg viewBox="0 0 20 20">
+      <circle cx="10" cy="10" r="7" />
+      <line x1="5" y1="15" x2="15" y2="5" />
+    </svg>
+  )},
+];
+
+export default function VisualizerPicker({ mode, onModeChange, figuresVisible, onToggleFigures, colorMode, onColorModeChange, clickEffect, onClickEffectChange }: VisualizerPickerProps) {
   return (
     <div id="viz-picker">
       {VISUALIZER_MODES.map((m) => (
@@ -126,6 +163,17 @@ export default function VisualizerPicker({ mode, onModeChange, figuresVisible, o
           <circle cx="10" cy="10" r="7" fill="url(#rainbow-grad)" stroke="none" />
         </svg>
       </button>
+      <div className="viz-picker-separator" />
+      {clickEffects.map((effect) => (
+        <button
+          key={effect.id}
+          className={`viz-mode-btn${clickEffect === effect.id ? ' active' : ''}`}
+          onClick={() => onClickEffectChange(effect.id)}
+          title={effect.label}
+        >
+          {effect.icon}
+        </button>
+      ))}
     </div>
   );
 }

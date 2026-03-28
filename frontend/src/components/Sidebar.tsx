@@ -14,6 +14,7 @@ interface SidebarProps {
   onPlayTrack: (index: number) => void;
   onUpdateTrackLikes: (index: number, likes: number) => void;
   isCollapsed: boolean;
+  onCollapse: () => void;
 }
 
 export default function Sidebar({
@@ -25,6 +26,7 @@ export default function Sidebar({
   onPlayTrack,
   onUpdateTrackLikes,
   isCollapsed,
+  onCollapse,
 }: SidebarProps) {
   const [likingTracks, setLikingTracks] = useState<Set<number>>(new Set());
   const [heartPulsingTracks, setHeartPulsingTracks] = useState<Set<number>>(new Set());
@@ -116,20 +118,25 @@ export default function Sidebar({
   return (
     <div
       id="sidebar"
-      style={isCollapsed ? { overflow: 'hidden' } : undefined}
+      style={isCollapsed ? { overflow: 'hidden', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', paddingTop: '20px' } : undefined}
       ref={sidebarRef}
-      onMouseMove={handleSidebarMouseMove}
-      onMouseLeave={handleSidebarMouseLeave}
+      onMouseMove={isCollapsed ? undefined : handleSidebarMouseMove}
+      onMouseLeave={isCollapsed ? undefined : handleSidebarMouseLeave}
     >
-      {/* Mouse-tracking specular highlight overlay (effect 1) */}
-      <div
-        ref={highlightRef}
-        className="glass-highlight"
-        style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 1, willChange: 'background' }}
-      />
-      <div id="sidebar-header">
-        <h2>{tracks.length > 0 ? `${tracks.length} songs` : 'songs'}</h2>
-      </div>
+      {isCollapsed ? (
+        <button className="collapse-sidebar-btn" onClick={onCollapse} title="Expand sidebar">{'\u25B6'}</button>
+      ) : (
+        <>
+        {/* Mouse-tracking specular highlight overlay */}
+        <div
+          ref={highlightRef}
+          className="glass-highlight"
+          style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 1, willChange: 'background' }}
+        />
+        <div id="sidebar-header">
+          <h2>{tracks.length > 0 ? `${tracks.length} songs` : 'songs'}</h2>
+          <button className="collapse-sidebar-btn" onClick={onCollapse} title="Collapse sidebar">{'\u25C0'}</button>
+        </div>
       <div id="track-list-wrapper">
         {!loading && tracks.length > 0 && (
           <ul id="track-list">
@@ -199,6 +206,8 @@ export default function Sidebar({
           </div>
         )}
       </div>
+      </>
+      )}
     </div>
   );
 }
