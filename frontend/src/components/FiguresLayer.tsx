@@ -30,6 +30,8 @@ const ART_IMAGES = [
   { src: `${R2_BASE}/IMG_1914.jpg`, alt: 'Photo' },
   { src: `${R2_BASE}/IMG_1966.jpg`, alt: 'Photo' },
   { src: `${R2_BASE}/IMG_2250.jpg`, alt: 'Photo' },
+  { src: `${R2_BASE}/IMG_2750.jpg`, alt: 'Photo' },
+  { src: `${R2_BASE}/IMG_3735%20(1).jpg`, alt: 'Photo' },
 ];
 
 interface FiguresLayerProps {

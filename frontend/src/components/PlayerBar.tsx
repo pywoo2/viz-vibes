@@ -127,6 +127,13 @@ export default function PlayerBar({
     repeatMode === 1 ? 'active' : repeatMode === 2 ? 'repeat-one' : '';
 
   return (
+    <>
+    <style>{`
+      @keyframes infoGlow {
+        0%, 100% { box-shadow: 0 0 12px rgba(255,255,255,0.25), 0 0 30px rgba(255,255,255,0.1); }
+        50% { box-shadow: 0 0 20px rgba(255,255,255,0.45), 0 0 40px rgba(255,255,255,0.2), 0 0 60px rgba(255,255,255,0.08); }
+      }
+    `}</style>
     <div
       id="player-bar"
       ref={barRef}
@@ -256,17 +263,19 @@ export default function PlayerBar({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            width: 24,
-            height: 24,
+            width: 36,
+            height: 36,
             borderRadius: '50%',
-            border: '1px solid var(--glass-border)',
-            background: 'none',
-            color: 'var(--fg-subtle)',
-            fontSize: '0.7rem',
-            fontWeight: 500,
+            border: '1px solid rgba(255, 255, 255, 0.25)',
+            background: 'rgba(255, 255, 255, 0.08)',
+            color: 'rgba(255, 255, 255, 0.7)',
+            fontSize: '0.9rem',
+            fontWeight: 600,
             cursor: 'pointer',
-            marginLeft: 4,
-            transition: 'color 0.15s, border-color 0.15s',
+            marginLeft: 8,
+            transition: 'color 0.15s, border-color 0.15s, background 0.15s, box-shadow 0.15s',
+            boxShadow: '0 0 12px rgba(255, 255, 255, 0.25), 0 0 30px rgba(255, 255, 255, 0.1)',
+            animation: 'infoGlow 2s ease-in-out infinite',
             flexShrink: 0,
           }}
           onMouseEnter={(e) => {
@@ -282,5 +291,6 @@ export default function PlayerBar({
         </button>
       </div>
     </div>
+    </>
   );
 }

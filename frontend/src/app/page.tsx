@@ -23,6 +23,7 @@ export default function Home() {
   const [colorMode, setColorMode] = useState('mono');
   const [clickEffect, setClickEffect] = useState('ripple');
   const [showAbout, setShowAbout] = useState(false);
+  const [showWarning, setShowWarning] = useState(true);
   const [noteText, setNoteText] = useState('');
   const [noteName, setNoteName] = useState('');
   const [notesRefreshKey, setNotesRefreshKey] = useState(0);
@@ -39,6 +40,7 @@ export default function Home() {
       .then((r) => {
         if (r.ok) {
           setNoteText('');
+          setNoteName('');
           setNotesRefreshKey((k) => k + 1);
         }
       })
@@ -241,6 +243,10 @@ export default function Home() {
               <h3>the design</h3>
               <p>Inspired by iOS liquid glass and MySpace.</p>
             </div>
+            <div className="about-section">
+              <h3>tips</h3>
+              <p>Click and drag the floating images and notes to rotate them in 3D. Scroll to zoom. Switch visualizers and click effects on the right panel. Heart a song to vote — the list sorts by most liked.</p>
+            </div>
             <a href="https://www.linkedin.com/in/pywoo/" target="_blank" rel="noopener noreferrer" className="about-link">
               Made by Peter Woo &rarr;
             </a>
@@ -248,6 +254,32 @@ export default function Home() {
         </div>
       )}
     </div>
+    {showWarning && (
+      <div style={{
+        position: 'fixed', inset: 0, zIndex: 10000, background: '#0a0a0a',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <div style={{ maxWidth: 400, textAlign: 'center', padding: 40 }}>
+          <h2 style={{ fontSize: '1.1rem', fontWeight: 300, letterSpacing: '0.08em', color: 'rgba(255,255,255,0.8)', textTransform: 'lowercase' as const, marginBottom: 16 }}>
+            before you enter
+          </h2>
+          <p style={{ fontSize: '0.8rem', fontWeight: 400, color: 'rgba(255,255,255,0.4)', lineHeight: 1.6, marginBottom: 28 }}>
+            this site contains flashing lights and rapidly changing visuals that may be harmful to people with photosensitive epilepsy.
+          </p>
+          <button
+            onClick={() => setShowWarning(false)}
+            style={{
+              background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)',
+              color: 'rgba(255,255,255,0.7)', padding: '10px 24px', borderRadius: 8,
+              fontSize: '0.8rem', fontFamily: 'inherit', fontWeight: 400, letterSpacing: '0.04em',
+              cursor: 'pointer', textTransform: 'lowercase' as const,
+            }}
+          >
+            i understand, continue
+          </button>
+        </div>
+      </div>
+    )}
     </>
   );
 }

@@ -568,7 +568,7 @@ body {
   transform: scale(1.05);
 }
 #controls button:active { transform: scale(0.97); }
-#controls button svg { width: 16px; height: 16px; fill: currentColor; }
+#controls button svg { width: 20px; height: 20px; fill: currentColor; }
 
 /* Play button - glass-like iOS style (effect 3: glass press) */
 #play-btn {
@@ -576,12 +576,12 @@ body {
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   color: #000 !important;
-  width: 32px;
-  height: 32px;
+  width: 38px;
+  height: 38px;
   transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.15s ease, box-shadow 0.3s ease !important;
   will-change: transform;
 }
-#play-btn svg { width: 16px; height: 16px; }
+#play-btn svg { width: 20px; height: 20px; }
 #play-btn:hover {
   background: rgba(255, 255, 255, 1) !important;
   transform: scale(1.06);
@@ -699,8 +699,8 @@ body {
   gap: 8px;
 }
 #player-right svg {
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
   fill: var(--fg-subtle);
   flex-shrink: 0;
 }
@@ -1122,4 +1122,59 @@ body {
   color: rgba(255, 255, 255, 0.2);
   white-space: nowrap;
   flex-shrink: 0;
+}
+
+/* ========== EPILEPSY WARNING ========== */
+.epilepsy-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: #0a0a0a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.epilepsy-card {
+  max-width: 400px;
+  text-align: center;
+  padding: 40px;
+}
+
+.epilepsy-card h2 {
+  font-size: 1.1rem;
+  font-weight: 300;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.8);
+  text-transform: lowercase;
+  margin-bottom: 16px;
+}
+
+.epilepsy-card p {
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.4);
+  line-height: 1.6;
+  margin-bottom: 28px;
+}
+
+.epilepsy-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.7);
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-family: inherit;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+  text-transform: lowercase;
+}
+
+.epilepsy-btn:hover {
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
 }
