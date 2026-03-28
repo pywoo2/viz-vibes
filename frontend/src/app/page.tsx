@@ -7,7 +7,7 @@ import Sidebar from '../components/Sidebar';
 import PlayerBar from '../components/PlayerBar';
 import Visualizer from '../components/Visualizer';
 import VisualizerPicker from '../components/VisualizerPicker';
-
+import FiguresLayer from '../components/FiguresLayer';
 
 export default function Home() {
   const player = useAudioPlayer();
@@ -16,6 +16,8 @@ export default function Home() {
   const [isResizing, setIsResizing] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [vizMode, setVizMode] = useState('noise');
+  const [figuresVisible, setFiguresVisible] = useState(false);
+  const [clickEffect, setClickEffect] = useState('ripple');
   const [showAbout, setShowAbout] = useState(false);
 
   useEffect(() => {
@@ -25,6 +27,10 @@ export default function Home() {
     if (collapsed === 'true') setIsCollapsed(true);
     const savedVizMode = localStorage.getItem('viz-mode');
     if (savedVizMode) setVizMode(savedVizMode);
+    const savedFigures = localStorage.getItem('figures-visible');
+    if (savedFigures === 'true') setFiguresVisible(true);
+    const savedClickEffect = localStorage.getItem('click-effect');
+    if (savedClickEffect) setClickEffect(savedClickEffect);
   }, []);
 
   const startResize = useCallback((e: React.MouseEvent) => {
@@ -66,6 +72,19 @@ export default function Home() {
     localStorage.setItem('viz-mode', mode);
   }, []);
 
+  const handleClickEffectChange = useCallback((effect: string) => {
+    setClickEffect(effect);
+    localStorage.setItem('click-effect', effect);
+  }, []);
+
+  const handleToggleFigures = useCallback(() => {
+    setFiguresVisible(prev => {
+      const next = !prev;
+      localStorage.setItem('figures-visible', String(next));
+      return next;
+    });
+  }, []);
+
   const currentTrack =
     player.currentIndex >= 0 ? player.tracks[player.currentIndex] : null;
 
@@ -82,10 +101,23 @@ export default function Home() {
     >
       {/* Visualizer spans full viewport behind everything */}
       <div id="visualizer-bg">
-        <Visualizer analyser={player.analyserRef?.current ?? null} isPlaying={player.isPlaying} mode={vizMode} />
+        <Visualizer analyser={player.analyserRef?.current ?? null} isPlaying={player.isPlaying} mode={vizMode} clickEffect={clickEffect} />
       </div>
 
-      <VisualizerPicker mode={vizMode} onModeChange={handleVizModeChange} />
+      <FiguresLayer
+        isPlaying={player.isPlaying}
+        analyser={player.analyserRef?.current ?? null}
+        visible={figuresVisible}
+      />
+
+      <VisualizerPicker
+        mode={vizMode}
+        onModeChange={handleVizModeChange}
+        clickEffect={clickEffect}
+        onClickEffectChange={handleClickEffectChange}
+        figuresVisible={figuresVisible}
+        onToggleFigures={handleToggleFigures}
+      />
 
       <Sidebar
         tracks={player.tracks}

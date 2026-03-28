@@ -70,7 +70,6 @@ export function useAudioPlayer(): AudioPlayerState & AudioPlayerActions & { anal
   // Initialize audio element
   useEffect(() => {
     const audio = new Audio();
-    audio.crossOrigin = 'anonymous';
     audio.volume = 0.8;
     audioRef.current = audio;
 
@@ -85,17 +84,6 @@ export function useAudioPlayer(): AudioPlayerState & AudioPlayerActions & { anal
       playNextInternal();
     });
 
-    // Retry without crossOrigin if a track fails to load (CORS issue)
-    audio.addEventListener('error', () => {
-      if (audio.crossOrigin && audio.src) {
-        console.warn('Track load failed with crossOrigin, retrying without...');
-        audio.crossOrigin = null as unknown as string;
-        const src = audio.src;
-        audio.src = '';
-        audio.src = src;
-        audio.play().catch(() => {});
-      }
-    });
 
     return () => {
       audio.pause();
@@ -168,16 +156,7 @@ export function useAudioPlayer(): AudioPlayerState & AudioPlayerActions & { anal
     currentIndexRef.current = index;
     const track = tracksRef.current[index];
     audio.src = track.url || track.file;
-    audio.play().catch((err) => {
-      console.error('Play failed:', err);
-      // Retry without crossOrigin if CORS fails
-      if (audio.crossOrigin) {
-        console.warn('Retrying without crossOrigin...');
-        audio.crossOrigin = null as unknown as string;
-        audio.src = track.url || track.file;
-        audio.play().catch(() => {});
-      }
-    });
+    audio.play().catch(() => {});
     setIsPlaying(true);
     isPlayingRef.current = true;
   }, [initAudioContext]);

@@ -6,6 +6,7 @@ interface VisualizerProps {
   analyser: AnalyserNode | null;
   isPlaying: boolean;
   mode: string;
+  clickEffect: string;
 }
 
 // Vertex shader — full screen quad (shared across all modes)
@@ -27,6 +28,7 @@ const uniformHeader = `
   uniform float energy;
   uniform vec2 mouse; // 0-1 normalized, (-1,-1) when inactive
   uniform vec3 click; // xy = position (0-1), z = time of click
+  uniform int clickType; // 0=none, 1=ripple, 2=burst, 3=shockwave
 `;
 
 // Mode 1: Noise Field (original)
@@ -86,16 +88,29 @@ const noiseFieldShader = uniformHeader + `
     brightness += glow * 0.3 + mouseGlow;
     brightness = pow(brightness, 0.8);
 
-    // Click ripple
-    if (click.z > 0.0) {
+    // Click effect
+    if (click.z > 0.0 && clickType > 0) {
       float clickAge = time - click.z;
       if (clickAge < 1.5) {
         vec2 cp = click.xy * 2.0 - 1.0;
         cp.x *= resolution.x / resolution.y;
         float cd = length(p - cp);
-        float ring = abs(cd - clickAge * 0.8) - 0.02;
-        float ripple = smoothstep(0.03, 0.0, ring) * (1.0 - clickAge / 1.5);
-        brightness += ripple * 0.5;
+        float fade = 1.0 - clickAge / 1.5;
+
+        if (clickType == 1) {
+          float ring = abs(cd - clickAge * 0.8) - 0.02;
+          brightness += smoothstep(0.03, 0.0, ring) * fade * 0.4;
+        } else if (clickType == 2) {
+          float angle = atan(p.y - cp.y, p.x - cp.x);
+          float rays = abs(sin(angle * 8.0));
+          float expand = smoothstep(clickAge * 0.6, clickAge * 0.6 + 0.1, cd) *
+                         smoothstep(clickAge * 0.8, clickAge * 0.6, cd);
+          brightness += rays * expand * fade * 0.5;
+        } else if (clickType == 3) {
+          float wave = smoothstep(clickAge * 0.7 + 0.05, clickAge * 0.7, cd) *
+                       smoothstep(clickAge * 0.7 - 0.15, clickAge * 0.7, cd);
+          brightness += wave * fade * 0.6;
+        }
       }
     }
 
@@ -133,8 +148,8 @@ const waveformShader = uniformHeader + `
 
     float brightness = line + glow + mouseGlow;
 
-    // Click ripple
-    if (click.z > 0.0) {
+    // Click effect
+    if (click.z > 0.0 && clickType > 0) {
       float clickAge = time - click.z;
       if (clickAge < 1.5) {
         vec2 p = uv * 2.0 - 1.0;
@@ -142,9 +157,22 @@ const waveformShader = uniformHeader + `
         vec2 cp = click.xy * 2.0 - 1.0;
         cp.x *= resolution.x / resolution.y;
         float cd = length(p - cp);
-        float ring = abs(cd - clickAge * 0.8) - 0.02;
-        float ripple = smoothstep(0.03, 0.0, ring) * (1.0 - clickAge / 1.5);
-        brightness += ripple * 0.5;
+        float fade = 1.0 - clickAge / 1.5;
+
+        if (clickType == 1) {
+          float ring = abs(cd - clickAge * 0.8) - 0.02;
+          brightness += smoothstep(0.03, 0.0, ring) * fade * 0.4;
+        } else if (clickType == 2) {
+          float angle = atan(p.y - cp.y, p.x - cp.x);
+          float rays = abs(sin(angle * 8.0));
+          float expand = smoothstep(clickAge * 0.6, clickAge * 0.6 + 0.1, cd) *
+                         smoothstep(clickAge * 0.8, clickAge * 0.6, cd);
+          brightness += rays * expand * fade * 0.5;
+        } else if (clickType == 3) {
+          float wave = smoothstep(clickAge * 0.7 + 0.05, clickAge * 0.7, cd) *
+                       smoothstep(clickAge * 0.7 - 0.15, clickAge * 0.7, cd);
+          brightness += wave * fade * 0.6;
+        }
       }
     }
 
@@ -207,16 +235,29 @@ const particlesShader = uniformHeader + `
     brightness = clamp(brightness, 0.0, 1.0);
     brightness = pow(brightness, 0.85);
 
-    // Click ripple
-    if (click.z > 0.0) {
+    // Click effect
+    if (click.z > 0.0 && clickType > 0) {
       float clickAge = time - click.z;
       if (clickAge < 1.5) {
         vec2 cp = click.xy * 2.0 - 1.0;
         cp.x *= resolution.x / resolution.y;
         float cd = length(p - cp);
-        float ring = abs(cd - clickAge * 0.8) - 0.02;
-        float ripple = smoothstep(0.03, 0.0, ring) * (1.0 - clickAge / 1.5);
-        brightness += ripple * 0.5;
+        float fade = 1.0 - clickAge / 1.5;
+
+        if (clickType == 1) {
+          float ring = abs(cd - clickAge * 0.8) - 0.02;
+          brightness += smoothstep(0.03, 0.0, ring) * fade * 0.4;
+        } else if (clickType == 2) {
+          float angle = atan(p.y - cp.y, p.x - cp.x);
+          float rays = abs(sin(angle * 8.0));
+          float expand = smoothstep(clickAge * 0.6, clickAge * 0.6 + 0.1, cd) *
+                         smoothstep(clickAge * 0.8, clickAge * 0.6, cd);
+          brightness += rays * expand * fade * 0.5;
+        } else if (clickType == 3) {
+          float wave = smoothstep(clickAge * 0.7 + 0.05, clickAge * 0.7, cd) *
+                       smoothstep(clickAge * 0.7 - 0.15, clickAge * 0.7, cd);
+          brightness += wave * fade * 0.6;
+        }
       }
     }
 
@@ -274,7 +315,9 @@ function compileProgram(gl: WebGLRenderingContext, fragSource: string): WebGLPro
   return program;
 }
 
-export default function Visualizer({ analyser, isPlaying, mode }: VisualizerProps) {
+const clickTypeMap: Record<string, number> = { none: 0, ripple: 1, burst: 2, shockwave: 3 };
+
+export default function Visualizer({ analyser, isPlaying, mode, clickEffect }: VisualizerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const glRef = useRef<WebGLRenderingContext | null>(null);
   const programRef = useRef<WebGLProgram | null>(null);
@@ -283,6 +326,8 @@ export default function Visualizer({ analyser, isPlaying, mode }: VisualizerProp
   const startTimeRef = useRef(Date.now());
   const mouseRef = useRef({ x: -1, y: -1 });
   const clickRef = useRef({ x: -1, y: -1, time: 0 });
+  const clickEffectRef = useRef(clickEffect);
+  clickEffectRef.current = clickEffect;
 
   // Initialize WebGL context (once)
   useEffect(() => {
@@ -388,6 +433,7 @@ export default function Visualizer({ analyser, isPlaying, mode }: VisualizerProp
       gl.uniform2f(gl.getUniformLocation(program, 'mouse'), mouseRef.current.x, mouseRef.current.y);
       gl.uniform3f(gl.getUniformLocation(program, 'click'),
         clickRef.current.x, clickRef.current.y, clickRef.current.time);
+      gl.uniform1i(gl.getUniformLocation(program, 'clickType'), clickTypeMap[clickEffectRef.current] || 1);
 
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     };
