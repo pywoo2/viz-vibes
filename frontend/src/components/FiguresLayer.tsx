@@ -85,9 +85,13 @@ function randomPosition() {
   return { x: 15 + Math.random() * 70, y: 15 + Math.random() * 70 };
 }
 
-function pickRandomMedia(exclude: string[]): { src: string; type: 'image' | 'video' } {
+function pickRandomMedia(exclude: string[], preferType?: 'image' | 'video'): { src: string; type: 'image' | 'video' } {
   const available = ART_MEDIA.filter((m) => !exclude.includes(m.src));
   const pool = available.length > 0 ? available : ART_MEDIA;
+  if (preferType) {
+    const typed = pool.filter((m) => m.type === preferType);
+    if (typed.length > 0) return typed[Math.floor(Math.random() * typed.length)];
+  }
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
@@ -117,7 +121,8 @@ export default function FiguresLayer({ visible, colorMode }: FiguresLayerProps) 
     const initial: MediaState[] = [];
     const usedSrcs: string[] = [];
     for (let i = 0; i < 3; i++) {
-      const media = pickRandomMedia(usedSrcs);
+      // First slot is always a video
+      const media = pickRandomMedia(usedSrcs, i === 0 ? 'video' : undefined);
       usedSrcs.push(media.src);
       const pos = randomPosition();
       initial.push({ x: pos.x, y: pos.y, rotateX: 0, rotateY: 0, scale: 1, opacity: 0, src: media.src, type: media.type });
@@ -156,7 +161,9 @@ export default function FiguresLayer({ visible, colorMode }: FiguresLayerProps) 
           const fadedIndex = prev.findIndex((img) => img.opacity === 0);
           if (fadedIndex === -1) return prev;
           const usedSrcs = prev.map((img) => img.src);
-          const newMedia = pickRandomMedia(usedSrcs);
+          // If no videos remain after fade, force the replacement to be a video
+          const remainingVideos = prev.filter((img, i) => i !== fadedIndex && img.opacity > 0 && img.type === 'video').length;
+          const newMedia = pickRandomMedia(usedSrcs, remainingVideos === 0 ? 'video' : undefined);
           const pos = randomPosition();
           return prev.map((img, i) =>
             i === fadedIndex
