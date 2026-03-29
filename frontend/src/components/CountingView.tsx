@@ -180,7 +180,7 @@ export default function CountingView() {
           )}
           {log.map((entry, i) => (
             <div key={i} className="counting-log-entry">
-              <span className={`counting-log-action ${entry.action === '+1' ? 'add' : entry.action === '−1' ? 'sub' : 'reset'}`}>
+              <span className={`counting-log-action ${entry.action.startsWith('+') ? 'add' : entry.action.startsWith('−') || entry.action.startsWith('-') ? 'sub' : 'reset'}`}>
                 {entry.action}
               </span>
               {entry.timestamp && (
