@@ -335,8 +335,14 @@ def get_pet():
 def feed_pet():
     pet = load_pet()
     pet = apply_decay(pet)
-    pet["hunger"] = pet["hunger"] - 5  # Can go below 0 (overfed)
-    pet["totalInteractions"] += 1
+    new_hunger = pet["hunger"] - 5
+    if new_hunger < 0:
+        # Overfed! Lose 1 interaction as penalty, cap at -5
+        pet["hunger"] = max(-5, new_hunger)
+        pet["totalInteractions"] = max(0, pet["totalInteractions"] - 1)
+    else:
+        pet["hunger"] = new_hunger
+        pet["totalInteractions"] += 1
     pet["lastFed"] = datetime.now(timezone.utc).isoformat()
     pet["stage"] = get_stage(pet["totalInteractions"])
     pet["mood"] = get_mood(pet)
@@ -349,9 +355,15 @@ def feed_pet():
 def play_pet():
     pet = load_pet()
     pet = apply_decay(pet)
-    pet["happiness"] = pet["happiness"] + 5  # Can go above 100 (overtired)
+    new_happy = pet["happiness"] + 5
+    if new_happy > 100:
+        # Overtired! Lose 1 interaction as penalty, cap at 105
+        pet["happiness"] = min(105, new_happy)
+        pet["totalInteractions"] = max(0, pet["totalInteractions"] - 1)
+    else:
+        pet["happiness"] = new_happy
+        pet["totalInteractions"] += 1
     pet["hunger"] = min(100, pet["hunger"] + 2)
-    pet["totalInteractions"] += 1
     pet["lastPlayed"] = datetime.now(timezone.utc).isoformat()
     pet["stage"] = get_stage(pet["totalInteractions"])
     pet["mood"] = get_mood(pet)
@@ -364,8 +376,14 @@ def play_pet():
 def clean_pet():
     pet = load_pet()
     pet = apply_decay(pet)
-    pet["cleanliness"] = pet["cleanliness"] + 5  # Can go above 100 (overcleaned)
-    pet["totalInteractions"] += 1
+    new_clean = pet["cleanliness"] + 5
+    if new_clean > 100:
+        # Overcleaned! Lose 1 interaction as penalty, cap at 105
+        pet["cleanliness"] = min(105, new_clean)
+        pet["totalInteractions"] = max(0, pet["totalInteractions"] - 1)
+    else:
+        pet["cleanliness"] = new_clean
+        pet["totalInteractions"] += 1
     pet["lastCleaned"] = datetime.now(timezone.utc).isoformat()
     pet["stage"] = get_stage(pet["totalInteractions"])
     pet["mood"] = get_mood(pet)
