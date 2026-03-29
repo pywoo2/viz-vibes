@@ -10,6 +10,10 @@ import VisualizerPicker from '../components/VisualizerPicker';
 import FiguresLayer from '../components/FiguresLayer';
 import NotesLayer from '../components/NotesLayer';
 import BlogView from '../components/BlogView';
+import AboutView from '../components/AboutView';
+import NotesView from '../components/NotesView';
+
+type ViewMode = 'visualizer' | 'blog' | 'about' | 'notes';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -23,11 +27,8 @@ export default function Home() {
   const [figuresVisible, setFiguresVisible] = useState(true);
   const [colorMode, setColorMode] = useState('mono');
   const [clickEffect, setClickEffect] = useState('ripple');
-  const [showAbout, setShowAbout] = useState(false);
-  const [showBlog, setShowBlog] = useState(false);
+  const [activeView, setActiveView] = useState<ViewMode>('visualizer');
   const [showWarning, setShowWarning] = useState(true);
-  const [noteText, setNoteText] = useState('');
-  const [noteName, setNoteName] = useState('');
   const [notesRefreshKey, setNotesRefreshKey] = useState(0);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const drawerTouchStartY = useRef<number | null>(null);
@@ -67,24 +68,6 @@ export default function Home() {
     return () => document.body.classList.remove('drawer-open');
   }, [mobileDrawerOpen]);
 
-  const submitNote = useCallback(() => {
-    const text = noteText.trim();
-    if (!text) return;
-    const name = noteName.trim() || 'anonymous';
-    fetch(`${API_URL}/api/notes`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text, name }),
-    })
-      .then((r) => {
-        if (r.ok) {
-          setNoteText('');
-          setNoteName('');
-          setNotesRefreshKey((k) => k + 1);
-        }
-      })
-      .catch(() => {});
-  }, [noteText, noteName]);
 
   useEffect(() => {
     const stored = localStorage.getItem('sidebar-width');
@@ -172,9 +155,6 @@ export default function Home() {
     <button ref={tracksPillRef} className={`mobile-tracks-btn ${mobileDrawerOpen ? 'hidden' : ''}`} onClick={() => setMobileDrawerOpen(!mobileDrawerOpen)}>
       {player.tracks.length === 0 ? 'loading...' : `\u266B ${player.tracks.length} tracks`}
     </button>
-    <button className="mobile-about-btn" aria-label="About" onClick={() => setShowAbout(prev => !prev)}>
-      i
-    </button>
     <div
       className={`mobile-overlay ${mobileDrawerOpen ? 'visible' : ''}`}
       onClick={() => { setMobileDrawerOpen(false); tracksPillRef.current?.focus(); }}
@@ -193,22 +173,19 @@ export default function Home() {
     >
       {/* View toggle pill */}
       <div className="view-toggle-pill">
-        <button
-          className={`view-toggle-option ${!showBlog ? 'active' : ''}`}
-          onClick={() => setShowBlog(false)}
-        >
-          visualizer
-        </button>
-        <button
-          className={`view-toggle-option ${showBlog ? 'active' : ''}`}
-          onClick={() => setShowBlog(true)}
-        >
-          blog
-        </button>
+        {(['visualizer', 'blog', 'about', 'notes'] as ViewMode[]).map((view) => (
+          <button
+            key={view}
+            className={`view-toggle-option ${activeView === view ? 'active' : ''}`}
+            onClick={() => setActiveView(view)}
+          >
+            {view === 'notes' ? 'leave a note' : view}
+          </button>
+        ))}
       </div>
 
       {/* Visualizer spans full viewport behind everything */}
-      {!showBlog && (
+      {activeView === 'visualizer' && (
         <div id="visualizer-bg">
           <Visualizer analyser={player.analyserRef?.current ?? null} isPlaying={player.isPlaying} mode={vizMode} colorMode={colorMode} clickEffect={clickEffect} />
         </div>
@@ -217,12 +194,12 @@ export default function Home() {
       <FiguresLayer
         isPlaying={player.isPlaying}
         analyser={player.analyserRef?.current ?? null}
-        visible={figuresVisible && !showBlog}
+        visible={figuresVisible && activeView === 'visualizer'}
       />
 
-      <NotesLayer visible={figuresVisible && !showBlog} refreshKey={notesRefreshKey} />
+      <NotesLayer visible={figuresVisible && activeView === 'visualizer'} refreshKey={notesRefreshKey} />
 
-      {!showBlog && (
+      {activeView === 'visualizer' && (
         <VisualizerPicker
           mode={vizMode}
           onModeChange={handleVizModeChange}
@@ -263,7 +240,9 @@ export default function Home() {
       />
 
       <div id="main-area">
-        {showBlog && <BlogView />}
+        {activeView === 'blog' && <BlogView />}
+        {activeView === 'about' && <AboutView />}
+        {activeView === 'notes' && <NotesView onNoteSubmitted={() => setNotesRefreshKey((k) => k + 1)} />}
       </div>
 
       <PlayerBar
@@ -281,59 +260,9 @@ export default function Home() {
         onCycleRepeat={player.cycleRepeat}
         onSeek={player.seek}
         onSetVolume={player.setVolume}
-        onAboutClick={() => { setShowAbout(prev => !prev); }}
+        onAboutClick={() => { setActiveView(v => v === 'about' ? 'visualizer' : 'about'); }}
       />
 
-      {!showBlog && <div className="note-input-container">
-        <div className="note-disclaimer">* all notes are public on the site</div>
-        <input
-          type="text"
-          placeholder="your name"
-          maxLength={30}
-          value={noteName}
-          onChange={(e) => setNoteName(e.target.value)}
-          className="note-name-input"
-        />
-        <input
-          type="text"
-          placeholder="leave a note..."
-          maxLength={140}
-          value={noteText}
-          onChange={(e) => setNoteText(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') submitNote();
-          }}
-        />
-        <button className="note-submit-btn" onClick={submitNote} title="Submit note">&rarr;</button>
-      </div>}
-
-      {showAbout && (
-        <div className="about-overlay" onClick={() => setShowAbout(false)}>
-          <div className="about-card" onClick={(e) => e.stopPropagation()}>
-            <button className="about-close" onClick={() => setShowAbout(false)}>&times;</button>
-            <h2 className="about-title">about viz-vibes</h2>
-            <div className="about-section">
-              <h3>the music</h3>
-              <p>All songs are AI-generated.</p>
-            </div>
-            <div className="about-section">
-              <h3>the tech</h3>
-              <p>WebGL shaders power the audio-reactive visualizer. The frontend is Next.js, the backend is FastAPI, and audio streams from Cloudflare R2.</p>
-            </div>
-            <div className="about-section">
-              <h3>the design</h3>
-              <p>Inspired by iOS liquid glass and MySpace.</p>
-            </div>
-            <div className="about-section">
-              <h3>tips</h3>
-              <p>Click and drag the floating images and notes to rotate them in 3D. Scroll to zoom. Switch visualizers and click effects on the right panel. Heart a song to vote — the list sorts by most liked.</p>
-            </div>
-            <a href="https://www.linkedin.com/in/pywoo/" target="_blank" rel="noopener noreferrer" className="about-link">
-              Made by Peter Woo &rarr;
-            </a>
-          </div>
-        </div>
-      )}
     </div>
     {showWarning && (
       <div style={{
