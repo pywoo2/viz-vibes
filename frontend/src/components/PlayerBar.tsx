@@ -188,8 +188,8 @@ export default function PlayerBar({
         style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 1, willChange: 'background' }}
       />
 
-      {/* Left: now playing info */}
-      <div id="np-info">
+      {/* Left: now playing info — tappable on mobile to open drawer */}
+      <div id="np-info" onClick={onMiniBarTap} style={onMiniBarTap ? { cursor: 'pointer' } : undefined}>
         <div className="np-text">
           <div
             key={currentTrack ? currentTrack.title : '__empty__'}

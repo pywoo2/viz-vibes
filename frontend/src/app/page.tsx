@@ -272,6 +272,7 @@ export default function Home() {
         onSeek={player.seek}
         onSetVolume={player.setVolume}
         onAboutClick={() => { setActiveView(v => v === 'about' ? 'visualizer' : 'about'); }}
+        onMiniBarTap={() => setMobileDrawerOpen(true)}
       />
 
     </div>
