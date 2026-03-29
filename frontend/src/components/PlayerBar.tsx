@@ -19,6 +19,7 @@ interface PlayerBarProps {
   onSeek: (time: number) => void;
   onSetVolume: (vol: number) => void;
   onAboutClick?: () => void;
+  onMiniBarTap?: () => void;
 }
 
 function fmt(s: number): string {
@@ -43,6 +44,7 @@ export default function PlayerBar({
   onSeek,
   onSetVolume,
   onAboutClick,
+  onMiniBarTap,
 }: PlayerBarProps) {
   const progressRef = useRef<HTMLDivElement>(null);
   const isDraggingRef = useRef(false);

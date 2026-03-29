@@ -183,6 +183,17 @@ export default function Sidebar({
         <div className="handle-pill" />
         <span className="mobile-drawer-label">{tracks.length > 0 ? `${tracks.length} songs` : 'Songs'}</span>
       </div>
+      {/* Mobile "Now Playing" indicator — shows above viz picker when a song is playing */}
+      {currentIndex >= 0 && tracks[currentIndex] && (
+        <div className="drawer-now-playing">
+          <div className={`drawer-eq ${!isPlaying ? 'paused' : ''}`}>
+            <div className="eq-bar" />
+            <div className="eq-bar" />
+            <div className="eq-bar" />
+          </div>
+          <span>now playing — {tracks[currentIndex].title}</span>
+        </div>
+      )}
       {/* Mobile viz picker — horizontal scroll row */}
       <div className="mobile-viz-row">
         <div className="mobile-viz-label">visualizer</div>

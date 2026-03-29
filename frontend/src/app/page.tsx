@@ -153,7 +153,18 @@ export default function Home() {
       {mobileDrawerOpen ? '\u2715' : '\u2630'}
     </button>
     <button ref={tracksPillRef} className={`mobile-tracks-btn ${mobileDrawerOpen ? 'hidden' : ''}`} onClick={() => setMobileDrawerOpen(!mobileDrawerOpen)}>
-      {player.tracks.length === 0 ? 'loading...' : `\u266B ${player.tracks.length} tracks`}
+      {player.tracks.length === 0 ? 'loading...' : (
+        currentTrack ? (
+          <>
+            <span className={`pill-eq ${!player.isPlaying ? 'paused' : ''}`}>
+              <span className="eq-bar" />
+              <span className="eq-bar" />
+              <span className="eq-bar" />
+            </span>
+            {currentTrack.title}
+          </>
+        ) : `\u266B ${player.tracks.length} tracks`
+      )}
     </button>
     <div
       className={`mobile-overlay ${mobileDrawerOpen ? 'visible' : ''}`}
