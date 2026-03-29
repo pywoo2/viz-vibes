@@ -552,6 +552,7 @@ export default function Pet() {
                   style={{ width: isOverfed ? '100%' : `${Math.min(100, Math.max(0, hungerVal))}%` }}
                 />
               </span>
+              <span className="pet-stat-val">{Math.round(hungerVal)}</span>
             </div>
             <div className="pet-stat">
               <span className="pet-stat-label">{isOvertired ? '⚠️' : ''} JOY</span>
@@ -560,6 +561,8 @@ export default function Pet() {
                   className={`pet-stat-fill${isOvertired ? ' overfed' : ''}`}
                   style={{ width: isOvertired ? '100%' : `${Math.min(100, happyVal)}%` }}
                 />
+              </span>
+              <span className="pet-stat-val">{Math.round(happyVal)}</span>
               </span>
             </div>
             <div className="pet-stat">
@@ -570,6 +573,7 @@ export default function Pet() {
                   style={{ width: isOvercleaned ? '100%' : `${Math.min(100, cleanVal)}%` }}
                 />
               </span>
+              <span className="pet-stat-val">{Math.round(cleanVal)}</span>
             </div>
           </div>
           <div className="pet-info">

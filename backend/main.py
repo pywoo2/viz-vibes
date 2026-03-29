@@ -337,9 +337,9 @@ def feed_pet():
     pet = apply_decay(pet)
     new_hunger = pet["hunger"] - 5
     if new_hunger < 0:
-        # Overfed! Lose 1 interaction as penalty, cap at -5
+        # Overfed! Progress goes backwards
         pet["hunger"] = max(-5, new_hunger)
-        pet["totalInteractions"] = max(0, pet["totalInteractions"] - 1)
+        pet["totalInteractions"] = max(0, pet["totalInteractions"] - 5)
     else:
         pet["hunger"] = new_hunger
         pet["totalInteractions"] += 1
@@ -357,9 +357,9 @@ def play_pet():
     pet = apply_decay(pet)
     new_happy = pet["happiness"] + 5
     if new_happy > 100:
-        # Overtired! Lose 1 interaction as penalty, cap at 105
+        # Overtired! Progress goes backwards
         pet["happiness"] = min(105, new_happy)
-        pet["totalInteractions"] = max(0, pet["totalInteractions"] - 1)
+        pet["totalInteractions"] = max(0, pet["totalInteractions"] - 5)
     else:
         pet["happiness"] = new_happy
         pet["totalInteractions"] += 1
@@ -378,9 +378,9 @@ def clean_pet():
     pet = apply_decay(pet)
     new_clean = pet["cleanliness"] + 5
     if new_clean > 100:
-        # Overcleaned! Lose 1 interaction as penalty, cap at 105
+        # Overcleaned! Progress goes backwards
         pet["cleanliness"] = min(105, new_clean)
-        pet["totalInteractions"] = max(0, pet["totalInteractions"] - 1)
+        pet["totalInteractions"] = max(0, pet["totalInteractions"] - 5)
     else:
         pet["cleanliness"] = new_clean
         pet["totalInteractions"] += 1
