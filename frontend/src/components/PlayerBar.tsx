@@ -18,7 +18,6 @@ interface PlayerBarProps {
   onCycleRepeat: () => void;
   onSeek: (time: number) => void;
   onSetVolume: (vol: number) => void;
-  onAboutClick?: () => void;
   onMiniBarTap?: () => void;
 }
 
@@ -43,7 +42,6 @@ export default function PlayerBar({
   onCycleRepeat,
   onSeek,
   onSetVolume,
-  onAboutClick,
   onMiniBarTap,
 }: PlayerBarProps) {
   const progressRef = useRef<HTMLDivElement>(null);
@@ -167,13 +165,6 @@ export default function PlayerBar({
     repeatMode === 1 ? 'active' : repeatMode === 2 ? 'repeat-one' : '';
 
   return (
-    <>
-    <style>{`
-      @keyframes infoGlow {
-        0%, 100% { box-shadow: 0 0 12px rgba(255,255,255,0.25), 0 0 30px rgba(255,255,255,0.1); }
-        50% { box-shadow: 0 0 20px rgba(255,255,255,0.45), 0 0 40px rgba(255,255,255,0.2), 0 0 60px rgba(255,255,255,0.08); }
-      }
-    `}</style>
     <div
       id="player-bar"
       ref={barRef}
@@ -298,41 +289,7 @@ export default function PlayerBar({
           value={volume}
           onChange={(e) => onSetVolume(parseFloat(e.target.value))}
         />
-        <button
-          onClick={onAboutClick}
-          title="About"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: 36,
-            height: 36,
-            borderRadius: '50%',
-            border: '1px solid rgba(255, 255, 255, 0.25)',
-            background: 'rgba(255, 255, 255, 0.08)',
-            color: 'rgba(255, 255, 255, 0.7)',
-            fontSize: '0.9rem',
-            fontWeight: 600,
-            cursor: 'pointer',
-            marginLeft: 8,
-            transition: 'color 0.15s, border-color 0.15s, background 0.15s, box-shadow 0.15s',
-            boxShadow: '0 0 12px rgba(255, 255, 255, 0.25), 0 0 30px rgba(255, 255, 255, 0.1)',
-            animation: 'infoGlow 2s ease-in-out infinite',
-            flexShrink: 0,
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.color = 'var(--fg-bright)';
-            e.currentTarget.style.borderColor = 'var(--fg-muted)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.color = 'var(--fg-subtle)';
-            e.currentTarget.style.borderColor = 'var(--glass-border)';
-          }}
-        >
-          i
-        </button>
       </div>
     </div>
-    </>
   );
 }

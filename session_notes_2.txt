@@ -1,0 +1,288 @@
+SESSION NOTES #2 — 2026-03-28/29
+viz-vibes: Blog, View System, Notion CMS, Media Overlap Fix
+================================================================
+
+OVERVIEW
+--------
+This session added a blog/writing system to viz-vibes, evolved it from static
+markdown into a live Notion-powered CMS, built a multi-view navigation system
+with a toggle pill, and fixed media overlap. Here's everything in detail.
+
+
+========================================================================
+1. BLOG — INITIAL IMPLEMENTATION (Markdown-based)
+========================================================================
+
+GOAL: Add a blog where users can read posts while music keeps playing.
+
+DECISION: Instead of a separate route (which would unmount the audio player
+and stop music), we render the blog as a "view swap" within the existing
+page.tsx. The sidebar and player bar stay visible — only the main content
+area changes. This avoids any audio player refactoring.
+
+FILES CREATED:
+  - frontend/src/components/BlogView.tsx
+  - frontend/src/lib/posts.ts
+  - frontend/public/content/*.md (blog post markdown files)
+
+HOW IT WORKS:
+  - page.tsx has a `showBlog` state boolean
+  - When true: visualizer, figures, notes, viz picker, and note input are hidden
+  - BlogView renders in the #main-area grid cell instead
+  - BlogView has two states: index (post list) and reading (single post)
+  - Posts are defined in a manifest array in posts.ts (slug, title, date, desc)
+  - Markdown files live in public/content/ and are fetched at runtime
+  - react-markdown renders the markdown as React components
+  - A simple in-memory cache prevents re-fetching the same post
+
+CSS:
+  - .blog-view uses the same glass background as the rest of the app
+  - .blog-content is scrollable with padding for the toggle pill
+  - .blog-article styles all markdown elements (h1-h3, p, ul, ol, code,
+    pre, blockquote, hr, strong, em, a, img)
+  - #main-area gets pointer-events:auto when it has a .blog-view child
+    (normally it's pointer-events:none so clicks pass through to visualizer)
+
+
+========================================================================
+2. VIEW TOGGLE PILL — Unified Navigation
+========================================================================
+
+GOAL: Replace the separate blog button with a segmented pill at the top
+of the page that lets users switch between views.
+
+EVOLUTION:
+  - Started with just "visualizer | blog" toggle
+  - User asked to add "about" and "leave a note" as well
+  - Ended up with a single `activeView` state replacing separate booleans
+
+IMPLEMENTATION:
+  - page.tsx: `const [activeView, setActiveView] = useState<ViewMode>('visualizer')`
+  - ViewMode = 'visualizer' | 'blog' | 'about' | 'notes' (later 'pet' was added by user)
+  - The pill is a fixed-position bar centered below the "all music was created
+    using ai" disclaimer text
+  - Each button gets class "active" when it matches activeView
+  - All background elements (visualizer, figures, notes, viz picker) are
+    conditionally rendered/hidden based on activeView === 'visualizer'
+
+CSS (.view-toggle-pill):
+  - position: fixed, top: 30px, centered with left:50% + translateX(-50%)
+  - z-index: 50 (above content, below modals)
+  - Glass background with backdrop-filter blur
+  - Rounded pill shape with 3px padding
+  - Active option gets rgba(255,255,255,0.12) background highlight
+
+REMOVED:
+  - Old showAbout/showBlog separate state booleans
+  - Mobile about button (pill handles it)
+  - About overlay modal (replaced by AboutView)
+  - Inline note input container (replaced by NotesView)
+  - Blog button in PlayerBar (pill handles it)
+  - submitNote/noteText/noteName state from page.tsx (moved to NotesView)
+
+
+========================================================================
+3. ABOUT VIEW & NOTES VIEW — Dedicated Components
+========================================================================
+
+FILES CREATED:
+  - frontend/src/components/AboutView.tsx
+  - frontend/src/components/NotesView.tsx
+
+AboutView:
+  - Extracted from the old inline about overlay modal in page.tsx
+  - Reuses the .blog-view and .blog-article CSS classes for consistent styling
+  - Contains: the music, the tech, the design, tips sections
+  - "Made by Peter Woo" link at the bottom
+
+NotesView:
+  - Extracted from the old inline note-input-container in page.tsx
+  - Has its own submitNote logic and state (noteText, noteName, submitted)
+  - Takes onNoteSubmitted prop to trigger notesRefreshKey increment in page.tsx
+  - Full-height view with a form: name input, textarea (140 char max),
+    character counter, submit button, success message
+  - Styled with dedicated .notes-form-* CSS classes
+
+
+========================================================================
+4. STYLING — Notion-Inspired Typography
+========================================================================
+
+ITERATIONS:
+  1. First pass: glass-card style post list items, small body text (0.88rem),
+     thin headings, custom ordered list counters, accent-colored inline code
+  2. User asked to copy Notion's style — used Chrome browser automation to
+     inspect Notion's blog (notion.com/blog) and an article page
+  3. Rewrote typography to match Notion patterns
+
+NOTION-STYLE CHANGES:
+  Post list:
+    - Removed card borders/backgrounds → simple bottom dividers
+    - Bolder titles (font-weight: 600)
+    - Larger text sizes
+    - Hover: opacity fade instead of translateY lift
+
+  Article typography:
+    - H1: 2.4rem, 700 weight, tight negative letter-spacing (-0.03em)
+    - H2: 1.5rem, 600 weight, no bottom border
+    - H3: 1.2rem, 600 weight
+    - Body: 1rem, 400 weight, 1.7 line-height
+    - Bold: 600 weight
+    - Links: underline with muted color (not accent colored)
+    - Inline code: pink/red (#e06c75), system monospace font
+    - Code blocks: dark bg (rgba(0,0,0,0.4)), no border, 6px radius
+    - Blockquotes: just a 3px left border, no background fill
+    - Ordered lists: standard browser decimal markers
+    - HR: thin, lots of spacing (48px margin)
+
+  Content width:
+    - .blog-content: max-width: 750px, margin: 0 auto (centers in main area)
+    - .blog-article / .blog-post-list: max-width: 720px
+
+
+========================================================================
+5. NOTION CMS — Live Rendering from Public Notion Pages
+========================================================================
+
+GOAL: Let the user write blog posts in Notion and have them appear on the
+site automatically, with full fidelity (images, embeds, videos, formatting).
+
+APPROACH: Use react-notion-x to render Notion pages as React components.
+The unofficial notion-client library fetches public page data without auth.
+
+PACKAGES INSTALLED:
+  - react-notion-x (React renderer for Notion pages)
+  - notion-client (unofficial API client, works with public pages)
+  - notion-types (TypeScript types for Notion data)
+  - notion-utils (utility functions)
+
+PACKAGES REMOVED:
+  - react-markdown (no longer needed)
+
+ARCHITECTURE:
+
+  1. MANIFEST (src/lib/posts.ts):
+     - Posts array now has `notionId` instead of `slug`
+     - notionId is the page ID from the Notion URL
+     - Title, date, description are still in the manifest (for the index page)
+
+  2. API ROUTE (src/app/api/notion/route.ts):
+     - Next.js Route Handler (GET /api/notion?pageId=xxx)
+     - Uses notion-client's NotionAPI to fetch the page's recordMap
+     - Returns JSON with Cache-Control headers (5min cache, 10min stale-while-revalidate)
+     - This runs server-side, avoiding CORS issues with Notion's API
+
+  3. BLOGVIEW (src/components/BlogView.tsx):
+     - When a post is clicked, fetches /api/notion?pageId={notionId}
+     - Stores the recordMap in state
+     - Lazy-loads NotionRenderer from react-notion-x
+     - Imports react-notion-x/src/styles.css for base Notion styling
+     - Renders with darkMode={true}, fullPage={false}, disableHeader={true}
+
+  4. CSS OVERRIDES (globals.css):
+     - .notion-page-wrapper scopes all overrides
+     - Overrides Notion's default styles for dark theme compatibility
+     - Customizes: title size, heading sizes, text color, asset widths,
+       image border-radius, HR color, quote border, callout bg, bookmark border
+
+HOW TO ADD A NEW POST:
+  1. Write it in Notion
+  2. Publish to web (Share → Publish to web)
+  3. Copy the page ID from the URL (the hex string after the title)
+  4. Add entry to posts array in src/lib/posts.ts
+  5. Done — content is fetched live from Notion, including all images/embeds
+
+FIRST POST:
+  - "Rekindling A Love" — Peter's personal essay about running during COVID
+  - Notion page ID: 20a1eff1cf4880c8a0e5ce9a65657b82
+  - Public URL: https://exclusive-marimba-b1f.notion.site/Rekindling-A-Love-20a1eff1cf4880c8a0e5ce9a65657b82
+
+
+========================================================================
+6. MEDIA OVERLAP FIX — FiguresLayer Positioning
+========================================================================
+
+PROBLEM: When 3 photos/videos are on screen, they're positioned with pure
+random coordinates and often overlap heavily.
+
+FIX: Modified randomPosition() in FiguresLayer.tsx to accept an array of
+existing positions and enforce a minimum distance between items.
+
+BEFORE:
+  function randomPosition() {
+    return { x: 15 + Math.random() * 70, y: 15 + Math.random() * 70 };
+  }
+
+AFTER:
+  function randomPosition(existing: { x: number; y: number }[] = []) {
+    const minDist = 25; // minimum distance in viewport-percent
+    for (let attempt = 0; attempt < 20; attempt++) {
+      const x = 15 + Math.random() * 70;
+      const y = 15 + Math.random() * 70;
+      const tooClose = existing.some(
+        (e) => Math.hypot(e.x - x, e.y - y) < minDist
+      );
+      if (!tooClose) return { x, y };
+    }
+    return { x: 15 + Math.random() * 70, y: 15 + Math.random() * 70 };
+  }
+
+CALL SITES UPDATED:
+  - Initial placement: passes already-placed items as `existing`
+  - Cycling replacement: passes the other visible items' positions
+  - 25% viewport units minimum distance with 3 items in 70% range = good spread
+  - 20 retry attempts before falling back to pure random
+
+
+========================================================================
+7. FILES CHANGED SUMMARY
+========================================================================
+
+CREATED:
+  frontend/src/components/BlogView.tsx     — Blog view (Notion-powered)
+  frontend/src/components/AboutView.tsx    — About view (extracted from modal)
+  frontend/src/components/NotesView.tsx    — Notes form view
+  frontend/src/lib/posts.ts               — Blog post manifest (Notion IDs)
+  frontend/src/app/api/notion/route.ts     — Server-side Notion API proxy
+
+MODIFIED:
+  frontend/src/app/page.tsx               — View system, toggle pill, removed old overlays
+  frontend/src/app/globals.css            — Toggle pill CSS, blog/notion typography, notes form
+  frontend/src/components/PlayerBar.tsx   — Removed blog button (pill handles it)
+  frontend/src/components/FiguresLayer.tsx — Overlap prevention in randomPosition()
+  frontend/package.json                    — Added notion deps, removed react-markdown
+
+REMOVED:
+  frontend/public/content/*.md             — Static markdown files (replaced by Notion)
+
+DEPENDENCIES ADDED:
+  react-notion-x, notion-client, notion-types, notion-utils
+
+DEPENDENCIES REMOVED:
+  react-markdown
+
+
+========================================================================
+8. KEY ARCHITECTURAL DECISIONS
+========================================================================
+
+1. VIEW SWAP vs ROUTING: Chose in-page view swapping over Next.js routes
+   to keep the audio player alive across views. The useAudioPlayer hook
+   lives in page.tsx and never unmounts.
+
+2. SINGLE STATE vs MULTIPLE BOOLEANS: Replaced showBlog + showAbout with
+   a single activeView state. Cleaner, prevents impossible states (two
+   views open at once), easier to extend.
+
+3. NOTION OVER MARKDOWN: Switched from static .md files to live Notion
+   rendering. More complex but dramatically better authoring experience.
+   Write in Notion's rich editor, get images/embeds/formatting for free.
+
+4. UNOFFICIAL NOTION API: Used notion-client (unofficial) instead of the
+   official @notionhq/client because it works with public pages without
+   requiring API keys or integration sharing. Trade-off: could break if
+   Notion changes their internal API, but it's widely used and stable.
+
+5. SERVER-SIDE PROXY: The /api/notion route fetches Notion data server-side
+   rather than client-side. This avoids CORS issues and lets us add caching
+   headers. The 5-minute cache means edits in Notion appear within minutes.

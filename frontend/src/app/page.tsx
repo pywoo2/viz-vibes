@@ -171,7 +171,6 @@ export default function Home() {
       className={`mobile-overlay ${mobileDrawerOpen ? 'visible' : ''}`}
       onClick={() => { setMobileDrawerOpen(false); tracksPillRef.current?.focus(); }}
     />
-    <div className="ai-disclaimer">all music was created using ai</div>
     <div
       className="desktop-only"
       style={{
@@ -183,19 +182,6 @@ export default function Home() {
         position: 'relative',
       }}
     >
-      {/* View toggle pill */}
-      <div className="view-toggle-pill">
-        {(['visualizer', 'notes', 'pet', 'blog', 'about'] as ViewMode[]).map((view) => (
-          <button
-            key={view}
-            className={`view-toggle-option ${activeView === view ? 'active' : ''}`}
-            onClick={() => setActiveView(view)}
-          >
-            {view === 'notes' ? 'leave a note' : view}
-          </button>
-        ))}
-      </div>
-
       {/* Visualizer spans full viewport behind everything */}
       {activeView === 'visualizer' && (
         <div id="visualizer-bg">
@@ -253,6 +239,18 @@ export default function Home() {
       />
 
       <div id="main-area">
+        <div className="ai-disclaimer">all music was created using ai</div>
+        <div className="view-toggle-pill">
+          {(['visualizer', 'notes', 'pet', 'blog', 'about'] as ViewMode[]).map((view) => (
+            <button
+              key={view}
+              className={`view-toggle-option ${activeView === view ? 'active' : ''}`}
+              onClick={() => setActiveView(view)}
+            >
+              {view === 'notes' ? 'leave a note' : view}
+            </button>
+          ))}
+        </div>
         {activeView === 'blog' && <BlogView />}
         {activeView === 'about' && <AboutView />}
         {activeView === 'notes' && <NotesView onNoteSubmitted={() => setNotesRefreshKey((k) => k + 1)} />}
@@ -274,7 +272,6 @@ export default function Home() {
         onCycleRepeat={player.cycleRepeat}
         onSeek={player.seek}
         onSetVolume={player.setVolume}
-        onAboutClick={() => { setActiveView(v => v === 'about' ? 'visualizer' : 'about'); }}
         onMiniBarTap={() => setMobileDrawerOpen(true)}
       />
 

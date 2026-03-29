@@ -410,8 +410,9 @@ export default function Pet() {
 
   const handleAction = useCallback(async (action: string, animName: string, emoji: string, e?: React.MouseEvent) => {
     setAnimation(animName);
-    if (e) {
-      const rect = e.currentTarget.getBoundingClientRect();
+    const btnEl = e?.currentTarget as HTMLElement | undefined;
+    if (btnEl) {
+      const rect = btnEl.getBoundingClientRect();
       setFeedbackEmoji({ emoji, x: rect.left + rect.width / 2, y: rect.top });
     }
     triggerFlash();
@@ -420,6 +421,15 @@ export default function Pet() {
       await fetch(`${API_URL}/api/pet/${action}`, { method: 'POST' });
       const data = await fetch(`${API_URL}/api/pet`).then(r => r.json());
       setPet(data);
+      // Check for overfeeding — show warning
+      const wasOverfed = (action === 'feed' && data.hunger < 0) ||
+                         (action === 'play' && data.happiness > 100) ||
+                         (action === 'clean' && data.cleanliness > 100);
+      if (wasOverfed && btnEl) {
+        const rect2 = btnEl.getBoundingClientRect();
+        setFeedbackEmoji({ emoji: '⚠️', x: rect2.left + rect2.width / 2, y: rect2.top });
+        setTimeout(() => setFeedbackEmoji(null), 1500);
+      }
     } catch {
       // Simulate locally if backend is down
       if (pet) {
@@ -481,9 +491,15 @@ export default function Pet() {
     setTodoInput('');
   }, [todoInput]);
 
-  const hungerVal = 100 - (pet?.hunger ?? 50);
-  const happyVal = pet?.happiness ?? 50;
-  const cleanVal = pet?.cleanliness ?? 50;
+  const rawHunger = pet?.hunger ?? 50;
+  const rawHappy = pet?.happiness ?? 50;
+  const rawClean = pet?.cleanliness ?? 50;
+  const hungerVal = 100 - rawHunger; // 100=full, 0=starving
+  const happyVal = rawHappy;
+  const cleanVal = rawClean;
+  const isOverfed = rawHunger < 0; // fed too much
+  const isOvertired = rawHappy > 100; // played too much
+  const isOvercleaned = rawClean > 100; // cleaned too much
 
   const currentGoal = stageGoals.find(g => g.stage === pet?.stage);
   const totalInteractions = pet?.totalInteractions ?? 0;
@@ -529,29 +545,29 @@ export default function Pet() {
           </div>
           <div className="pet-stats">
             <div className="pet-stat">
-              <span className="pet-stat-label">FED</span>
-              <span className="pet-stat-bar">
+              <span className="pet-stat-label">{isOverfed ? '⚠️' : ''} FED</span>
+              <span className={`pet-stat-bar${isOverfed ? ' pet-stat-bar-warn' : ''}`}>
                 <span
-                  className={`pet-stat-fill${hungerVal < 0 ? ' overfed' : ''}`}
-                  style={{ width: `${Math.min(100, Math.abs(hungerVal))}%` }}
+                  className={`pet-stat-fill${isOverfed ? ' overfed' : ''}`}
+                  style={{ width: isOverfed ? '100%' : `${Math.min(100, Math.max(0, hungerVal))}%` }}
                 />
               </span>
             </div>
             <div className="pet-stat">
-              <span className="pet-stat-label">JOY</span>
-              <span className="pet-stat-bar">
+              <span className="pet-stat-label">{isOvertired ? '⚠️' : ''} JOY</span>
+              <span className={`pet-stat-bar${isOvertired ? ' pet-stat-bar-warn' : ''}`}>
                 <span
-                  className={`pet-stat-fill${happyVal > 100 ? ' overfed' : ''}`}
-                  style={{ width: `${Math.min(100, happyVal)}%` }}
+                  className={`pet-stat-fill${isOvertired ? ' overfed' : ''}`}
+                  style={{ width: isOvertired ? '100%' : `${Math.min(100, happyVal)}%` }}
                 />
               </span>
             </div>
             <div className="pet-stat">
-              <span className="pet-stat-label">CLN</span>
-              <span className="pet-stat-bar">
+              <span className="pet-stat-label">{isOvercleaned ? '⚠️' : ''} CLN</span>
+              <span className={`pet-stat-bar${isOvercleaned ? ' pet-stat-bar-warn' : ''}`}>
                 <span
-                  className={`pet-stat-fill${cleanVal > 100 ? ' overfed' : ''}`}
-                  style={{ width: `${Math.min(100, cleanVal)}%` }}
+                  className={`pet-stat-fill${isOvercleaned ? ' overfed' : ''}`}
+                  style={{ width: isOvercleaned ? '100%' : `${Math.min(100, cleanVal)}%` }}
                 />
               </span>
             </div>

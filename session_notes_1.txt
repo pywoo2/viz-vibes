@@ -1,0 +1,554 @@
+================================================================================
+VIZ-VIBES SESSION NOTES #1
+Date: March 28-29, 2026
+================================================================================
+
+OVERVIEW
+--------
+Built viz-vibes.com from scratch — a personal music player with interactive
+WebGL visualizers, floating media overlays, a shared Tamagotchi pet, and a
+guestbook. Started from a simple GitHub Pages site (pywoo2.github.io) with
+static HTML, ended with a full Next.js + FastAPI stack deployed on Railway
+with Cloudflare R2 storage and a custom domain.
+
+================================================================================
+PHASE 1: INITIAL MUSIC PLAYER (Single HTML File)
+================================================================================
+
+Started with a bare index.html on pywoo2.github.io. Built a Spotify-style
+music player in a single HTML file:
+
+- Gruvbox dark theme with CSS variables
+- Sidebar with track list (left), main area (right), bottom player bar
+- Full playback controls: play/pause, next/prev, shuffle, repeat (off/all/one)
+- Progress bar with click-to-seek
+- Volume slider
+- Keyboard shortcuts (Space, arrows)
+- Equalizer bars animation on the active track
+- Track list with staggered fade-in animations
+
+The player fetched tracks from a static tracks.json file. Audio files were
+.wav files stored locally.
+
+================================================================================
+PHASE 2: THEME SYSTEM
+================================================================================
+
+Added 6 color themes, all using CSS custom properties:
+- Gruvbox (warm retro green)
+- Nord (cool arctic cyan)
+- Rosé Pine (soft purple/pink)
+- Tokyo Night (deep blue/purple)
+- Catppuccin (pastel lavender)
+- Midnight (ultra-dark ice blue)
+
+Each theme defined ~30+ CSS variables (--bg, --fg, --accent, --glass-bg, etc).
+Theme picker dropdown in the sidebar header. Selection saved to localStorage.
+
+Later simplified to a single monochrome theme (black/white/gray) to match
+the liquid glass aesthetic. Eventually added 4 color modes for the visualizer:
+mono, rainbow, inverted, deep red.
+
+================================================================================
+PHASE 3: LIQUID GLASS EFFECTS
+================================================================================
+
+Researched iOS 26 liquid glass design. Implemented:
+
+- backdrop-filter: blur(40px) saturate(180%) on sidebar and player bar
+- Semi-transparent backgrounds (rgba with 0.7-0.9 opacity)
+- Subtle white border lines (rgba(255,255,255,0.08))
+- Inset box-shadows for edge glow
+- Animated specular highlight on sidebar (radial gradient that shifts)
+- Mouse-tracking highlights (JS updates CSS via refs, not state, for perf)
+- Track hover glass ripple effect
+- Play button spring press animation (cubic-bezier overshoot)
+- Heart pulse animation on like click
+- Active track breathing glow (4s box-shadow cycle)
+- Sidebar edge glow on hover (vertical light line)
+- Grain texture overlay (SVG feTurbulence at 3% opacity) — later removed
+
+Key technical challenge: Tailwind v4's @import strips backdrop-filter when
+using CSS variables. Fixed by hardcoding blur values instead of var(--glass-blur).
+
+================================================================================
+PHASE 4: INFRASTRUCTURE — RAILWAY + CLOUDFLARE R2
+================================================================================
+
+Moved off GitHub Pages to a proper backend setup:
+
+BACKEND (FastAPI on Railway):
+- server.py → main.py with FastAPI
+- Auto-discovers songs from R2 bucket (no more tracks.json)
+- GET /api/tracks — lists audio files with R2 URLs
+- POST /api/tracks/{title}/like — increment likes (stored in R2 _likes.json)
+- POST /api/tracks/{title}/unlike — decrement likes
+- GET /api/health — health check
+- CORS middleware allowing all origins
+- R2 credentials via environment variables (R2_ACCESS_KEY, R2_SECRET_KEY)
+
+STORAGE (Cloudflare R2):
+- Bucket: peters-music
+- Audio files (.wav) stored at root
+- Art/media files under art/ prefix
+- Likes stored as _likes.json
+- Notes stored as _notes.json
+- Pet state stored as _pet.json
+- Public access via r2.dev URL
+- CORS configured for cross-origin audio
+
+HOSTING (Railway):
+- Two services: frontend (peters-music) and backend
+- Frontend: Next.js Docker build with standalone output
+- Backend: Python 3.12 slim with uvicorn
+- NEXT_PUBLIC_API_URL passed as Docker build arg
+- Custom domain: viz-vibes.com via Cloudflare DNS
+
+DOMAIN (Cloudflare):
+- viz-vibes.com purchased via Cloudflare Registrar
+- CNAME to Railway
+- DNS only (no proxy) for Railway SSL
+- R2 public dev URL for media streaming
+
+================================================================================
+PHASE 5: NEXT.JS + FASTAPI REARCHITECTURE
+================================================================================
+
+Rewrote the single HTML file into a proper React app:
+
+FRONTEND STRUCTURE:
+- frontend/src/app/page.tsx — main page with grid layout
+- frontend/src/app/layout.tsx — root layout with Inter font
+- frontend/src/app/globals.css — all styles (grew to 3000+ lines)
+- frontend/src/hooks/useAudioPlayer.ts — custom hook managing all audio state
+- frontend/src/components/Sidebar.tsx — track list, likes, collapse
+- frontend/src/components/PlayerBar.tsx — controls, progress, volume
+- frontend/src/components/Visualizer.tsx — WebGL shaders
+- frontend/src/components/VisualizerPicker.tsx — RHS mode selector
+- frontend/src/components/ThemePicker.tsx — became useTheme() hook
+- frontend/src/components/FiguresLayer.tsx — floating media overlay
+- frontend/src/components/NotesLayer.tsx — floating notes overlay
+- frontend/src/components/Pet.tsx — Tamagotchi virtual pet
+- frontend/src/components/AboutView.tsx — about page
+- frontend/src/components/NotesView.tsx — note submission view
+- frontend/src/components/BlogView.tsx — blog view
+- frontend/src/themes.ts — theme definitions
+
+useAudioPlayer HOOK:
+- Manages: tracks, currentIndex, isPlaying, shuffle, repeat, volume, time
+- Fetches from /api/tracks on mount
+- AudioContext + AnalyserNode for visualizer data (lazy init on first play)
+- Handles crossOrigin issues with R2 (had to disable for reliable playback)
+- Keyboard shortcuts (Space, arrows)
+- Shuffle uses Fisher-Yates algorithm
+- Repeat modes: off, all, one
+
+================================================================================
+PHASE 6: WEBGL VISUALIZERS
+================================================================================
+
+Built 6 audio-reactive visualizer modes, all as GLSL fragment shaders:
+
+1. NOISE FIELD (default) — 3-octave 2D simplex noise
+   - Bass drives large slow movements
+   - Mids create medium flowing patterns
+   - Highs add fine detail
+   - Center radial glow scales with energy
+   - Mouse warps coordinate space (gravity well)
+
+2. WAVEFORM — audio-reactive sine wave line
+   - 3 layered sine waves at different frequencies
+   - Bass/mid/high control amplitudes
+   - Mouse pulls the wave toward cursor (gaussian falloff)
+   - Glow effect around the line
+
+3. PARTICLES — floating dots
+   - 8-25 particles (count scales with energy)
+   - Each has unique orbital path (golden angle distribution)
+   - Bass makes them expand outward
+   - Speed scales subtly with energy
+   - Mouse attracts nearby particles
+
+4. GRID — perspective tunnel
+   - Polar coordinate grid in tunnel view
+   - Tunnel center shifts with bass/mids + mouse
+   - Segment count changes with highs
+   - Line thickness pulses with bass
+   - Scan line effect driven by energy
+
+5. PLASMA — layered flowing sine field
+   - 5 overlapping sine wave layers
+   - Each modulated by different frequency band
+   - Sharp contour lines that pulse with energy
+   - Center energy burst
+   - Mouse warps coordinates before calculation
+
+6. NONE — black screen with subtle mouse glow + click effects
+
+CLICK EFFECTS (4 types, togglable):
+- Ripple: expanding thin ring from click point
+- Burst: radial rays + center flash
+- Shockwave: thick expanding bright disc
+- None: disabled
+
+TECHNICAL DETAILS:
+- Raw WebGL (no Three.js for the 2D version)
+- Full-screen quad (two triangles)
+- Shader recompiles on mode switch
+- Uniforms: time, bass, mid, high, energy, resolution, mouse, click, clickType, colorMode
+- Mouse tracking via window mousemove (refs, not state)
+- Touch support: touchmove for gravity, touchend for click effects
+- Canvas fills viewport via position:fixed on #visualizer-bg
+- ResizeObserver for responsive canvas sizing
+- DPR capped at 1.5 on mobile (was 2) for performance
+
+COLOR MODES:
+- Mono: vec3(brightness) — white on black
+- Rainbow: rainbow(hue) function using cosine color cycling
+- Inverted: vec3(1.0 - brightness) — black on white
+- Deep Red: (brightness * 0.7, brightness * 0.05, brightness * 0.05)
+
+3D SPHERE EXPERIMENT (reverted):
+- Briefly wrapped shaders onto a Three.js sphere with OrbitControls
+- Camera inside looking out (planetarium dome)
+- Reverted because: UV seam artifacts, disorienting rotation, shaders
+  designed for 2D not 3D, mouse interaction broke
+
+================================================================================
+PHASE 7: FLOATING MEDIA OVERLAY (FiguresLayer)
+================================================================================
+
+Shows photos and videos as faint overlays behind the visualizer:
+
+EVOLUTION:
+1. Started with procedural stick figure drawings (terrible)
+2. Switched to architectural line drawings (also terrible)
+3. Switched to real public domain images from Wikimedia Commons
+   (Da Vinci, Fibonacci, Doré, Tesla patents, CS diagrams)
+4. Final: user's personal photos + videos from R2
+
+CURRENT IMPLEMENTATION:
+- Fetches media list from GET /api/media (dynamic from R2)
+- Shows 3 items at a time (2 on mobile)
+- At least 1 is always a video
+- Cycles every 15s (25s on mobile) — one fades out, new one fades in
+- Staggered fade-in on initial load (800ms apart)
+- New items placed with minimum distance check (25% viewport)
+
+INTERACTIONS:
+- Left-click + drag: rotate in 3D (CSS perspective + rotateX/Y)
+- Right-click + drag: move position (percentage-based)
+- Scroll wheel: zoom in/out (0.3x to 3x scale)
+- Context menu disabled site-wide
+
+STYLING:
+- opacity: 0.12 (mono mode) or 0.2 (rainbow mode)
+- filter: grayscale(100%) brightness(3) contrast(0.6) — mono
+- filter: brightness(1.5) contrast(0.8) saturate(1.2) — rainbow
+- mixBlendMode: screen
+- Videos: autoPlay, loop, muted, playsInline
+
+BACKEND:
+- GET /api/media scans R2 art/ prefix
+- Returns { src, type } for each image/video
+- Supports: jpg, jpeg, png, gif, webp, svg, mov, mp4, webm, m4v
+- Dynamic — just drop files in R2 and they appear
+
+================================================================================
+PHASE 8: NOTES / GUESTBOOK (NotesLayer)
+================================================================================
+
+Floating text notes that visitors leave:
+
+BACKEND:
+- GET /api/notes — returns all notes from _notes.json in R2
+- POST /api/notes — add note (text 1-140 chars, name optional)
+- Stored as array of {text, name, timestamp}
+
+FRONTEND:
+- NotesLayer component — same interaction model as FiguresLayer
+- Shows 2-3 notes at a time, cycles every 15s/25s
+- Left-click drag to rotate, right-click drag to move, scroll to zoom
+- Italic text with "quotes" and — author attribution
+- New notes appear immediately after submission (optimistic + refetch)
+
+NOTE INPUT:
+- Desktop: floating glass input near bottom-right
+- Mobile: hidden (was covering player bar)
+- "leave a note" tab view for dedicated submission
+- Name field + text field + submit arrow
+- "* all notes are public on the site" disclaimer
+
+================================================================================
+PHASE 9: LIKES SYSTEM
+================================================================================
+
+- Heart icon on each track in sidebar
+- Click to like (POST /api/tracks/{title}/like)
+- Optimistic UI update (increment immediately, revert on error)
+- Tracks sorted by most liked (descending), then alphabetical
+- Live re-sorting: when you like a track, the list re-sorts immediately
+  while preserving the currently playing track's position
+- Like counts stored in _likes.json on R2
+- "sorted by most liked — tap the heart" hint in sidebar
+
+ISSUE: R2 API token initially had read-only permission. Likes silently
+failed (500 error). Required creating a new token with read+write access.
+
+================================================================================
+PHASE 10: RESIZABLE / COLLAPSIBLE SIDEBAR
+================================================================================
+
+- Drag right edge to resize (200px min, 400px max)
+- Double-click edge to collapse/expand
+- Width saved to localStorage
+- Collapsed state: 40px sliver with expand button (▶)
+- Expand button at same height as collapse button (◀)
+- Grid template columns update dynamically
+- Transition disabled during active resize (no lag)
+
+================================================================================
+PHASE 11: ABOUT PAGE → MODAL → VIEW
+================================================================================
+
+Started as a separate /about page (caused full navigation, killed audio).
+Converted to a glass modal overlay (no page navigation).
+Eventually became a tab view with cards layout.
+
+Content:
+- "the music" — All songs are AI-generated
+- "the tech" — WebGL, Next.js, FastAPI, Cloudflare R2
+- "the design" — Inspired by iOS liquid glass and MySpace
+- "tips" — Left-click rotate, right-click move, scroll zoom
+- "Made by Peter Woo →" LinkedIn link
+
+================================================================================
+PHASE 12: MOBILE RESPONSIVE (12 rounds of iteration)
+================================================================================
+
+ROUND 1 — Basic layout:
+- Hamburger menu → slide-out drawer from left
+- Compact player bar
+- Volume/picker/notes hidden on mobile
+
+ROUND 2 — iPad + safe areas:
+- iPad: 200px fixed sidebar, 70px bar
+- viewport-fit=cover for iPhone notch
+- env(safe-area-inset-bottom) on player bar
+- WebGL DPR capped at 1.5x on mobile
+- Touch progress bar seeking (touchstart/touchmove/touchend)
+
+ROUND 3 — Drawer polish:
+- Drag handle pill at top of drawer
+- 2-row player bar (title + controls | progress)
+- 52px track items, 36px heart buttons
+- Body scroll lock when drawer open
+
+ROUND 4 — Spotify-inspired:
+- Glass player bar (visualizer shows through)
+- 48px play button
+- Hamburger replaced with floating "♫ 14 tracks" pill
+- Drawer from BOTTOM (not left) — bottom sheet pattern
+- Player bar glow/shadow
+
+ROUND 5 — Polish:
+- Swipe down to close drawer (>100px threshold)
+- Mobile about "i" button at top-right
+- Track title fade animation on song change
+- Backdrop blur on drawer overlay
+- AI disclaimer hidden on mobile
+- Epilepsy button full-width
+
+ROUND 6 — Visual polish:
+- Glass edge glow lines on player bar and drawer
+- Drawer bounce animation (slight overshoot)
+- Tracks pill fade-up entrance animation
+- Active track left accent border
+- Title ellipsis truncation
+- Progress thumb glow when playing
+- Duplicate labels removed
+
+ROUND 7 — Tap feedback:
+- Track tap highlight flash
+- Play button scale-down on tap
+- Progress thumb enlarges on touch
+- Note input focus glow
+- Heart scale animation on tap
+- Viz picker pill tap feedback
+- Haptic-hint ripple on play button (::after pseudo-element)
+
+ROUND 8 — Performance:
+- Particles: 15 on mobile (was 25)
+- Notes/figures cycle 25s on mobile (was 15s)
+- iOS rubber band prevention (overscroll-behavior: none)
+- Text selection disabled on interactive elements
+- will-change GPU hints
+- Landscape drawer 60vh
+- touch-action: manipulation
+
+ROUND 9 — Typography:
+- Bolder player bar title (font-weight 500)
+- Track names 14px, dimmed numbers
+- Larger viz picker pills
+- Monospace time labels
+
+ROUND 10 — Details:
+- Drawer top shadow
+- Track separator lines
+- Bigger equalizer bars
+- Scroll bounce prevention in drawer
+- Track list fade gradient at bottom
+
+ROUND 11 — Accessibility + PWA:
+- theme-color meta tag (#0a0a0a)
+- apple-mobile-web-app-capable
+- Focus management (returns to pill on drawer close)
+- aria-label on all icon buttons
+- prefers-reduced-motion support
+- iOS status bar safe area on about button
+
+ROUND 12 — Final Spotify copy:
+- Spotify mini bar: 52px, progress at top, title + play only
+- Floating rounded pill shape with side margins
+- Bare play icon (no white circle — that's for full-screen)
+- Bold title (font-weight 600)
+- Prev/next restored as smaller icons
+- Tap song title opens drawer
+- "Now Playing" indicator in drawer
+- Pill shows song name when playing
+
+BREAKPOINT STRATEGY:
+- Phone: max-width 767px (bottom sheet drawer)
+- Tablet: 768px - 1023px (200px sidebar, no resize)
+- Desktop: 1024px+ (full layout)
+
+================================================================================
+PHASE 13: TAMAGOTCHI PET
+================================================================================
+
+Shared virtual pet that all users care for together.
+
+BACKEND:
+- Pet state in _pet.json on R2
+- Stats: hunger (0-100+), happiness (0-100+), cleanliness (0-100+)
+- Time-based decay: every hour, hunger +5, happiness -3, cleanliness -2
+- Actions: feed (-5 hunger), play (+5 happiness, +2 hunger), clean (+5 cleanliness)
+- Stats can exceed 0-100 (overfeeding mechanic — bar turns red)
+- Evolution stages: egg(150) → baby(600) → kid(3000) → teen(15000) → adult
+- Mood calculation based on average stats
+- Endpoints: GET /api/pet, POST feed/play/clean/rename
+- Community todo log: GET/POST /api/pet/todos (max 20, stored in R2)
+
+FRONTEND:
+- Canvas-based pixel art rendering (16x16 grid, 2fps)
+- 4-color monochrome palette (GameBoy green: #0f380f, #306230, #8bac0f)
+- 12 hand-crafted sprite frames:
+  - Egg: wobble animation (2 frames)
+  - Baby: idle bounce, eating, sad, dirty, sleeping, playing
+- Retro Tamagotchi device shell (dark gradient, rounded corners, shadow)
+- Green LCD screen with inset shadow
+- Stat bars (FED, JOY, CLN) — turn red when overfed (>100 or <0)
+- Evolution progress bar (emoji → bar → next emoji, no numbers)
+- Three round retro buttons (feed, play, clean)
+- Click pet name to rename (inline edit)
+- Floating emoji feedback on actions (🍔/🎾/✨ pop from button, drift up)
+- Screen flash animation on button press
+
+3-COLUMN LAYOUT:
+- Left: Instructions card (how to care, evolution stages + progress)
+- Center: Tamagotchi device
+- Right: Community log (chat-style card, auto-scroll to bottom)
+
+================================================================================
+PHASE 14: SONG MANAGEMENT
+================================================================================
+
+RENAMING:
+- All 14 songs renamed to lowercase (e.g., "Salt in My Head" → "turn it off")
+- Likes preserved during rename (updated _likes.json in R2)
+- Files re-uploaded with new names, old files deleted
+- Fixed broken songs (empty files from failed renames) by re-uploading
+
+FILE FORMAT FIXES:
+- Converted 6 HEIC photos to JPG (browsers can't display HEIC)
+- Converted 7 PNG photos to JPG
+- One song had underscore in name ("What Did I Do Last Night_") — fixed
+
+DYNAMIC MEDIA:
+- GET /api/media endpoint scans R2 art/ prefix
+- Returns all images and videos with type classification
+- Frontend fetches dynamically — no more hardcoded file lists
+- Just drop files in R2 and they appear automatically
+
+================================================================================
+PHASE 15: MISCELLANEOUS FEATURES
+================================================================================
+
+EPILEPSY WARNING:
+- Full-screen dark overlay on page load
+- "before you enter" / "this site contains flashing lights..."
+- "i understand, continue" button to dismiss
+- Uses inline styles (Tailwind was stripping CSS classes)
+
+RIGHT-CLICK CONTEXT MENU:
+- Disabled site-wide via script in layout.tsx
+- Right-click + drag moves floating media/notes instead
+
+VIEW SYSTEM (tabs):
+- visualizer, leave a note, pet, blog, about
+- Pill-shaped toggle at top center
+- Each view renders different content in #main-area
+- Visualizer + floating layers only show on visualizer tab
+
+BLOG:
+- BlogView component
+- Markdown content in public/content/
+- "Rekindling A Love" — relationship with running
+
+AI DISCLAIMER:
+- "all music was created using ai" at top center
+- 0.5 opacity, 0.7rem
+- Hidden on mobile
+
+CENTERING FIX:
+- Moved tabs + disclaimer inside #main-area
+- Changed from position:fixed to position:absolute
+- Now centers relative to content column, not viewport
+- Sidebar expand/collapse doesn't misalign tabs
+
+================================================================================
+DEPLOYMENT WORKFLOW
+================================================================================
+
+Throughout the session, the deploy process was:
+
+1. npm run build (in frontend/)
+2. git add -A && git commit && git push
+3. Copy frontend to /tmp, strip node_modules/.next
+4. railway link + railway service link peters-music + railway up --detach
+5. (For backend) Same but with backend service
+
+Total commits: ~60+
+Total deploys: ~40+
+Total agents spawned: ~80+
+
+The multi-agent workflow was key — research, implementation, and testing
+agents running in parallel, communicating via a blackboard file
+(.blackboard.md and .mobile-blackboard.md).
+
+================================================================================
+TECH STACK SUMMARY
+================================================================================
+
+Frontend: Next.js 16, TypeScript, Tailwind CSS v4
+Backend: FastAPI, Python 3.12, boto3
+Storage: Cloudflare R2 (S3-compatible)
+Hosting: Railway (2 services)
+Domain: Cloudflare Registrar + DNS
+Audio: Web Audio API (AnalyserNode for FFT data)
+Visualizer: Raw WebGL (GLSL fragment shaders)
+Pet: Canvas 2D (pixel art rendering)
+
+================================================================================
+END OF SESSION NOTES
+================================================================================

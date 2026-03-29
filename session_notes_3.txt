@@ -1,0 +1,231 @@
+Session Notes 3 — Styling Uplevel for About & Leave a Note Tabs + Info Button Removal
+======================================================================================
+Date: 2026-03-29
+
+Files changed:
+  - frontend/src/components/AboutView.tsx
+  - frontend/src/components/NotesView.tsx
+  - frontend/src/components/PlayerBar.tsx
+  - frontend/src/app/page.tsx
+  - frontend/src/app/globals.css
+
+
+1. ABOUT VIEW STYLING UPLEVEL
+==============================
+
+Goal: Uplevel the About tab to match the iOS liquid glass aesthetic used throughout
+the rest of the platform (sidebar, player bar, blog view).
+
+Starting state:
+  - AboutView.tsx was a simple component using the generic `.blog-view` container
+    with `.blog-content` > `.blog-article` wrappers.
+  - Content was plain HTML: h1, h2, p tags, an <hr>, and a link. No custom classes.
+  - All styling came from the shared blog-view/blog-content CSS, which gave it a
+    basic glass panel with backdrop blur but no visual distinction from the blog.
+
+First iteration (card grid — later revised):
+  - Replaced the flat article layout with a 2-column CSS grid of glass cards.
+  - Each section (music, tech, design, tips) became its own `.about-view-card` with:
+    * A decorative icon (♫, ◆, ◎, ⟡) via `.about-view-card-icon`
+    * A lowercase heading via `.about-view-card-heading` (0.72rem, 600 weight,
+      letter-spacing 0.08em, colored with --fg-dim)
+    * Body text via `.about-view-card-text` (0.88rem, 300 weight, line-height 1.7)
+  - Cards had glass styling: `background: rgba(255,255,255,0.03)`, border with
+    `var(--glass-border)`, `border-radius: 16px`, and a `::before` pseudo-element
+    with a `radial-gradient` to simulate a specular highlight at the top-left.
+  - Hover state brightened the background to 0.05 alpha, pushed border to 0.14 alpha,
+    and added an elevated box-shadow + inset top glow.
+  - "Tips" card spanned both columns with `.about-view-card--wide { grid-column: 1/-1 }`.
+  - Footer with a thin border-top separator and author link.
+
+Second iteration (simplified — final version):
+  - User feedback: didn't love the stacking, formatting, and colors of the card grid.
+  - Dropped the grid, cards, icons, and all card-related CSS entirely.
+  - Replaced with a clean single-column article flow that matches the blog view's
+    editorial feel:
+    * `.about-view-sections` — a flex column with 32px gap between sections.
+    * `.about-view-section h2` — small label-style headings (0.7rem, 600 weight,
+      lowercase, letter-spaced, colored --fg-dim). Matches the old about-modal
+      section headings and feels consistent with the sidebar track metadata style.
+    * `.about-view-section p` — body text at 0.88rem, 300 weight, --fg color,
+      line-height 1.7.
+    * Footer with 48px top margin, thin border-top, and the author link.
+  - The outer `.about-view` container kept the same glass panel base as blog-view:
+    var(--glass-bg), backdrop-filter blur(40px) saturate(180%), border-left with
+    var(--glass-border).
+  - Content area: max-width 750px (matching blog-content), padding 80px 48px 48px,
+    centered with margin 0 auto.
+
+CSS classes created:
+  .about-view, .about-view-content, .about-view-title, .about-view-sections,
+  .about-view-section (h2 and p), .about-view-footer, .about-view-author
+
+CSS classes removed (from first iteration):
+  .about-view-grid, .about-view-card, .about-view-card::before,
+  .about-view-card:hover, .about-view-card--wide, .about-view-card-icon,
+  .about-view-card-heading, .about-view-card-text
+
+
+2. NOTES VIEW (LEAVE A NOTE) STYLING UPLEVEL
+=============================================
+
+Goal: Same liquid glass uplevel, plus fix centering.
+
+Starting state:
+  - NotesView.tsx used the same generic `.blog-view` > `.blog-content` > `.blog-article`
+    wrappers as the about page and blog.
+  - Form elements used `.notes-form`, `.notes-form-input`, `.notes-form-textarea`,
+    `.notes-form-footer`, `.notes-form-count`, `.notes-form-submit`,
+    `.notes-form-success` classes.
+  - Form had max-width 400px but was left-aligned inside the 750px content area,
+    making it feel off-center.
+
+First iteration (glass card — later revised):
+  - Gave NotesView its own `.notes-view` / `.notes-view-content` wrappers instead
+    of reusing blog-view.
+  - Added a title (1.6rem, 200 weight, lowercase) and subtitle paragraph.
+  - Wrapped the form in a `.notes-view-card` glass container:
+    * Same glass card treatment as the about cards: rgba(255,255,255,0.03) bg,
+      glass-border, 16px radius, inset top shadow, radial-gradient ::before.
+    * max-width: 460px for a tighter form feel.
+  - Inputs got upgraded: 14px 18px padding, 12px radius, focus state with
+    box-shadow ring (0 0 0 3px at 0.03 alpha).
+  - Submit button got backdrop-filter blur(10px), pill shape (20px radius),
+    active scale(0.96) press animation.
+  - Success message got a pulsing dot indicator (.notes-view-success-dot) with
+    a fade-in animation (noteSuccessFade keyframe) and dot pulse (noteDotPulse).
+  - Content area used max-width 750px with margin 0 auto, but the card's own
+    max-width 460px caused it to left-align within that space.
+
+Second iteration (centered, no card wrapper — final version):
+  - User feedback: centering felt off.
+  - Root cause: the content wrapper was max-width 750px centered in the panel,
+    but the card inside was max-width 460px and left-aligned within that.
+  - Fix: Made `.notes-view` itself a centering container with
+    `align-items: center; justify-content: center` (flex).
+  - Removed the max-width and margin from `.notes-view-content` and instead set
+    max-width 460px directly on the content wrapper so everything is naturally
+    centered in the viewport.
+  - Removed the glass card wrapper (`.notes-view-card` no longer has background,
+    border, shadow, or ::before). It's now just a bare flex column with gap.
+    The inputs themselves provide the visual structure.
+  - On mobile, switched to `justify-content: flex-start` so content starts from
+    the top with padding instead of vertically centering (which wastes space on
+    small screens).
+
+CSS classes created:
+  .notes-view, .notes-view-content, .notes-view-title, .notes-view-subtitle,
+  .notes-view-card, .notes-view-input, .notes-view-textarea, .notes-view-footer,
+  .notes-view-count, .notes-view-submit, .notes-view-success, .notes-view-success-dot
+
+CSS classes removed:
+  .notes-form, .notes-form-input, .notes-form-textarea, .notes-form-footer,
+  .notes-form-count, .notes-form-submit, .notes-form-success
+
+Keyframes added:
+  @keyframes noteSuccessFade — fade-in with slight upward translate
+  @keyframes noteDotPulse — opacity pulse for the success dot indicator
+
+
+3. INFO BUTTON REMOVAL FROM PLAYER BAR
+=======================================
+
+Goal: Remove the "i" info button from the player bar since the about tab in the
+view toggle pill now serves as the sole entry point to the about content.
+
+What was removed from PlayerBar.tsx:
+  - The `onAboutClick` prop from the PlayerBarProps interface (line 21).
+  - The `onAboutClick` destructured parameter (line 46).
+  - The `<style>` block containing the `@keyframes infoGlow` animation (lines 171-176).
+    This was an inline <style> tag that defined a pulsing box-shadow glow animation
+    cycling between 12px/30px and 20px/40px/60px white glow over 2 seconds.
+  - The entire `<button>` element (lines 301-333): a 36px circular button with
+    inline styles for glass appearance, the infoGlow animation, and mouse
+    enter/leave handlers for hover color changes. It rendered the letter "i".
+  - The wrapping React fragment (`<>...</>`) which was only needed because the
+    <style> tag and <div> were siblings. With the style tag and button removed,
+    the component now returns a single <div> directly.
+
+What was removed from page.tsx:
+  - The `onAboutClick` prop passed to <PlayerBar>:
+    `onAboutClick={() => { setActiveView(v => v === 'about' ? 'visualizer' : 'about'); }}`
+
+What was removed from globals.css (dead CSS from old about modal):
+  - The entire "ABOUT MODAL" section (~90 lines):
+    .about-overlay, .about-card, .about-close, .about-close:hover, .about-title,
+    .about-section, .about-section h3, .about-section p, .about-link, .about-link:hover
+  - The "ABOUT MODAL — MOBILE" media query section (~40 lines):
+    Mobile overrides for .about-card, .about-title, .about-section p, .about-section,
+    .about-link, .about-close
+  - The `.about-close` selector from a mobile tap-target rule that set min-height 44px
+    on interactive elements.
+
+Note: These CSS classes had no corresponding TSX references — the old modal had
+already been functionally replaced by the AboutView tab component, but the CSS
+was left behind as dead code. This cleanup removed it.
+
+
+4. VIEW TOGGLE PILL POINTER-EVENTS FIX
+=======================================
+
+Bug: After the changes, clicking the view toggle pill tabs didn't work — the cursor
+showed as a crosshair (from the visualizer canvas underneath).
+
+Root cause:
+  - `#main-area` has `pointer-events: none` by default so clicks pass through to
+    the visualizer canvas behind it.
+  - `#main-area` only gets `pointer-events: auto` when it contains specific view
+    components, via `:has()` selectors:
+      #main-area:has(.blog-view),
+      #main-area:has(.pet-container),
+      #main-area:has(.about-view),
+      #main-area:has(.notes-view) { pointer-events: auto; }
+  - When on the visualizer view, none of those child components are rendered, so
+    #main-area stays pointer-events: none, and the pill (which is positioned
+    absolutely inside #main-area) inherits that.
+  - The crosshair cursor came from `#visualizer-bg #visualizer-canvas` which has
+    `cursor: crosshair` — since the pill wasn't intercepting clicks, the canvas
+    underneath was showing its cursor.
+
+Fix: Added `pointer-events: auto` directly to `.view-toggle-pill` so it always
+intercepts clicks regardless of the parent's pointer-events state. This is the
+same pattern used throughout the codebase for interactive elements inside
+pointer-events: none containers.
+
+
+5. MOBILE RESPONSIVE ADJUSTMENTS
+=================================
+
+Added a `@media (max-width: 767px)` block for both new views:
+  - .about-view, .notes-view: border-left: none (no left border on mobile since
+    there's no sidebar adjacent)
+  - .about-view-content: padding reduced to 70px 20px 20px
+  - .notes-view: justify-content: flex-start (don't vertically center on small screens)
+  - .notes-view-content: padding reduced to 70px 20px 20px
+
+These match the existing blog-view mobile overrides for consistency.
+
+
+6. CONSISTENCY WITH EXISTING PLATFORM STYLING
+===============================================
+
+Design tokens reused from the existing system:
+  - --glass-bg (rgba(28,28,30,0.72)) — semi-transparent dark background
+  - --glass-border (rgba(255,255,255,0.08)) — subtle light border
+  - --glass-blur (40px) — backdrop blur strength
+  - --fg, --fg-bright, --fg-dim, --fg-muted — text color hierarchy
+  - --accent — used for success states (green in gruvbox theme)
+  - backdrop-filter: blur(40px) saturate(180%) — the standard glass treatment
+  - border-left: 1px solid var(--glass-border) — panel edge separator
+  - animation: fadeIn 0.3s ease — shared view entrance animation
+
+Typography conventions preserved:
+  - Title: 1.6rem, weight 200, lowercase, letter-spacing 0.06em
+  - Section headings: 0.7rem, weight 600, lowercase, letter-spacing 0.08em
+  - Body text: 0.85-0.88rem, weight 300, line-height 1.6-1.7
+  - Font family: inherited from body (-apple-system, SF Pro, Inter stack)
+
+Spacing conventions:
+  - Content padding: 80px 48px 48px (desktop), 70px 20px 20px (mobile)
+  - max-width: 750px — matches blog-content
+  - scrollbar-width: thin, scrollbar-color: var(--fg-muted) transparent

@@ -6,38 +6,32 @@ export default function AboutView() {
       <div className="about-view-content">
         <h1 className="about-view-title">about viz-vibes</h1>
 
-        <div className="about-view-grid">
-          <div className="about-view-card">
-            <span className="about-view-card-icon">♫</span>
-            <h2 className="about-view-card-heading">the music</h2>
-            <p className="about-view-card-text">All songs are AI-generated.</p>
+        <div className="about-view-sections">
+          <div className="about-view-section">
+            <h2>the music</h2>
+            <p>All songs are AI-generated.</p>
           </div>
 
-          <div className="about-view-card">
-            <span className="about-view-card-icon">◆</span>
-            <h2 className="about-view-card-heading">the tech</h2>
-            <p className="about-view-card-text">
+          <div className="about-view-section">
+            <h2>the tech</h2>
+            <p>
               WebGL shaders power the audio-reactive visualizer. The frontend is
               Next.js, the backend is FastAPI, and audio streams from Cloudflare R2.
             </p>
           </div>
 
-          <div className="about-view-card">
-            <span className="about-view-card-icon">◎</span>
-            <h2 className="about-view-card-heading">the design</h2>
-            <p className="about-view-card-text">
-              Inspired by iOS liquid glass and MySpace.
-            </p>
+          <div className="about-view-section">
+            <h2>the design</h2>
+            <p>Inspired by iOS liquid glass and MySpace.</p>
           </div>
 
-          <div className="about-view-card about-view-card--wide">
-            <span className="about-view-card-icon">⟡</span>
-            <h2 className="about-view-card-heading">tips</h2>
-            <p className="about-view-card-text">
-              Left-click and drag the floating images, videos, and notes to rotate them in 3D.
-              Right-click and drag to move them around.
-              Scroll to zoom. Switch visualizers and click effects on the right
-              panel. Heart a song to vote — the list sorts by most liked.
+          <div className="about-view-section">
+            <h2>tips</h2>
+            <p>
+              Left-click and drag the floating images, videos, and notes to rotate
+              them in 3D. Right-click and drag to move them around. Scroll to zoom.
+              Switch visualizers and click effects on the right panel. Heart a song
+              to vote — the list sorts by most liked.
             </p>
           </div>
         </div>
