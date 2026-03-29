@@ -41,15 +41,50 @@ function randomPosition(existing: { x: number; y: number }[] = []) {
   return { x: 15 + Math.random() * 70, y: 15 + Math.random() * 70 };
 }
 
-function pickRandomMedia(allMedia: MediaItem[], exclude: string[], preferType?: 'image' | 'video'): MediaItem | null {
-  if (allMedia.length === 0) return null;
-  const available = allMedia.filter((m) => !exclude.includes(m.src));
-  const pool = available.length > 0 ? available : allMedia;
-  if (preferType) {
-    const typed = pool.filter((m) => m.type === preferType);
-    if (typed.length > 0) return typed[Math.floor(Math.random() * typed.length)];
+// Shuffle-bag: cycle through all media before repeating any, like a deck of cards.
+// Separate bags for images and videos so the "at least 1 video" constraint
+// doesn't drain the video bag faster than the image bag.
+function createShuffleBag(items: MediaItem[]): MediaItem[] {
+  const shuffled = [...items];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
-  return pool[Math.floor(Math.random() * pool.length)];
+  return shuffled;
+}
+
+let imageBag: MediaItem[] = [];
+let videoBag: MediaItem[] = [];
+
+function pickFromBag(allMedia: MediaItem[], exclude: string[], preferType?: 'image' | 'video'): MediaItem | null {
+  if (allMedia.length === 0) return null;
+
+  const allImages = allMedia.filter((m) => m.type === 'image');
+  const allVideos = allMedia.filter((m) => m.type === 'video');
+
+  if (preferType === 'video' || (!preferType && Math.random() < 0.4)) {
+    // Draw from video bag
+    if (videoBag.length === 0) videoBag = createShuffleBag(allVideos);
+    for (let tries = 0; tries < videoBag.length; tries++) {
+      const item = videoBag.pop()!;
+      if (!exclude.includes(item.src)) return item;
+      // Put it at the front to try later
+      videoBag.unshift(item);
+    }
+    // All videos excluded (only 3 showing), reshuffle
+    videoBag = createShuffleBag(allVideos);
+    return videoBag.pop() ?? null;
+  }
+
+  // Draw from image bag
+  if (imageBag.length === 0) imageBag = createShuffleBag(allImages);
+  for (let tries = 0; tries < imageBag.length; tries++) {
+    const item = imageBag.pop()!;
+    if (!exclude.includes(item.src)) return item;
+    imageBag.unshift(item);
+  }
+  imageBag = createShuffleBag(allImages);
+  return imageBag.pop() ?? null;
 }
 
 export default function FiguresLayer({ visible, colorMode }: FiguresLayerProps) {
@@ -92,7 +127,7 @@ export default function FiguresLayer({ visible, colorMode }: FiguresLayerProps) 
     const usedSrcs: string[] = [];
     for (let i = 0; i < 3; i++) {
       // First slot is always a video
-      const media = pickRandomMedia(allMediaRef.current, usedSrcs, i === 0 ? 'video' : undefined);
+      const media = pickFromBag(allMediaRef.current, usedSrcs, i === 0 ? 'video' : undefined);
       if (!media) continue;
       usedSrcs.push(media.src);
       const pos = randomPosition(initial);
@@ -134,7 +169,7 @@ export default function FiguresLayer({ visible, colorMode }: FiguresLayerProps) 
           const usedSrcs = prev.map((img) => img.src);
           // If no videos remain after fade, force the replacement to be a video
           const remainingVideos = prev.filter((img, i) => i !== fadedIndex && img.opacity > 0 && img.type === 'video').length;
-          const newMedia = pickRandomMedia(allMediaRef.current, usedSrcs, remainingVideos === 0 ? 'video' : undefined);
+          const newMedia = pickFromBag(allMediaRef.current, usedSrcs, remainingVideos === 0 ? 'video' : undefined);
           if (!newMedia) return prev;
           const others = prev.filter((_, i) => i !== fadedIndex && prev[i].opacity > 0);
           const pos = randomPosition(others);
