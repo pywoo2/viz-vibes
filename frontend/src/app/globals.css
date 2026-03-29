@@ -2576,6 +2576,21 @@ body {
   color: var(--fg-bright);
 }
 
+.about-view-bio {
+  font-size: 0.75rem;
+  color: var(--fg-dim);
+  margin-top: 6px;
+  font-weight: 300;
+}
+.about-view-bio a {
+  color: var(--fg);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.about-view-bio a:hover {
+  color: var(--accent);
+}
+
 /* ========== NOTES VIEW ========== */
 .notes-view {
   position: relative;
@@ -2733,37 +2748,101 @@ body {
 }
 
 @media (max-width: 767px) {
+  /* ── View toggle pill ── */
+  .view-toggle-pill {
+    top: 12px;
+    padding: 2px;
+    gap: 1px;
+  }
+
+  .view-toggle-option {
+    padding: 5px 10px;
+    font-size: 0.62rem;
+  }
+
+  /* ── Blog view ── */
   .blog-view {
     border-left: none;
   }
 
   .blog-content {
-    padding: 70px 20px 20px;
+    padding: 56px 20px 80px;
   }
 
   .blog-post-item {
     padding: 16px 18px;
   }
 
+  .blog-back {
+    min-height: 44px;
+  }
+
   .notion-page-wrapper .notion-title {
     font-size: 1.6rem !important;
   }
 
-  .about-view,
-  .notes-view {
+  .notion-page-wrapper h2 {
+    font-size: 1.2rem !important;
+  }
+
+  .notion-page-wrapper p,
+  .notion-page-wrapper .notion-text {
+    font-size: 0.9rem !important;
+  }
+
+  .notion-page-wrapper img,
+  .notion-page-wrapper .notion-asset-wrapper {
+    max-width: 100%;
+    border-radius: 8px;
+  }
+
+  /* ── About view ── */
+  .about-view {
     border-left: none;
   }
 
   .about-view-content {
-    padding: 70px 20px 20px;
+    padding: 56px 20px 80px;
   }
 
+  .about-view-title {
+    font-size: 1.3rem;
+  }
+
+  .about-view-sections {
+    gap: 24px;
+  }
+
+  .about-view-section p {
+    font-size: 0.82rem;
+  }
+
+  .about-view-footer {
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* ── Notes view ── */
   .notes-view {
+    border-left: none;
     justify-content: flex-start;
   }
 
   .notes-view-content {
-    padding: 70px 20px 20px;
+    padding: 56px 20px 80px;
+    max-width: 100%;
+  }
+
+  .notes-view-title {
+    font-size: 1.3rem;
+  }
+
+  .notes-view-content input,
+  .notes-view-content textarea {
+    font-size: 16px;
+  }
+
+  .notes-view-content button[type="submit"] {
+    min-height: 44px;
   }
 }
 
@@ -3290,6 +3369,47 @@ body {
   padding: 6px 10px;
   cursor: pointer;
   font-size: 0.75rem;
+}
+
+/* ========== R11-4.5: PET VIEW MOBILE RESPONSIVE ========== */
+@media (max-width: 767px) {
+  .pet-container {
+    overflow-y: auto;
+    padding-bottom: 80px;
+  }
+
+  .pet-layout {
+    flex-direction: column;
+    align-items: center;
+    padding: 56px 16px 20px;
+    gap: 16px;
+  }
+
+  .pet-instructions {
+    width: 100%;
+    max-width: 340px;
+  }
+
+  .pet-device {
+    max-width: 280px;
+    padding: 20px 18px 18px;
+  }
+
+  .pet-log {
+    width: 100%;
+    max-width: 340px;
+    max-height: 250px;
+  }
+
+  .pet-canvas {
+    width: 140px;
+    height: 140px;
+  }
+
+  .pet-btn {
+    width: 48px;
+    height: 48px;
+  }
 }
 
 /* ========== R11-5: REDUCED MOTION PREFERENCE ========== */
