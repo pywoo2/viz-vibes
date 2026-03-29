@@ -488,6 +488,11 @@ body {
   position: relative;
   z-index: 1;
   pointer-events: none;
+  overflow: hidden;
+}
+
+#main-area:has(.blog-view) {
+  pointer-events: auto;
 }
 
 #main-header {
@@ -1213,74 +1218,73 @@ body {
     display: none !important;
   }
 
-  /* Compact player bar — glass, fixed at bottom */
+  /* Mobile player bar — Spotify-style stacked layout */
   #player-bar {
     position: fixed !important;
     bottom: 0 !important;
     left: 0 !important;
     right: 0 !important;
-    display: grid !important;
-    display: grid !important;
-    grid-template-columns: 1fr auto !important;
-    grid-template-rows: auto auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
     height: auto !important;
-    padding: 6px 12px;
-    padding-bottom: max(6px, env(safe-area-inset-bottom));
-    gap: 2px 8px;
-    background: rgba(0, 0, 0, 0.6) !important;
+    padding: 10px 16px 12px;
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+    gap: 6px;
+    background: rgba(0, 0, 0, 0.75) !important;
     -webkit-backdrop-filter: blur(30px) saturate(150%) !important;
     backdrop-filter: blur(30px) saturate(150%) !important;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
     z-index: 15;
   }
 
-  /* Row 1 left: song title */
+  /* Row 1: song title — centered, full width */
   #np-info {
-    grid-column: 1;
-    grid-row: 1;
+    width: 100%;
     display: flex;
     align-items: center;
+    justify-content: center;
     min-width: 0;
   }
   #np-info .np-text {
+    text-align: center;
     width: 100%;
   }
   #np-info .np-title {
-    font-size: 0.72rem;
+    font-size: 0.85rem;
+    font-weight: 500;
     color: #fff;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    max-width: 80vw;
   }
 
-  /* Row 1 right: controls */
+  /* Row 2: controls — centered, spacious */
   #player-center {
-    grid-column: 2;
-    grid-row: 1;
     max-width: none;
-    width: auto;
-    gap: 0;
+    width: 100%;
+    gap: 4px;
+    align-items: center;
   }
-  #controls { gap: 6px; }
-  #controls button { padding: 4px; }
-  #controls button svg { width: 18px; height: 18px; }
-  #play-btn { width: 36px !important; height: 36px !important; }
-  #play-btn svg { width: 18px !important; height: 18px !important; }
+  #controls { gap: 20px; justify-content: center !important; }
+  #controls button { padding: 8px; }
+  #controls button svg { width: 22px; height: 22px; }
+  #play-btn { width: 48px !important; height: 48px !important; }
+  #play-btn svg { width: 22px !important; height: 22px !important; }
 
   /* Hide shuffle, repeat on mobile */
   #shuffle-btn, #repeat-btn { display: none; }
 
-  /* Row 2: progress bar full width */
+  /* Row 3: progress bar full width */
   #progress-row {
-    grid-column: 1 / -1;
-    grid-row: 2;
     width: 100%;
   }
   #progress-row .time {
-    font-size: 9px;
-    min-width: 24px;
-    color: rgba(255, 255, 255, 0.3);
+    font-size: 10px;
+    min-width: 28px;
+    color: rgba(255, 255, 255, 0.4);
   }
 
   /* Hide volume on mobile */
@@ -1313,7 +1317,7 @@ body {
   .mobile-tracks-btn {
     display: flex;
     position: fixed;
-    bottom: 80px;
+    bottom: 120px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 20;
@@ -2279,6 +2283,294 @@ body {
   /* R11-6: Status bar safe area on mobile */
   .mobile-about-btn {
     top: max(12px, env(safe-area-inset-top)) !important;
+  }
+}
+
+/* ========== BLOG VIEW ========== */
+.blog-view {
+  position: relative;
+  z-index: 10;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  backdrop-filter: blur(40px) saturate(180%);
+  border-left: 1px solid var(--glass-border);
+  pointer-events: auto;
+  animation: fadeIn 0.3s ease;
+}
+
+.blog-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 28px;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.blog-title {
+  font-size: 1.1rem;
+  font-weight: 200;
+  letter-spacing: 0.08em;
+  color: var(--fg-bright);
+  text-transform: lowercase;
+}
+
+.blog-back {
+  background: none;
+  border: none;
+  color: var(--fg-dim);
+  font-size: 0.82rem;
+  font-family: inherit;
+  cursor: pointer;
+  padding: 4px 0;
+  transition: color 0.15s;
+}
+
+.blog-back:hover {
+  color: var(--fg-bright);
+}
+
+.blog-close {
+  background: none;
+  border: none;
+  color: var(--fg-dim);
+  font-size: 1.2rem;
+  cursor: pointer;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: color 0.15s, background 0.15s;
+}
+
+.blog-close:hover {
+  color: var(--fg-bright);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.blog-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 28px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--fg-muted) transparent;
+}
+
+.blog-loading {
+  color: var(--fg-dim);
+  font-size: 0.85rem;
+}
+
+/* Blog post list */
+.blog-post-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.blog-post-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  width: 100%;
+  padding: 16px 20px;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.blog-post-item:hover {
+  background: var(--bg-hover);
+  border-color: var(--glass-border);
+}
+
+.blog-post-item-title {
+  font-size: 0.95rem;
+  font-weight: 400;
+  color: var(--fg-bright);
+}
+
+.blog-post-item-date {
+  font-size: 0.72rem;
+  color: var(--fg-dim);
+  letter-spacing: 0.04em;
+}
+
+.blog-post-item-desc {
+  font-size: 0.82rem;
+  color: var(--fg);
+  font-weight: 300;
+  line-height: 1.5;
+}
+
+/* Blog article — markdown typography */
+.blog-article {
+  max-width: 640px;
+}
+
+.blog-post-meta {
+  margin-bottom: 24px;
+}
+
+.blog-post-meta time {
+  font-size: 0.72rem;
+  color: var(--fg-dim);
+  letter-spacing: 0.04em;
+}
+
+.blog-article h1 {
+  font-size: 1.5rem;
+  font-weight: 300;
+  letter-spacing: 0.04em;
+  color: var(--fg-bright);
+  margin-bottom: 16px;
+  line-height: 1.3;
+}
+
+.blog-article h2 {
+  font-size: 1.05rem;
+  font-weight: 400;
+  color: var(--fg-bright);
+  margin-top: 32px;
+  margin-bottom: 12px;
+  letter-spacing: 0.02em;
+}
+
+.blog-article h3 {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--fg);
+  margin-top: 24px;
+  margin-bottom: 8px;
+}
+
+.blog-article p {
+  font-size: 0.88rem;
+  font-weight: 300;
+  color: var(--fg);
+  line-height: 1.75;
+  margin-bottom: 16px;
+}
+
+.blog-article a {
+  color: var(--accent);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.blog-article a:hover {
+  color: var(--fg-bright);
+}
+
+.blog-article ul,
+.blog-article ol {
+  margin-bottom: 16px;
+  padding-left: 24px;
+}
+
+.blog-article li {
+  font-size: 0.88rem;
+  font-weight: 300;
+  color: var(--fg);
+  line-height: 1.75;
+  margin-bottom: 4px;
+}
+
+.blog-article strong {
+  font-weight: 500;
+  color: var(--fg-bright);
+}
+
+.blog-article code {
+  font-size: 0.82rem;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+  padding: 2px 6px;
+  color: var(--accent);
+}
+
+.blog-article pre {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  overflow-x: auto;
+}
+
+.blog-article pre code {
+  background: none;
+  padding: 0;
+  font-size: 0.82rem;
+  color: var(--fg);
+}
+
+.blog-article blockquote {
+  border-left: 2px solid var(--accent-dim);
+  padding-left: 16px;
+  margin-bottom: 16px;
+  color: var(--fg-dim);
+  font-style: italic;
+}
+
+.blog-article hr {
+  border: none;
+  border-top: 1px solid var(--glass-border);
+  margin: 32px 0;
+}
+
+/* Blog button (desktop — in sidebar area or near viz picker) */
+.mobile-blog-btn {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .mobile-blog-btn {
+    display: flex;
+    position: fixed;
+    top: 12px;
+    right: 56px;
+    z-index: 35;
+    height: 36px;
+    padding: 0 12px;
+    border-radius: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(0, 0, 0, 0.5);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.72rem;
+    font-weight: 500;
+    font-family: inherit;
+    letter-spacing: 0.06em;
+    text-transform: lowercase;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+
+  .blog-view {
+    border-left: none;
+  }
+
+  .blog-header {
+    padding: 16px 20px;
+  }
+
+  .blog-content {
+    padding: 20px;
   }
 }
 

@@ -9,6 +9,7 @@ import Visualizer from '../components/Visualizer';
 import VisualizerPicker from '../components/VisualizerPicker';
 import FiguresLayer from '../components/FiguresLayer';
 import NotesLayer from '../components/NotesLayer';
+import BlogView from '../components/BlogView';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -23,6 +24,7 @@ export default function Home() {
   const [colorMode, setColorMode] = useState('mono');
   const [clickEffect, setClickEffect] = useState('ripple');
   const [showAbout, setShowAbout] = useState(false);
+  const [showBlog, setShowBlog] = useState(false);
   const [showWarning, setShowWarning] = useState(true);
   const [noteText, setNoteText] = useState('');
   const [noteName, setNoteName] = useState('');
@@ -173,6 +175,9 @@ export default function Home() {
     <button className="mobile-about-btn" aria-label="About" onClick={() => setShowAbout(prev => !prev)}>
       i
     </button>
+    <button className="mobile-blog-btn" aria-label="Blog" onClick={() => setShowBlog(prev => !prev)}>
+      blog
+    </button>
     <div
       className={`mobile-overlay ${mobileDrawerOpen ? 'visible' : ''}`}
       onClick={() => { setMobileDrawerOpen(false); tracksPillRef.current?.focus(); }}
@@ -190,28 +195,32 @@ export default function Home() {
       }}
     >
       {/* Visualizer spans full viewport behind everything */}
-      <div id="visualizer-bg">
-        <Visualizer analyser={player.analyserRef?.current ?? null} isPlaying={player.isPlaying} mode={vizMode} colorMode={colorMode} clickEffect={clickEffect} />
-      </div>
+      {!showBlog && (
+        <div id="visualizer-bg">
+          <Visualizer analyser={player.analyserRef?.current ?? null} isPlaying={player.isPlaying} mode={vizMode} colorMode={colorMode} clickEffect={clickEffect} />
+        </div>
+      )}
 
       <FiguresLayer
         isPlaying={player.isPlaying}
         analyser={player.analyserRef?.current ?? null}
-        visible={figuresVisible}
+        visible={figuresVisible && !showBlog}
       />
 
-      <NotesLayer visible={figuresVisible} refreshKey={notesRefreshKey} />
+      <NotesLayer visible={figuresVisible && !showBlog} refreshKey={notesRefreshKey} />
 
-      <VisualizerPicker
-        mode={vizMode}
-        onModeChange={handleVizModeChange}
-        figuresVisible={figuresVisible}
-        onToggleFigures={handleToggleFigures}
-        colorMode={colorMode}
-        onColorModeChange={handleColorModeChange}
-        clickEffect={clickEffect}
-        onClickEffectChange={handleClickEffectChange}
-      />
+      {!showBlog && (
+        <VisualizerPicker
+          mode={vizMode}
+          onModeChange={handleVizModeChange}
+          figuresVisible={figuresVisible}
+          onToggleFigures={handleToggleFigures}
+          colorMode={colorMode}
+          onColorModeChange={handleColorModeChange}
+          clickEffect={clickEffect}
+          onClickEffectChange={handleClickEffectChange}
+        />
+      )}
 
       <Sidebar
         tracks={player.tracks}
@@ -240,7 +249,9 @@ export default function Home() {
         style={{ left: isCollapsed ? 0 : sidebarWidth }}
       />
 
-      <div id="main-area"></div>
+      <div id="main-area">
+        {showBlog && <BlogView onClose={() => setShowBlog(false)} />}
+      </div>
 
       <PlayerBar
         currentTrack={currentTrack}
@@ -257,10 +268,11 @@ export default function Home() {
         onCycleRepeat={player.cycleRepeat}
         onSeek={player.seek}
         onSetVolume={player.setVolume}
+        onBlogClick={() => { setShowBlog(prev => !prev); }}
         onAboutClick={() => { setShowAbout(prev => !prev); }}
       />
 
-      <div className="note-input-container">
+      {!showBlog && <div className="note-input-container">
         <div className="note-disclaimer">* all notes are public on the site</div>
         <input
           type="text"
