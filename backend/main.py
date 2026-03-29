@@ -303,6 +303,11 @@ def apply_decay(pet: dict) -> dict:
                 pet["happiness"] = max(0, pet["happiness"] - 1)
             if random.random() < 0.5:
                 pet["cleanliness"] = max(0, pet["cleanliness"] - 1)
+        # Lose 1 progress per hour per stat at 0
+        hours = intervals // 12  # 12 five-minute intervals per hour
+        if hours >= 1:
+            zero_stats = (1 if pet["happiness"] <= 0 else 0) + (1 if pet["cleanliness"] <= 0 else 0) + (1 if pet["hunger"] >= 100 else 0)
+            pet["totalInteractions"] = max(0, pet["totalInteractions"] - zero_stats * hours)
         pet["lastDecay"] = now.isoformat()
     return pet
 
