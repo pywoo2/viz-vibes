@@ -2821,6 +2821,179 @@ body {
   }
 }
 
+/* ========== PET (TAMAGOTCHI) ========== */
+/* ── Tamagotchi Pet ── */
+
+.pet-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 24px;
+}
+
+.pet-device {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  background: linear-gradient(145deg, #3a3a4a 0%, #2a2a38 100%);
+  border-radius: 28px;
+  padding: 28px 24px 24px;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  border: 2px solid #1a1a24;
+  max-width: 300px;
+  width: 100%;
+}
+
+.pet-screen {
+  background: #9bbc0f;
+  border: 3px solid #0f380f;
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  box-shadow:
+    inset 0 0 20px rgba(0, 0, 0, 0.15),
+    inset 0 0 4px rgba(0, 0, 0, 0.25),
+    0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.pet-canvas {
+  width: 160px;
+  height: 160px;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  border: 2px solid #306230;
+  border-radius: 6px;
+  box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.1);
+}
+
+.pet-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 100%;
+  font-family: 'Courier New', monospace;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #0f380f;
+}
+
+.pet-stat {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pet-stat-label {
+  width: 28px;
+  text-align: right;
+  flex-shrink: 0;
+  font-size: 0.6rem;
+  letter-spacing: 0.5px;
+}
+
+.pet-stat-bar {
+  flex: 1;
+  height: 8px;
+  background: rgba(48, 98, 48, 0.35);
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid #306230;
+}
+
+.pet-stat-fill {
+  display: block;
+  height: 100%;
+  background: #0f380f;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.pet-stat-val {
+  width: 22px;
+  text-align: right;
+  flex-shrink: 0;
+  font-size: 0.6rem;
+}
+
+.pet-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.65rem;
+  color: #306230;
+}
+
+.pet-info-dot {
+  color: #306230;
+  font-weight: bold;
+}
+
+.pet-name {
+  font-weight: bold;
+  color: #0f380f;
+}
+
+.pet-stage,
+.pet-mood {
+  color: #306230;
+}
+
+.pet-offline {
+  font-family: 'Courier New', monospace;
+  font-size: 0.55rem;
+  color: #306230;
+  font-style: italic;
+  opacity: 0.7;
+}
+
+.pet-buttons {
+  display: flex;
+  gap: 16px;
+}
+
+.pet-btn {
+  background: linear-gradient(180deg, #4a4a5c 0%, #36364a 100%);
+  color: #c8d8c0;
+  border: 2px solid #1a1a24;
+  border-radius: 50%;
+  width: 54px;
+  height: 54px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.1s, background 0.15s;
+  text-transform: lowercase;
+  box-shadow:
+    0 3px 6px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.pet-btn:hover {
+  background: linear-gradient(180deg, #5a5a6e 0%, #42425a 100%);
+  color: #e0f0d8;
+}
+
+.pet-btn:active {
+  transform: scale(0.92);
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
 /* ========== R11-5: REDUCED MOTION PREFERENCE ========== */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

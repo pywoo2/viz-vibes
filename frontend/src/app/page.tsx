@@ -12,8 +12,9 @@ import NotesLayer from '../components/NotesLayer';
 import BlogView from '../components/BlogView';
 import AboutView from '../components/AboutView';
 import NotesView from '../components/NotesView';
+import Pet from '../components/Pet';
 
-type ViewMode = 'visualizer' | 'blog' | 'about' | 'notes';
+type ViewMode = 'visualizer' | 'blog' | 'about' | 'notes' | 'pet';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -184,7 +185,7 @@ export default function Home() {
     >
       {/* View toggle pill */}
       <div className="view-toggle-pill">
-        {(['visualizer', 'blog', 'about', 'notes'] as ViewMode[]).map((view) => (
+        {(['visualizer', 'notes', 'pet', 'blog', 'about'] as ViewMode[]).map((view) => (
           <button
             key={view}
             className={`view-toggle-option ${activeView === view ? 'active' : ''}`}
@@ -255,6 +256,7 @@ export default function Home() {
         {activeView === 'blog' && <BlogView />}
         {activeView === 'about' && <AboutView />}
         {activeView === 'notes' && <NotesView onNoteSubmitted={() => setNotesRefreshKey((k) => k + 1)} />}
+        {activeView === 'pet' && <Pet />}
       </div>
 
       <PlayerBar

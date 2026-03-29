@@ -30,6 +30,22 @@ R2_BUCKET = os.environ.get("R2_BUCKET", "peters-music")
 AUDIO_EXTENSIONS = {".wav", ".mp3", ".ogg", ".flac", ".aac", ".m4a"}
 LIKES_KEY = "_likes.json"
 NOTES_KEY = "_notes.json"
+PET_KEY = "_pet.json"
+
+DEFAULT_PET = {
+    "name": "viz",
+    "hunger": 50,
+    "happiness": 50,
+    "cleanliness": 50,
+    "age": 0,
+    "totalInteractions": 0,
+    "stage": "egg",
+    "lastFed": None,
+    "lastPlayed": None,
+    "lastCleaned": None,
+    "lastDecay": None,
+    "born": None,
+}
 
 
 class NoteBody(BaseModel):
@@ -225,3 +241,124 @@ def add_note(body: NoteBody):
     if not save_notes(notes):
         raise HTTPException(status_code=500, detail="Failed to persist note")
     return new_note
+
+
+# ── Pet (shared Tamagotchi) ──────────────────────────────────────────
+
+
+def load_pet() -> dict:
+    """Read _pet.json from R2, return default if not found."""
+    try:
+        s3 = get_r2_client()
+        response = s3.get_object(Bucket=R2_BUCKET, Key=PET_KEY)
+        return json.loads(response["Body"].read().decode("utf-8"))
+    except Exception:
+        now = datetime.now(timezone.utc).isoformat()
+        pet = {**DEFAULT_PET, "lastFed": now, "lastPlayed": now, "lastCleaned": now, "lastDecay": now, "born": now}
+        save_pet(pet)
+        return pet
+
+
+def save_pet(pet: dict) -> bool:
+    """Write _pet.json to R2."""
+    try:
+        s3 = get_r2_client()
+        s3.put_object(
+            Bucket=R2_BUCKET,
+            Key=PET_KEY,
+            Body=json.dumps(pet, indent=2).encode("utf-8"),
+            ContentType="application/json",
+        )
+        return True
+    except Exception as e:
+        print(f"[save_pet] Failed to write _pet.json to R2: {e}")
+        return False
+
+
+def apply_decay(pet: dict) -> dict:
+    """Apply time-based stat decay since lastDecay."""
+    now = datetime.now(timezone.utc)
+    last = datetime.fromisoformat(pet["lastDecay"])
+    hours = (now - last).total_seconds() / 3600
+    if hours >= 1:
+        full_hours = int(hours)
+        pet["hunger"] = min(100, pet["hunger"] + 5 * full_hours)
+        pet["happiness"] = max(0, pet["happiness"] - 3 * full_hours)
+        pet["cleanliness"] = max(0, pet["cleanliness"] - 2 * full_hours)
+        pet["lastDecay"] = now.isoformat()
+    return pet
+
+
+def get_stage(total_interactions: int) -> str:
+    if total_interactions < 50:
+        return "egg"
+    if total_interactions < 200:
+        return "baby"
+    if total_interactions < 1000:
+        return "kid"
+    if total_interactions < 5000:
+        return "teen"
+    return "adult"
+
+
+def get_mood(pet: dict) -> str:
+    mood_score = ((100 - pet["hunger"]) + pet["happiness"] + pet["cleanliness"]) / 3
+    if mood_score > 70:
+        return "happy"
+    if mood_score > 40:
+        return "neutral"
+    return "sad"
+
+
+@app.get("/api/pet")
+def get_pet():
+    pet = load_pet()
+    pet = apply_decay(pet)
+    pet["stage"] = get_stage(pet["totalInteractions"])
+    pet["mood"] = get_mood(pet)
+    if not save_pet(pet):
+        raise HTTPException(status_code=500, detail="Failed to persist pet state")
+    return pet
+
+
+@app.post("/api/pet/feed")
+def feed_pet():
+    pet = load_pet()
+    pet = apply_decay(pet)
+    pet["hunger"] = max(0, pet["hunger"] - 20)
+    pet["totalInteractions"] += 1
+    pet["lastFed"] = datetime.now(timezone.utc).isoformat()
+    pet["stage"] = get_stage(pet["totalInteractions"])
+    pet["mood"] = get_mood(pet)
+    if not save_pet(pet):
+        raise HTTPException(status_code=500, detail="Failed to persist pet state")
+    return pet
+
+
+@app.post("/api/pet/play")
+def play_pet():
+    pet = load_pet()
+    pet = apply_decay(pet)
+    pet["happiness"] = min(100, pet["happiness"] + 15)
+    pet["hunger"] = min(100, pet["hunger"] + 5)
+    pet["totalInteractions"] += 1
+    pet["lastPlayed"] = datetime.now(timezone.utc).isoformat()
+    pet["stage"] = get_stage(pet["totalInteractions"])
+    pet["mood"] = get_mood(pet)
+    if not save_pet(pet):
+        raise HTTPException(status_code=500, detail="Failed to persist pet state")
+    return pet
+
+
+@app.post("/api/pet/clean")
+def clean_pet():
+    pet = load_pet()
+    pet = apply_decay(pet)
+    pet["cleanliness"] = min(100, pet["cleanliness"] + 25)
+    pet["totalInteractions"] += 1
+    pet["lastCleaned"] = datetime.now(timezone.utc).isoformat()
+    pet["stage"] = get_stage(pet["totalInteractions"])
+    pet["mood"] = get_mood(pet)
+    if not save_pet(pet):
+        raise HTTPException(status_code=500, detail="Failed to persist pet state")
+    return pet
