@@ -439,9 +439,9 @@ def save_pet_todos(todos: list[dict]) -> bool:
 @app.get("/api/pet/todos")
 def get_pet_todos():
     todos = load_pet_todos()
-    # newest first
-    todos.sort(key=lambda t: t.get("timestamp", ""), reverse=True)
-    return todos[:20]
+    # oldest first
+    todos.sort(key=lambda t: t.get("timestamp", ""))
+    return todos[-20:]
 
 
 @app.post("/api/pet/todos")
@@ -458,8 +458,8 @@ def add_pet_todo(body: TodoBody):
     }
     todos.append(new_todo)
     # Keep newest 20
-    todos.sort(key=lambda t: t.get("timestamp", ""), reverse=True)
-    todos = todos[:20]
+    todos.sort(key=lambda t: t.get("timestamp", ""))
+    todos = todos[-20:]
     if not save_pet_todos(todos):
         raise HTTPException(status_code=500, detail="Failed to persist todo")
     return new_todo

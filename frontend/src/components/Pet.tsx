@@ -484,9 +484,9 @@ export default function Pet() {
         body: JSON.stringify({ text, author: 'visitor' }),
       });
       const newTodo = await res.json();
-      setTodos(prev => [newTodo, ...prev].slice(0, 20));
+      setTodos(prev => [...prev, newTodo].slice(-20));
     } catch {
-      setTodos(prev => [{ text, author: 'visitor', timestamp: new Date().toISOString() }, ...prev].slice(0, 20));
+      setTodos(prev => [...prev, { text, author: 'visitor', timestamp: new Date().toISOString() }].slice(-20));
     }
     setTodoInput('');
   }, [todoInput]);
@@ -625,6 +625,12 @@ export default function Pet() {
           {todos.map((t, i) => (
             <div key={i} className="pet-log-entry">
               <span className="pet-log-text">{t.text}</span>
+              {t.timestamp && (
+                <span className="pet-log-time">
+                  {new Date(t.timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}{' '}
+                  {new Date(t.timestamp).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
+                </span>
+              )}
             </div>
           ))}
         </div>

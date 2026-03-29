@@ -3237,6 +3237,13 @@ body {
   line-height: 1.4;
 }
 
+.pet-log-time {
+  color: rgba(255,255,255,0.25);
+  font-size: 0.6rem;
+  display: block;
+  margin-top: 2px;
+}
+
 .pet-log-author {
   color: rgba(255,255,255,0.3);
   font-size: 0.65rem;
