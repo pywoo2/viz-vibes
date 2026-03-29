@@ -22,7 +22,19 @@ export default function AboutView() {
 
           <div className="about-view-section">
             <h2>the design</h2>
-            <p>Inspired by MySpace.</p>
+            <p>
+              Inspired by MySpace — back when the internet was personal, stupid, and
+              expressive. In an age of{' '}
+              <a
+                href="https://en.wikipedia.org/wiki/Enshittification"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                enshittification
+              </a>
+              {' '}and AI slop, this is a small corner of the web that&apos;s just vibes.
+              Overfeed the pet. Spam-like a song. Click the shaders.
+            </p>
           </div>
 
           <div className="about-view-section">

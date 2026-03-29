@@ -2551,6 +2551,18 @@ body {
   border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
+.about-view-section a {
+  color: var(--fg-bright);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: rgba(255, 255, 255, 0.3);
+  transition: text-decoration-color 0.2s;
+}
+
+.about-view-section a:hover {
+  text-decoration-color: var(--fg-bright);
+}
+
 .about-view-author {
   font-size: 0.8rem;
   font-weight: 400;
