@@ -77,34 +77,58 @@ export default function CountingView() {
     setLog(prev => [...prev, { action, timestamp: new Date().toISOString() }].slice(-50));
   }, []);
 
-  const handleIncrement = useCallback(async () => {
+  // Debounced batching: accumulate delta, send one request after 600ms of no clicks
+  const pendingDelta = useRef(0);
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const flushDelta = useCallback(async () => {
+    const delta = pendingDelta.current;
+    pendingDelta.current = 0;
+    if (delta === 0) return;
+    try {
+      const r = await fetch(`${API_URL}/api/counter/add`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ delta }),
+      });
+      if (r.ok) {
+        const data = await r.json();
+        if (typeof data.value === 'number') setCount(data.value);
+      }
+    } catch { /* optimistic update already applied */ }
+  }, []);
+
+  const queueDelta = useCallback((d: number) => {
+    pendingDelta.current += d;
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(flushDelta, 600);
+  }, [flushDelta]);
+
+  const handleIncrement = useCallback(() => {
     flash('up');
     flashBtn('add');
     spawnParticles('+1', '#8bac0f');
     setCount(prev => (prev ?? 0) + 1);
     addLogEntry('+1');
-    try {
-      const r = await fetch(`${API_URL}/api/counter/increment`, { method: 'POST' });
-      if (r.ok) { const data = await r.json(); if (typeof data.value === 'number') setCount(data.value); }
-    } catch { /* optimistic update already applied */ }
-  }, [flash, flashBtn, spawnParticles, addLogEntry]);
+    queueDelta(1);
+  }, [flash, flashBtn, spawnParticles, addLogEntry, queueDelta]);
 
-  const handleDecrement = useCallback(async () => {
+  const handleDecrement = useCallback(() => {
     flash('down');
     flashBtn('sub');
     spawnParticles('−1', '#d44');
     setCount(prev => (prev ?? 0) - 1);
     addLogEntry('−1');
-    try {
-      const r = await fetch(`${API_URL}/api/counter/decrement`, { method: 'POST' });
-      if (r.ok) { const data = await r.json(); if (typeof data.value === 'number') setCount(data.value); }
-    } catch { /* optimistic update already applied */ }
-  }, [flash, flashBtn, spawnParticles, addLogEntry]);
+    queueDelta(-1);
+  }, [flash, flashBtn, spawnParticles, addLogEntry, queueDelta]);
 
   const handleReset = useCallback(async () => {
     flash('reset');
     flashBtn('reset');
     spawnParticles('0', 'rgba(255,255,255,0.4)');
+    // Cancel any pending delta
+    pendingDelta.current = 0;
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
     setCount(0);
     addLogEntry('reset');
     try {

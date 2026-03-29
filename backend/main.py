@@ -561,6 +561,21 @@ def decrement_counter():
     return counter
 
 
+class CounterDelta(BaseModel):
+    delta: int
+
+
+@app.post("/api/counter/add")
+def add_counter(body: CounterDelta):
+    counter = load_counter()
+    counter["value"] += body.delta
+    if not save_counter(counter):
+        raise HTTPException(status_code=500, detail="Failed to persist counter")
+    if body.delta != 0:
+        append_counter_log(f"{body.delta:+d}")
+    return counter
+
+
 @app.post("/api/counter/reset")
 def reset_counter():
     counter = {"value": 0}
