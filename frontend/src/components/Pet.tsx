@@ -335,6 +335,23 @@ export default function Pet() {
   const [nameInput, setNameInput] = useState('');
   const [todos, setTodos] = useState<TodoEntry[]>([]);
   const [todoInput, setTodoInput] = useState('');
+  const logRef = useRef<HTMLDivElement>(null);
+  const deviceRef = useRef<HTMLDivElement>(null);
+  const instructionsRef = useRef<HTMLDivElement>(null);
+  const logPanelRef = useRef<HTMLDivElement>(null);
+  const [panelHeight, setPanelHeight] = useState<number | undefined>(undefined);
+
+  // Sync side panel heights to device
+  useEffect(() => {
+    const sync = () => {
+      if (deviceRef.current) {
+        setPanelHeight(deviceRef.current.offsetHeight);
+      }
+    };
+    sync();
+    window.addEventListener('resize', sync);
+    return () => window.removeEventListener('resize', sync);
+  }, [pet]);
 
   // Fetch pet state
   useEffect(() => {
@@ -365,7 +382,13 @@ export default function Pet() {
   useEffect(() => {
     fetch(`${API_URL}/api/pet/todos`)
       .then(r => r.json())
-      .then((data) => { if (Array.isArray(data)) setTodos(data); })
+      .then((data) => {
+        if (Array.isArray(data)) {
+          const sorted = [...data].sort((a, b) => (a.timestamp || '').localeCompare(b.timestamp || ''));
+          setTodos(sorted);
+          setTimeout(() => { if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight; }, 50);
+        }
+      })
       .catch(() => {});
   }, []);
 
@@ -489,6 +512,7 @@ export default function Pet() {
       setTodos(prev => [...prev, { text, author: 'visitor', timestamp: new Date().toISOString() }].slice(-20));
     }
     setTodoInput('');
+    setTimeout(() => { if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight; }, 50);
   }, [todoInput]);
 
   const rawHunger = pet?.hunger ?? 50;
@@ -510,12 +534,13 @@ export default function Pet() {
   return (
     <div className="pet-container">
       <div className="pet-layout">
-      <div className="pet-instructions">
+      <div className="pet-instructions" style={panelHeight ? { height: panelHeight } : undefined}>
         <div className="pet-instructions-header">how to care</div>
         <div className="pet-instructions-body">
           <p>{'\u{1F354}'} <strong>feed</strong> — reduces hunger</p>
           <p>{'\u{1F3BE}'} <strong>play</strong> — increases happiness</p>
           <p>{'\u2728'} <strong>clean</strong> — increases cleanliness</p>
+          <p className="pet-instructions-warn">⚠️ don&apos;t overdo it or you&apos;ll overfeed or tire the pet out and cause evolution progress to regress.</p>
           <p className="pet-instructions-note">everyone shares this one pet — take care of it together! stats decay over time if nobody visits.</p>
         </div>
         <div className="pet-instructions-header">evolution</div>
@@ -533,7 +558,7 @@ export default function Pet() {
           </div>
         </div>
       </div>
-      <div className="pet-device">
+      <div className="pet-device" ref={deviceRef}>
         <div className={`pet-screen${actionFlash ? ' action-flash' : ''}`}>
           <div className="pet-canvas-wrapper">
             <canvas
@@ -615,10 +640,12 @@ export default function Pet() {
             clean
           </button>
         </div>
+
+
       </div>
-      <div className="pet-log">
+      <div className="pet-log" style={panelHeight ? { height: panelHeight } : undefined}>
         <div className="pet-log-header">community log</div>
-        <div className="pet-log-messages" ref={(el) => { if (el) el.scrollTop = el.scrollHeight; }}>
+        <div className="pet-log-messages" ref={logRef}>
           {todos.length === 0 && (
             <div className="pet-log-empty">no messages yet...</div>
           )}

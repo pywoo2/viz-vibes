@@ -13,9 +13,11 @@ import BlogView from '../components/BlogView';
 import AboutView from '../components/AboutView';
 import NotesView from '../components/NotesView';
 import Pet from '../components/Pet';
+import CountingView from '../components/CountingView';
+import ParachuteView from '../components/ParachuteView';
 import { posts } from '../lib/posts';
 
-type ViewMode = 'visualizer' | 'blog' | 'about' | 'notes' | 'pet';
+type ViewMode = 'visualizer' | 'blog' | 'about' | 'notes' | 'pet' | 'counting' | 'parachute';
 
 function parseHash(hash: string): { view: ViewMode; blogSlug: string | null } {
   const h = hash.replace('#', '');
@@ -27,7 +29,7 @@ function parseHash(hash: string): { view: ViewMode; blogSlug: string | null } {
     }
     return { view: 'blog', blogSlug: null };
   }
-  const validViews: ViewMode[] = ['visualizer', 'blog', 'about', 'notes', 'pet'];
+  const validViews: ViewMode[] = ['visualizer', 'blog', 'about', 'notes', 'pet', 'counting', 'parachute'];
   if (validViews.includes(h as ViewMode)) return { view: h as ViewMode, blogSlug: null };
   return { view: 'visualizer', blogSlug: null };
 }
@@ -290,7 +292,7 @@ export default function Home() {
       <div id="main-area">
         <div className="ai-disclaimer">all music was created using ai</div>
         <div className="view-toggle-pill">
-          {(['visualizer', 'notes', 'pet', 'blog', 'about'] as ViewMode[]).map((view) => (
+          {(['visualizer', 'notes', 'pet', 'counting', 'parachute', 'blog', 'about'] as ViewMode[]).map((view) => (
             <button
               key={view}
               className={`view-toggle-option ${activeView === view ? 'active' : ''}`}
@@ -304,6 +306,8 @@ export default function Home() {
         {activeView === 'about' && <AboutView />}
         {activeView === 'notes' && <NotesView onNoteSubmitted={() => setNotesRefreshKey((k) => k + 1)} />}
         {activeView === 'pet' && <Pet />}
+        {activeView === 'counting' && <CountingView />}
+        {activeView === 'parachute' && <ParachuteView />}
       </div>
 
       <PlayerBar

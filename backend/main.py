@@ -33,6 +33,8 @@ LIKES_KEY = "_likes.json"
 NOTES_KEY = "_notes.json"
 PET_KEY = "_pet.json"
 PET_TODOS_KEY = "_pet_todos.json"
+COUNTER_KEY = "_counter.json"
+COUNTER_LOG_KEY = "_counter_log.json"
 
 DEFAULT_PET = {
     "name": "tamagotchi",
@@ -287,16 +289,20 @@ def save_pet(pet: dict) -> bool:
 
 
 def apply_decay(pet: dict) -> dict:
-    """Apply time-based stat decay since lastDecay."""
+    """Apply time-based stat decay since lastDecay.
+    Every 5-minute interval has a 50% chance of -1 to each stat.
+    """
     now = datetime.now(timezone.utc)
     last = datetime.fromisoformat(pet["lastDecay"])
-    hours = (now - last).total_seconds() / 3600
-    if hours >= 1:
-        full_hours = int(hours)
-        for _ in range(full_hours):
-            pet["hunger"] = min(100, pet["hunger"] + random.randint(2, 8))
-            pet["happiness"] = max(0, pet["happiness"] - random.randint(2, 8))
-            pet["cleanliness"] = max(0, pet["cleanliness"] - random.randint(2, 8))
+    intervals = int((now - last).total_seconds() / 300)  # 5-minute intervals
+    if intervals >= 1:
+        for _ in range(intervals):
+            if random.random() < 0.5:
+                pet["hunger"] = min(100, pet["hunger"] + 1)
+            if random.random() < 0.5:
+                pet["happiness"] = max(0, pet["happiness"] - 1)
+            if random.random() < 0.5:
+                pet["cleanliness"] = max(0, pet["cleanliness"] - 1)
         pet["lastDecay"] = now.isoformat()
     return pet
 
@@ -465,3 +471,100 @@ def add_pet_todo(body: TodoBody):
     if not save_pet_todos(todos):
         raise HTTPException(status_code=500, detail="Failed to persist todo")
     return new_todo
+
+
+# ── Shared counter ────────────────────────────────────────────────
+
+
+def load_counter() -> dict:
+    try:
+        s3 = get_r2_client()
+        response = s3.get_object(Bucket=R2_BUCKET, Key=COUNTER_KEY)
+        return json.loads(response["Body"].read().decode("utf-8"))
+    except Exception:
+        return {"value": 0}
+
+
+def save_counter(counter: dict) -> bool:
+    try:
+        s3 = get_r2_client()
+        s3.put_object(
+            Bucket=R2_BUCKET,
+            Key=COUNTER_KEY,
+            Body=json.dumps(counter).encode("utf-8"),
+            ContentType="application/json",
+        )
+        return True
+    except Exception as e:
+        print(f"[save_counter] Failed: {e}")
+        return False
+
+
+def load_counter_log() -> list[dict]:
+    try:
+        s3 = get_r2_client()
+        response = s3.get_object(Bucket=R2_BUCKET, Key=COUNTER_LOG_KEY)
+        return json.loads(response["Body"].read().decode("utf-8"))
+    except Exception:
+        return []
+
+
+def save_counter_log(log: list[dict]) -> bool:
+    try:
+        s3 = get_r2_client()
+        s3.put_object(
+            Bucket=R2_BUCKET,
+            Key=COUNTER_LOG_KEY,
+            Body=json.dumps(log).encode("utf-8"),
+            ContentType="application/json",
+        )
+        return True
+    except Exception as e:
+        print(f"[save_counter_log] Failed: {e}")
+        return False
+
+
+def append_counter_log(action: str):
+    log = load_counter_log()
+    log.append({"action": action, "timestamp": datetime.now(timezone.utc).isoformat()})
+    log = log[-50:]
+    save_counter_log(log)
+
+
+@app.get("/api/counter")
+def get_counter():
+    return load_counter()
+
+
+@app.get("/api/counter/log")
+def get_counter_log():
+    return load_counter_log()
+
+
+@app.post("/api/counter/increment")
+def increment_counter():
+    counter = load_counter()
+    counter["value"] += 1
+    if not save_counter(counter):
+        raise HTTPException(status_code=500, detail="Failed to persist counter")
+    append_counter_log("+1")
+    return counter
+
+
+@app.post("/api/counter/decrement")
+def decrement_counter():
+    counter = load_counter()
+    counter["value"] -= 1
+    if not save_counter(counter):
+        raise HTTPException(status_code=500, detail="Failed to persist counter")
+    append_counter_log("−1")
+    return counter
+
+
+@app.post("/api/counter/reset")
+def reset_counter():
+    counter = {"value": 0}
+    if not save_counter(counter):
+        raise HTTPException(status_code=500, detail="Failed to persist counter")
+    append_counter_log("reset")
+    return counter
