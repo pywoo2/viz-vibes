@@ -290,11 +290,11 @@ def save_pet(pet: dict) -> bool:
 
 def apply_decay(pet: dict) -> dict:
     """Apply time-based stat decay since lastDecay.
-    Every 5-minute interval has a 50% chance of -1 to each stat.
+    Every 2-minute interval has a 50% chance of -1 to each stat.
     """
     now = datetime.now(timezone.utc)
     last = datetime.fromisoformat(pet["lastDecay"])
-    intervals = int((now - last).total_seconds() / 300)  # 5-minute intervals
+    intervals = int((now - last).total_seconds() / 120)  # 2-minute intervals
     if intervals >= 1:
         for _ in range(intervals):
             if random.random() < 0.5:
@@ -304,7 +304,7 @@ def apply_decay(pet: dict) -> dict:
             if random.random() < 0.5:
                 pet["cleanliness"] = max(0, pet["cleanliness"] - 1)
         # Lose 1 progress per hour per stat at 0
-        hours = intervals // 12  # 12 five-minute intervals per hour
+        hours = intervals // 30  # 30 two-minute intervals per hour
         if hours >= 1:
             zero_stats = (1 if pet["happiness"] <= 0 else 0) + (1 if pet["cleanliness"] <= 0 else 0) + (1 if pet["hunger"] >= 100 else 0)
             pet["totalInteractions"] = max(0, pet["totalInteractions"] - zero_stats * hours)
