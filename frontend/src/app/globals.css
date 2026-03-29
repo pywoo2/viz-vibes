@@ -491,7 +491,10 @@ body {
   overflow: hidden;
 }
 
-#main-area:has(.blog-view) {
+#main-area:has(.blog-view),
+#main-area:has(.pet-container),
+#main-area:has(.about-view),
+#main-area:has(.notes-view) {
   pointer-events: auto;
 }
 

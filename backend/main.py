@@ -33,7 +33,7 @@ NOTES_KEY = "_notes.json"
 PET_KEY = "_pet.json"
 
 DEFAULT_PET = {
-    "name": "viz",
+    "name": "tamagotchi",
     "hunger": 50,
     "happiness": 50,
     "cleanliness": 50,

@@ -445,7 +445,7 @@ export default function Pet() {
             </div>
           </div>
           <div className="pet-info">
-            <span className="pet-name">{pet?.name ?? 'viz'}</span>
+            <span className="pet-name">{pet?.name ?? 'tamagotchi'}</span>
             <span className="pet-info-dot">&middot;</span>
             <span className="pet-stage">{pet?.stage ?? 'egg'}</span>
             <span className="pet-info-dot">&middot;</span>
