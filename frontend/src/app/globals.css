@@ -2496,147 +2496,62 @@ body {
   line-height: 1.6;
 }
 
-/* Blog article — Notion-inspired typography */
-.blog-article {
+/* Notion renderer — dark theme overrides */
+.notion-page-wrapper {
   max-width: 720px;
 }
 
-.blog-post-meta {
-  margin-bottom: 4px;
+.notion-page-wrapper .notion-page {
+  padding: 0 !important;
+  width: 100% !important;
 }
 
-.blog-post-meta time {
-  font-size: 0.85rem;
-  color: var(--fg-muted);
+.notion-page-wrapper .notion-title {
+  font-size: 2.4rem !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.03em !important;
+  color: var(--fg-bright) !important;
 }
 
-.blog-article h1 {
-  font-size: 2.4rem;
-  font-weight: 700;
-  letter-spacing: -0.03em;
-  color: var(--fg-bright);
-  margin-bottom: 24px;
-  line-height: 1.2;
+.notion-page-wrapper .notion-h2 {
+  font-size: 1.5rem !important;
+  margin-top: 40px !important;
 }
 
-.blog-article h2 {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: var(--fg-bright);
-  margin-top: 48px;
-  margin-bottom: 16px;
-  letter-spacing: -0.02em;
-  line-height: 1.3;
+.notion-page-wrapper .notion-h3 {
+  font-size: 1.2rem !important;
+  margin-top: 32px !important;
 }
 
-.blog-article h3 {
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: var(--fg-bright);
-  margin-top: 36px;
-  margin-bottom: 12px;
-  letter-spacing: -0.01em;
+.notion-page-wrapper .notion-text {
+  color: var(--fg) !important;
 }
 
-.blog-article p {
-  font-size: 1rem;
-  font-weight: 400;
-  color: var(--fg);
-  line-height: 1.7;
-  margin-bottom: 16px;
+.notion-page-wrapper .notion-asset-wrapper {
+  max-width: 100% !important;
 }
 
-.blog-article a {
-  color: var(--fg);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-  text-decoration-color: var(--fg-muted);
-  transition: text-decoration-color 0.15s;
-}
-
-.blog-article a:hover {
-  text-decoration-color: var(--fg-bright);
-}
-
-.blog-article ul,
-.blog-article ol {
-  margin-bottom: 16px;
-  padding-left: 26px;
-}
-
-.blog-article li {
-  font-size: 1rem;
-  font-weight: 400;
-  color: var(--fg);
-  line-height: 1.7;
-  margin-bottom: 4px;
-}
-
-.blog-article li::marker {
-  color: var(--fg-dim);
-}
-
-.blog-article strong {
-  font-weight: 600;
-  color: var(--fg-bright);
-}
-
-.blog-article em {
-  font-style: italic;
-}
-
-.blog-article code {
-  font-size: 0.88em;
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 4px;
-  padding: 2px 6px;
-  color: #e06c75;
-  font-family: 'SFMono-Regular', 'Consolas', 'Liberation Mono', 'Menlo', monospace;
-}
-
-.blog-article pre {
-  background: rgba(0, 0, 0, 0.4);
+.notion-page-wrapper .notion-asset-wrapper img,
+.notion-page-wrapper .notion-asset-wrapper video {
   border-radius: 6px;
-  padding: 20px 24px;
-  margin: 24px 0;
-  overflow-x: auto;
-  scrollbar-width: thin;
-  scrollbar-color: var(--fg-muted) transparent;
 }
 
-.blog-article pre code {
-  background: none;
-  padding: 0;
-  font-size: 0.9rem;
-  color: var(--fg);
-  line-height: 1.55;
+.notion-page-wrapper .notion-hr {
+  border-color: rgba(255, 255, 255, 0.06) !important;
 }
 
-.blog-article blockquote {
-  border-left: 3px solid rgba(255, 255, 255, 0.15);
-  padding: 0 0 0 20px;
-  margin: 24px 0;
+.notion-page-wrapper .notion-quote {
+  border-left-color: rgba(255, 255, 255, 0.15) !important;
 }
 
-.blog-article blockquote p {
-  margin-bottom: 0;
-  color: var(--fg-dim);
+.notion-page-wrapper .notion-callout {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
 }
 
-.blog-article hr {
-  border: none;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  margin: 48px 0;
-}
-
-.blog-article ol {
-  list-style: decimal;
-}
-
-.blog-article img {
-  max-width: 100%;
-  border-radius: 6px;
-  margin: 24px 0;
+.notion-page-wrapper .notion-bookmark {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  background: rgba(255, 255, 255, 0.02) !important;
 }
 
 /* Notes form */
@@ -2735,12 +2650,8 @@ body {
     padding: 16px 18px;
   }
 
-  .blog-article h1 {
-    font-size: 1.3rem;
-  }
-
-  .blog-article h2 {
-    margin-top: 32px;
+  .notion-page-wrapper .notion-title {
+    font-size: 1.6rem !important;
   }
 }
 
@@ -2829,11 +2740,19 @@ body {
 
 .pet-container {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
   height: 100%;
-  padding: 24px;
-  gap: 20px;
+  width: 100%;
+}
+
+.pet-layout {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 24px;
+  width: 100%;
+  padding: 20px;
 }
 
 .pet-device {
@@ -3006,19 +2925,26 @@ body {
 }
 
 .pet-feedback-emoji {
-  position: absolute;
-  top: 50%;
-  left: 50%;
+  position: fixed;
   transform: translate(-50%, -50%);
-  font-size: 2rem;
-  animation: emojiFloat 1.5s ease-out forwards;
+  font-size: 1.8rem;
+  animation: emojiPop 1.5s ease-out forwards;
   pointer-events: none;
-  z-index: 10;
+  z-index: 100;
 }
 
-@keyframes emojiFloat {
-  0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-  100% { opacity: 0; transform: translate(-50%, -150%) scale(1.5); }
+@keyframes emojiPop {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(0.5);
+  }
+  20% {
+    transform: translate(-50%, -10px) scale(1.2);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -80px) scale(1);
+  }
 }
 
 .pet-screen.action-flash {
@@ -3061,121 +2987,114 @@ body {
   display: flex;
   align-items: center;
   gap: 6px;
-  width: 100%;
-  font-family: 'Courier New', monospace;
-  font-size: 0.55rem;
-  color: #0f380f;
+  font-size: 0.8rem;
+  padding: 0 12px;
 }
 
-.pet-evolution-label {
-  flex-shrink: 0;
-  white-space: nowrap;
+.pet-evolution-bar {
+  flex: 1;
+  height: 8px;
+  background: #306230;
+  border: 1px solid #0f380f;
+  border-radius: 2px;
+  overflow: hidden;
 }
 
 .pet-evolution-fill {
-  background: #306230;
+  height: 100%;
+  background: #0f380f;
+  border-radius: 1px;
+  transition: width 0.3s ease;
 }
 
 /* ── Community log ── */
 
 .pet-log {
+  background: #1a1a1a;
+  border: 2px solid #333;
+  border-radius: 12px;
+  width: 260px;
+  max-height: 400px;
   display: flex;
   flex-direction: column;
-  background: #1a1a24;
-  border: 2px solid #306230;
-  border-radius: 12px;
-  padding: 14px;
-  max-width: 260px;
-  width: 100%;
-  max-height: 420px;
-  font-family: 'Courier New', monospace;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
 }
 
-.pet-log-title {
-  margin: 0 0 10px;
+.pet-log-header {
+  background: #222;
+  padding: 10px 14px;
+  border-bottom: 1px solid #333;
+  font-family: monospace;
   font-size: 0.7rem;
-  color: #8bac0f;
-  text-transform: lowercase;
-  letter-spacing: 1px;
-  border-bottom: 1px solid #306230;
-  padding-bottom: 6px;
+  color: rgba(255,255,255,0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .pet-log-messages {
   flex: 1;
   overflow-y: auto;
+  padding: 10px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin-bottom: 10px;
-  min-height: 80px;
-  max-height: 280px;
+  gap: 8px;
 }
 
 .pet-log-empty {
-  color: #306230;
-  font-size: 0.6rem;
+  color: rgba(255,255,255,0.3);
+  font-size: 0.65rem;
   font-style: italic;
   text-align: center;
   padding: 20px 0;
 }
 
 .pet-log-entry {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  padding: 4px 0;
-  border-bottom: 1px solid rgba(48, 98, 48, 0.3);
+  background: rgba(255,255,255,0.04);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 0.75rem;
 }
 
 .pet-log-text {
-  color: #8bac0f;
-  font-size: 0.6rem;
-  word-break: break-word;
+  color: rgba(255,255,255,0.7);
+  display: block;
+  line-height: 1.4;
 }
 
 .pet-log-author {
-  color: #306230;
-  font-size: 0.5rem;
+  color: rgba(255,255,255,0.3);
+  font-size: 0.65rem;
+  margin-top: 4px;
+  display: block;
 }
 
 .pet-log-input {
+  border-top: 1px solid #333;
+  padding: 8px;
   display: flex;
   gap: 6px;
 }
 
-.pet-log-input-field {
+.pet-log-input input {
   flex: 1;
-  background: #0f380f;
-  border: 1px solid #306230;
-  border-radius: 4px;
-  padding: 5px 8px;
-  color: #8bac0f;
-  font-family: 'Courier New', monospace;
-  font-size: 0.55rem;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 6px;
+  color: #fff;
+  padding: 6px 10px;
+  font-size: 0.7rem;
+  font-family: inherit;
   outline: none;
 }
 
-.pet-log-input-field::placeholder {
-  color: #306230;
-}
-
-.pet-log-send {
-  background: #306230;
-  border: 1px solid #8bac0f;
-  border-radius: 4px;
-  color: #8bac0f;
-  font-family: 'Courier New', monospace;
-  font-size: 0.8rem;
+.pet-log-input button {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 6px;
+  color: rgba(255,255,255,0.5);
+  padding: 6px 10px;
   cursor: pointer;
-  padding: 2px 8px;
-  transition: background 0.15s;
-}
-
-.pet-log-send:hover {
-  background: #8bac0f;
-  color: #0f380f;
+  font-size: 0.75rem;
 }
 
 /* ========== R11-5: REDUCED MOTION PREFERENCE ========== */

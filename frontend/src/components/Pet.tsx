@@ -329,7 +329,7 @@ export default function Pet() {
   const [animation, setAnimation] = useState<string>('idle');
   const [frame, setFrame] = useState(0);
   const [error, setError] = useState(false);
-  const [feedbackEmoji, setFeedbackEmoji] = useState<string | null>(null);
+  const [feedbackEmoji, setFeedbackEmoji] = useState<{emoji: string, x: number, y: number} | null>(null);
   const [actionFlash, setActionFlash] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const [nameInput, setNameInput] = useState('');
@@ -408,9 +408,12 @@ export default function Pet() {
     setTimeout(() => setActionFlash(false), 300);
   }, []);
 
-  const handleAction = useCallback(async (action: string, animName: string, emoji: string) => {
+  const handleAction = useCallback(async (action: string, animName: string, emoji: string, e?: React.MouseEvent) => {
     setAnimation(animName);
-    setFeedbackEmoji(emoji);
+    if (e) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      setFeedbackEmoji({ emoji, x: rect.left + rect.width / 2, y: rect.top });
+    }
     triggerFlash();
     setTimeout(() => setFeedbackEmoji(null), 1500);
     try {
@@ -432,9 +435,9 @@ export default function Pet() {
     setTimeout(() => setAnimation('idle'), 2000);
   }, [pet, triggerFlash]);
 
-  const handleFeed = useCallback(() => handleAction('feed', 'eating', '\u{1F354}'), [handleAction]);
-  const handlePlay = useCallback(() => handleAction('play', 'playing', '\u{1F3BE}'), [handleAction]);
-  const handleClean = useCallback(() => handleAction('clean', 'sleeping', '\u2728'), [handleAction]);
+  const handleFeed = useCallback((e: React.MouseEvent) => handleAction('feed', 'eating', '\u{1F354}', e), [handleAction]);
+  const handlePlay = useCallback((e: React.MouseEvent) => handleAction('play', 'playing', '\u{1F3BE}', e), [handleAction]);
+  const handleClean = useCallback((e: React.MouseEvent) => handleAction('clean', 'sleeping', '\u2728', e), [handleAction]);
 
   const renamingRef = useRef(false);
   const handleRename = useCallback(async (newName: string) => {
@@ -488,6 +491,7 @@ export default function Pet() {
 
   return (
     <div className="pet-container">
+      <div className="pet-layout">
       <div className="pet-device">
         <div className={`pet-screen${actionFlash ? ' action-flash' : ''}`}>
           <div className="pet-canvas-wrapper">
@@ -497,9 +501,6 @@ export default function Pet() {
               height={160}
               className="pet-canvas"
             />
-            {feedbackEmoji && (
-              <div className="pet-feedback-emoji">{feedbackEmoji}</div>
-            )}
           </div>
           <div className="pet-stats">
             <div className="pet-stat">
@@ -535,15 +536,11 @@ export default function Pet() {
           </div>
           {currentGoal && (
             <div className="pet-evolution">
-              <span className="pet-evolution-label">
-                {currentGoal.emoji} {totalInteractions}/{currentGoal.threshold} {'\u2192'} {currentGoal.nextEmoji}
-              </span>
-              <span className="pet-stat-bar">
-                <span
-                  className="pet-stat-fill pet-evolution-fill"
-                  style={{ width: `${progress}%` }}
-                />
-              </span>
+              <span>{currentGoal.emoji}</span>
+              <div className="pet-evolution-bar">
+                <div className="pet-evolution-fill" style={{ width: `${progress}%` }} />
+              </div>
+              <span>{currentGoal.nextEmoji}</span>
             </div>
           )}
           <div className="pet-info">
@@ -588,7 +585,7 @@ export default function Pet() {
         </div>
       </div>
       <div className="pet-log">
-        <h3 className="pet-log-title">community log</h3>
+        <div className="pet-log-header">community log</div>
         <div className="pet-log-messages">
           {todos.length === 0 && (
             <div className="pet-log-empty">no messages yet...</div>
@@ -607,11 +604,20 @@ export default function Pet() {
             value={todoInput}
             onChange={e => setTodoInput(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') handleAddTodo(); }}
-            className="pet-log-input-field"
           />
-          <button onClick={handleAddTodo} className="pet-log-send">{'\u2192'}</button>
+          <button onClick={handleAddTodo}>{'\u2192'}</button>
         </div>
       </div>
+      </div>
+      {feedbackEmoji && (
+        <div className="pet-feedback-emoji" style={{
+          position: 'fixed',
+          left: feedbackEmoji.x,
+          top: feedbackEmoji.y,
+        }}>
+          {feedbackEmoji.emoji}
+        </div>
+      )}
     </div>
   );
 }

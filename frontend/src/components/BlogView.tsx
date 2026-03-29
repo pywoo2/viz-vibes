@@ -1,20 +1,30 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import ReactMarkdown from 'react-markdown';
-import { posts, getPostContent, type Post } from '../lib/posts';
+import { useState, useEffect, lazy, Suspense } from 'react';
+import { posts, type Post } from '../lib/posts';
+import type { ExtendedRecordMap } from 'notion-types';
+
+const NotionRenderer = lazy(() =>
+  import('react-notion-x').then((mod) => ({ default: mod.NotionRenderer }))
+);
+
+import 'react-notion-x/src/styles.css';
 
 export default function BlogView() {
   const [activePost, setActivePost] = useState<Post | null>(null);
-  const [content, setContent] = useState('');
+  const [recordMap, setRecordMap] = useState<ExtendedRecordMap | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!activePost) return;
+    if (!activePost) {
+      setRecordMap(null);
+      return;
+    }
     setLoading(true);
-    getPostContent(activePost.slug)
-      .then(setContent)
-      .catch(() => setContent('Failed to load post.'))
+    fetch(`/api/notion?pageId=${activePost.notionId}`)
+      .then((r) => r.json())
+      .then((data) => setRecordMap(data))
+      .catch(() => setRecordMap(null))
       .finally(() => setLoading(false));
   }, [activePost]);
 
@@ -29,18 +39,24 @@ export default function BlogView() {
         {activePost ? (
           loading ? (
             <p className="blog-loading">loading...</p>
+          ) : recordMap ? (
+            <div className="notion-page-wrapper">
+              <Suspense fallback={<p className="blog-loading">loading...</p>}>
+                <NotionRenderer
+                  recordMap={recordMap}
+                  fullPage={false}
+                  darkMode={true}
+                  disableHeader={true}
+                />
+              </Suspense>
+            </div>
           ) : (
-            <article className="blog-article">
-              <div className="blog-post-meta">
-                <time>{activePost.date}</time>
-              </div>
-              <ReactMarkdown>{content}</ReactMarkdown>
-            </article>
+            <p className="blog-loading">failed to load post.</p>
           )
         ) : (
           <ul className="blog-post-list">
             {posts.map((post) => (
-              <li key={post.slug}>
+              <li key={post.notionId}>
                 <button
                   className="blog-post-item"
                   onClick={() => setActivePost(post)}
