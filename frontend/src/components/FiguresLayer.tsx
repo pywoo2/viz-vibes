@@ -27,7 +27,17 @@ interface MediaState {
   type: 'image' | 'video';
 }
 
-function randomPosition() {
+function randomPosition(existing: { x: number; y: number }[] = []) {
+  const minDist = 25; // minimum distance in viewport-percent between item centers
+  for (let attempt = 0; attempt < 20; attempt++) {
+    const x = 15 + Math.random() * 70;
+    const y = 15 + Math.random() * 70;
+    const tooClose = existing.some(
+      (e) => Math.hypot(e.x - x, e.y - y) < minDist
+    );
+    if (!tooClose) return { x, y };
+  }
+  // fallback — best-effort after 20 tries
   return { x: 15 + Math.random() * 70, y: 15 + Math.random() * 70 };
 }
 
@@ -85,7 +95,7 @@ export default function FiguresLayer({ visible, colorMode }: FiguresLayerProps) 
       const media = pickRandomMedia(allMediaRef.current, usedSrcs, i === 0 ? 'video' : undefined);
       if (!media) continue;
       usedSrcs.push(media.src);
-      const pos = randomPosition();
+      const pos = randomPosition(initial);
       initial.push({ x: pos.x, y: pos.y, rotateX: 0, rotateY: 0, scale: 1, opacity: 0, src: media.src, type: media.type });
     }
     setImages(initial);
@@ -126,7 +136,8 @@ export default function FiguresLayer({ visible, colorMode }: FiguresLayerProps) 
           const remainingVideos = prev.filter((img, i) => i !== fadedIndex && img.opacity > 0 && img.type === 'video').length;
           const newMedia = pickRandomMedia(allMediaRef.current, usedSrcs, remainingVideos === 0 ? 'video' : undefined);
           if (!newMedia) return prev;
-          const pos = randomPosition();
+          const others = prev.filter((_, i) => i !== fadedIndex && prev[i].opacity > 0);
+          const pos = randomPosition(others);
           return prev.map((img, i) =>
             i === fadedIndex
               ? { x: pos.x, y: pos.y, rotateX: 0, rotateY: 0, scale: 1, opacity: 0, src: newMedia.src, type: newMedia.type }

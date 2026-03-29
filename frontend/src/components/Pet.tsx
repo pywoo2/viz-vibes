@@ -307,7 +307,21 @@ interface PetState {
   hunger: number;
   happiness: number;
   cleanliness: number;
+  totalInteractions: number;
 }
+
+interface TodoEntry {
+  text: string;
+  author: string;
+  timestamp: string;
+}
+
+const stageGoals = [
+  { stage: 'egg', next: 'baby', threshold: 50, emoji: '\u{1F95A}', nextEmoji: '\u{1F423}' },
+  { stage: 'baby', next: 'kid', threshold: 200, emoji: '\u{1F423}', nextEmoji: '\u{1F425}' },
+  { stage: 'kid', next: 'teen', threshold: 1000, emoji: '\u{1F425}', nextEmoji: '\u{1F426}' },
+  { stage: 'teen', next: 'adult', threshold: 5000, emoji: '\u{1F426}', nextEmoji: '\u{1F985}' },
+];
 
 export default function Pet() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -315,6 +329,12 @@ export default function Pet() {
   const [animation, setAnimation] = useState<string>('idle');
   const [frame, setFrame] = useState(0);
   const [error, setError] = useState(false);
+  const [feedbackEmoji, setFeedbackEmoji] = useState<string | null>(null);
+  const [actionFlash, setActionFlash] = useState(false);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [nameInput, setNameInput] = useState('');
+  const [todos, setTodos] = useState<TodoEntry[]>([]);
+  const [todoInput, setTodoInput] = useState('');
 
   // Fetch pet state
   useEffect(() => {
@@ -332,12 +352,21 @@ export default function Pet() {
             hunger: 50,
             happiness: 70,
             cleanliness: 60,
+            totalInteractions: 12,
           });
         });
     };
     fetchPet();
     const interval = setInterval(fetchPet, 30000);
     return () => clearInterval(interval);
+  }, []);
+
+  // Fetch community todos
+  useEffect(() => {
+    fetch(`${API_URL}/api/pet/todos`)
+      .then(r => r.json())
+      .then((data) => { if (Array.isArray(data)) setTodos(data); })
+      .catch(() => {});
   }, []);
 
   // Animation loop — 2fps like real Tamagotchi
@@ -374,8 +403,16 @@ export default function Pet() {
     renderSprite(ctx, sprite, canvas.width, canvas.height);
   }, [pet, animation, frame]);
 
-  const handleAction = useCallback(async (action: string, animName: string) => {
+  const triggerFlash = useCallback(() => {
+    setActionFlash(true);
+    setTimeout(() => setActionFlash(false), 300);
+  }, []);
+
+  const handleAction = useCallback(async (action: string, animName: string, emoji: string) => {
     setAnimation(animName);
+    setFeedbackEmoji(emoji);
+    triggerFlash();
+    setTimeout(() => setFeedbackEmoji(null), 1500);
     try {
       await fetch(`${API_URL}/api/pet/${action}`, { method: 'POST' });
       const data = await fetch(`${API_URL}/api/pet`).then(r => r.json());
@@ -388,30 +425,82 @@ export default function Pet() {
           hunger: action === 'feed' ? Math.max(0, pet.hunger - 20) : pet.hunger,
           happiness: action === 'play' ? Math.min(100, pet.happiness + 15) : pet.happiness,
           cleanliness: action === 'clean' ? Math.min(100, pet.cleanliness + 25) : pet.cleanliness,
+          totalInteractions: pet.totalInteractions + 1,
         });
       }
     }
     setTimeout(() => setAnimation('idle'), 2000);
+  }, [pet, triggerFlash]);
+
+  const handleFeed = useCallback(() => handleAction('feed', 'eating', '\u{1F354}'), [handleAction]);
+  const handlePlay = useCallback(() => handleAction('play', 'playing', '\u{1F3BE}'), [handleAction]);
+  const handleClean = useCallback(() => handleAction('clean', 'sleeping', '\u2728'), [handleAction]);
+
+  const renamingRef = useRef(false);
+  const handleRename = useCallback(async (newName: string) => {
+    if (renamingRef.current) return;
+    renamingRef.current = true;
+    const trimmed = newName.trim().slice(0, 20);
+    if (!trimmed) {
+      setIsEditingName(false);
+      renamingRef.current = false;
+      return;
+    }
+    try {
+      const res = await fetch(`${API_URL}/api/pet/rename`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: trimmed }),
+      });
+      const data = await res.json();
+      setPet(data);
+    } catch {
+      if (pet) setPet({ ...pet, name: trimmed });
+    }
+    setIsEditingName(false);
+    renamingRef.current = false;
   }, [pet]);
 
-  const handleFeed = useCallback(() => handleAction('feed', 'eating'), [handleAction]);
-  const handlePlay = useCallback(() => handleAction('play', 'playing'), [handleAction]);
-  const handleClean = useCallback(() => handleAction('clean', 'sleeping'), [handleAction]);
+  const handleAddTodo = useCallback(async () => {
+    const text = todoInput.trim();
+    if (!text) return;
+    try {
+      const res = await fetch(`${API_URL}/api/pet/todos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, author: 'visitor' }),
+      });
+      const newTodo = await res.json();
+      setTodos(prev => [newTodo, ...prev].slice(0, 20));
+    } catch {
+      setTodos(prev => [{ text, author: 'visitor', timestamp: new Date().toISOString() }, ...prev].slice(0, 20));
+    }
+    setTodoInput('');
+  }, [todoInput]);
 
   const hungerVal = 100 - (pet?.hunger ?? 50);
   const happyVal = pet?.happiness ?? 50;
   const cleanVal = pet?.cleanliness ?? 50;
 
+  const currentGoal = stageGoals.find(g => g.stage === pet?.stage);
+  const totalInteractions = pet?.totalInteractions ?? 0;
+  const progress = currentGoal ? Math.min(100, (totalInteractions / currentGoal.threshold) * 100) : 100;
+
   return (
     <div className="pet-container">
       <div className="pet-device">
-        <div className="pet-screen">
-          <canvas
-            ref={canvasRef}
-            width={160}
-            height={160}
-            className="pet-canvas"
-          />
+        <div className={`pet-screen${actionFlash ? ' action-flash' : ''}`}>
+          <div className="pet-canvas-wrapper">
+            <canvas
+              ref={canvasRef}
+              width={160}
+              height={160}
+              className="pet-canvas"
+            />
+            {feedbackEmoji && (
+              <div className="pet-feedback-emoji">{feedbackEmoji}</div>
+            )}
+          </div>
           <div className="pet-stats">
             <div className="pet-stat">
               <span className="pet-stat-label">FED</span>
@@ -444,8 +533,39 @@ export default function Pet() {
               <span className="pet-stat-val">{cleanVal}</span>
             </div>
           </div>
+          {currentGoal && (
+            <div className="pet-evolution">
+              <span className="pet-evolution-label">
+                {currentGoal.emoji} {totalInteractions}/{currentGoal.threshold} {'\u2192'} {currentGoal.nextEmoji}
+              </span>
+              <span className="pet-stat-bar">
+                <span
+                  className="pet-stat-fill pet-evolution-fill"
+                  style={{ width: `${progress}%` }}
+                />
+              </span>
+            </div>
+          )}
           <div className="pet-info">
-            <span className="pet-name">{pet?.name ?? 'tamagotchi'}</span>
+            {isEditingName ? (
+              <input
+                className="pet-name-input"
+                value={nameInput}
+                onChange={e => setNameInput(e.target.value)}
+                onBlur={() => handleRename(nameInput)}
+                onKeyDown={e => { if (e.key === 'Enter') handleRename(nameInput); if (e.key === 'Escape') setIsEditingName(false); }}
+                maxLength={20}
+                autoFocus
+              />
+            ) : (
+              <span
+                className="pet-name pet-name-clickable"
+                onClick={() => { setNameInput(pet?.name ?? ''); setIsEditingName(true); }}
+                title="click to rename"
+              >
+                {pet?.name ?? 'tamagotchi'}
+              </span>
+            )}
             <span className="pet-info-dot">&middot;</span>
             <span className="pet-stage">{pet?.stage ?? 'egg'}</span>
             <span className="pet-info-dot">&middot;</span>
@@ -465,6 +585,31 @@ export default function Pet() {
           <button onClick={handleClean} className="pet-btn" title="clean">
             clean
           </button>
+        </div>
+      </div>
+      <div className="pet-log">
+        <h3 className="pet-log-title">community log</h3>
+        <div className="pet-log-messages">
+          {todos.length === 0 && (
+            <div className="pet-log-empty">no messages yet...</div>
+          )}
+          {todos.map((t, i) => (
+            <div key={i} className="pet-log-entry">
+              <span className="pet-log-text">{t.text}</span>
+              <span className="pet-log-author">{'\u2014'} {t.author}</span>
+            </div>
+          ))}
+        </div>
+        <div className="pet-log-input">
+          <input
+            placeholder="leave a note..."
+            maxLength={100}
+            value={todoInput}
+            onChange={e => setTodoInput(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') handleAddTodo(); }}
+            className="pet-log-input-field"
+          />
+          <button onClick={handleAddTodo} className="pet-log-send">{'\u2192'}</button>
         </div>
       </div>
     </div>

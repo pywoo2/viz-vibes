@@ -31,6 +31,7 @@ AUDIO_EXTENSIONS = {".wav", ".mp3", ".ogg", ".flac", ".aac", ".m4a"}
 LIKES_KEY = "_likes.json"
 NOTES_KEY = "_notes.json"
 PET_KEY = "_pet.json"
+PET_TODOS_KEY = "_pet_todos.json"
 
 DEFAULT_PET = {
     "name": "tamagotchi",
@@ -51,6 +52,15 @@ DEFAULT_PET = {
 class NoteBody(BaseModel):
     text: str
     name: str = "anonymous"
+
+
+class TodoBody(BaseModel):
+    text: str
+    author: str = "anonymous"
+
+
+class RenameBody(BaseModel):
+    name: str
 
 
 def get_r2_client():
@@ -362,3 +372,76 @@ def clean_pet():
     if not save_pet(pet):
         raise HTTPException(status_code=500, detail="Failed to persist pet state")
     return pet
+
+
+@app.post("/api/pet/rename")
+def rename_pet(body: RenameBody):
+    name = body.name.strip()[:20]
+    if not name:
+        raise HTTPException(status_code=400, detail="Name must be 1-20 characters")
+    pet = load_pet()
+    pet = apply_decay(pet)
+    pet["name"] = name
+    pet["stage"] = get_stage(pet["totalInteractions"])
+    pet["mood"] = get_mood(pet)
+    if not save_pet(pet):
+        raise HTTPException(status_code=500, detail="Failed to persist pet state")
+    return pet
+
+
+# ── Pet community todo log ─────────────────────────────────────────
+
+
+def load_pet_todos() -> list[dict]:
+    """Read _pet_todos.json from R2."""
+    try:
+        s3 = get_r2_client()
+        response = s3.get_object(Bucket=R2_BUCKET, Key=PET_TODOS_KEY)
+        return json.loads(response["Body"].read().decode("utf-8"))
+    except Exception:
+        return []
+
+
+def save_pet_todos(todos: list[dict]) -> bool:
+    """Write _pet_todos.json to R2."""
+    try:
+        s3 = get_r2_client()
+        s3.put_object(
+            Bucket=R2_BUCKET,
+            Key=PET_TODOS_KEY,
+            Body=json.dumps(todos, indent=2).encode("utf-8"),
+            ContentType="application/json",
+        )
+        return True
+    except Exception as e:
+        print(f"[save_pet_todos] Failed to write _pet_todos.json to R2: {e}")
+        return False
+
+
+@app.get("/api/pet/todos")
+def get_pet_todos():
+    todos = load_pet_todos()
+    # newest first
+    todos.sort(key=lambda t: t.get("timestamp", ""), reverse=True)
+    return todos[:20]
+
+
+@app.post("/api/pet/todos")
+def add_pet_todo(body: TodoBody):
+    text = body.text.strip()
+    if not text or len(text) > 100:
+        raise HTTPException(status_code=400, detail="Text must be 1-100 characters")
+    author = body.author.strip()[:30] or "anonymous"
+    todos = load_pet_todos()
+    new_todo = {
+        "text": text,
+        "author": author,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+    todos.append(new_todo)
+    # Keep newest 20
+    todos.sort(key=lambda t: t.get("timestamp", ""), reverse=True)
+    todos = todos[:20]
+    if not save_pet_todos(todos):
+        raise HTTPException(status_code=500, detail="Failed to persist todo")
+    return new_todo
