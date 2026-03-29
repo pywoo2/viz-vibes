@@ -175,9 +175,6 @@ export default function Home() {
     <button className="mobile-about-btn" aria-label="About" onClick={() => setShowAbout(prev => !prev)}>
       i
     </button>
-    <button className="mobile-blog-btn" aria-label="Blog" onClick={() => setShowBlog(prev => !prev)}>
-      blog
-    </button>
     <div
       className={`mobile-overlay ${mobileDrawerOpen ? 'visible' : ''}`}
       onClick={() => { setMobileDrawerOpen(false); tracksPillRef.current?.focus(); }}
@@ -194,6 +191,22 @@ export default function Home() {
         position: 'relative',
       }}
     >
+      {/* View toggle pill */}
+      <div className="view-toggle-pill">
+        <button
+          className={`view-toggle-option ${!showBlog ? 'active' : ''}`}
+          onClick={() => setShowBlog(false)}
+        >
+          visualizer
+        </button>
+        <button
+          className={`view-toggle-option ${showBlog ? 'active' : ''}`}
+          onClick={() => setShowBlog(true)}
+        >
+          blog
+        </button>
+      </div>
+
       {/* Visualizer spans full viewport behind everything */}
       {!showBlog && (
         <div id="visualizer-bg">
@@ -250,7 +263,7 @@ export default function Home() {
       />
 
       <div id="main-area">
-        {showBlog && <BlogView onClose={() => setShowBlog(false)} />}
+        {showBlog && <BlogView />}
       </div>
 
       <PlayerBar
@@ -268,7 +281,6 @@ export default function Home() {
         onCycleRepeat={player.cycleRepeat}
         onSeek={player.seek}
         onSetVolume={player.setVolume}
-        onBlogClick={() => { setShowBlog(prev => !prev); }}
         onAboutClick={() => { setShowAbout(prev => !prev); }}
       />
 
@@ -293,7 +305,7 @@ export default function Home() {
           }}
         />
         <button className="note-submit-btn" onClick={submitNote} title="Submit note">&rarr;</button>
-      </div>
+      </div>}
 
       {showAbout && (
         <div className="about-overlay" onClick={() => setShowAbout(false)}>

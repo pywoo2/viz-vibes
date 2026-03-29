@@ -4,11 +4,7 @@ import { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { posts, getPostContent, type Post } from '../lib/posts';
 
-interface BlogViewProps {
-  onClose: () => void;
-}
-
-export default function BlogView({ onClose }: BlogViewProps) {
+export default function BlogView() {
   const [activePost, setActivePost] = useState<Post | null>(null);
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(false);
@@ -24,18 +20,12 @@ export default function BlogView({ onClose }: BlogViewProps) {
 
   return (
     <div className="blog-view">
-      <div className="blog-header">
-        {activePost ? (
+      <div className="blog-content">
+        {activePost && (
           <button className="blog-back" onClick={() => setActivePost(null)}>
             &larr; back
           </button>
-        ) : (
-          <h1 className="blog-title">blog</h1>
         )}
-        <button className="blog-close" onClick={onClose}>&times;</button>
-      </div>
-
-      <div className="blog-content">
         {activePost ? (
           loading ? (
             <p className="blog-loading">loading...</p>

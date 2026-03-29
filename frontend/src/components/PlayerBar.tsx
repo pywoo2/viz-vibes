@@ -19,7 +19,6 @@ interface PlayerBarProps {
   onSeek: (time: number) => void;
   onSetVolume: (vol: number) => void;
   onAboutClick?: () => void;
-  onBlogClick?: () => void;
 }
 
 function fmt(s: number): string {
@@ -44,7 +43,6 @@ export default function PlayerBar({
   onSeek,
   onSetVolume,
   onAboutClick,
-  onBlogClick,
 }: PlayerBarProps) {
   const progressRef = useRef<HTMLDivElement>(null);
   const isDraggingRef = useRef(false);
@@ -298,42 +296,6 @@ export default function PlayerBar({
           value={volume}
           onChange={(e) => onSetVolume(parseFloat(e.target.value))}
         />
-        <button
-          onClick={onBlogClick}
-          title="Blog"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            height: 36,
-            padding: '0 14px',
-            borderRadius: 18,
-            border: '1px solid rgba(255, 255, 255, 0.15)',
-            background: 'rgba(255, 255, 255, 0.06)',
-            color: 'rgba(255, 255, 255, 0.6)',
-            fontSize: '0.72rem',
-            fontWeight: 500,
-            fontFamily: 'inherit',
-            letterSpacing: '0.06em',
-            textTransform: 'lowercase' as const,
-            cursor: 'pointer',
-            marginLeft: 8,
-            transition: 'color 0.15s, border-color 0.15s, background 0.15s',
-            flexShrink: 0,
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.color = 'var(--fg-bright)';
-            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.color = 'rgba(255, 255, 255, 0.6)';
-            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
-            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
-          }}
-        >
-          blog
-        </button>
         <button
           onClick={onAboutClick}
           title="About"

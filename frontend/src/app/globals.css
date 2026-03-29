@@ -1218,7 +1218,7 @@ body {
     display: none !important;
   }
 
-  /* Mobile player bar — Spotify-style stacked layout */
+  /* Mobile player bar — Spotify mini bar style */
   #player-bar {
     position: fixed !important;
     bottom: 0 !important;
@@ -1226,86 +1226,125 @@ body {
     right: 0 !important;
     display: flex !important;
     flex-direction: column !important;
-    align-items: center !important;
     height: auto !important;
-    padding: 10px 16px 12px;
-    padding-bottom: max(12px, env(safe-area-inset-bottom));
-    gap: 6px;
-    background: rgba(0, 0, 0, 0.75) !important;
-    -webkit-backdrop-filter: blur(30px) saturate(150%) !important;
-    backdrop-filter: blur(30px) saturate(150%) !important;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
+    padding: 0 !important;
+    padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+    gap: 0 !important;
+    background: rgba(18, 18, 18, 0.95) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    backdrop-filter: blur(20px) !important;
+    border-top: none !important;
+    box-shadow: none !important;
     z-index: 15;
   }
 
-  /* Row 1: song title — centered, full width */
-  #np-info {
+  /* Progress bar at the VERY TOP of the bar — Spotify style */
+  #progress-row {
+    order: -1 !important;
     width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 0;
+    padding: 0 !important;
+    height: 3px;
+    position: relative;
+    gap: 0 !important;
+  }
+  #progress-row .time { display: none !important; }
+  #progress-container {
+    height: 3px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    box-sizing: border-box !important;
+  }
+  #progress-bar {
+    border-radius: 0 !important;
+  }
+  #progress-bar::after {
+    display: none !important; /* No thumb on mini bar */
+  }
+
+  /* Main content: title left, play button right */
+  #np-info {
+    order: 1 !important;
+    flex: 1 !important;
+    min-width: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    padding: 0 !important;
   }
   #np-info .np-text {
-    text-align: center;
+    text-align: left;
     width: 100%;
+    min-width: 0;
   }
   #np-info .np-title {
-    font-size: 0.85rem;
+    font-size: 0.82rem;
     font-weight: 500;
     color: #fff;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 80vw;
   }
 
-  /* Row 2: controls — centered, spacious */
+  /* Player center: only play button visible */
   #player-center {
+    order: 2 !important;
     max-width: none;
-    width: 100%;
-    gap: 4px;
-    align-items: center;
+    width: auto !important;
+    flex-shrink: 0 !important;
+    gap: 0 !important;
   }
-  #controls { gap: 20px; justify-content: center !important; }
-  #controls button { padding: 8px; }
-  #controls button svg { width: 22px; height: 22px; }
-  #play-btn { width: 48px !important; height: 48px !important; }
-  #play-btn svg { width: 22px !important; height: 22px !important; }
+  #controls { gap: 0 !important; }
+  #controls button { padding: 0; }
 
-  /* Hide shuffle, repeat on mobile */
-  #shuffle-btn, #repeat-btn { display: none; }
+  /* Hide everything except play button */
+  #prev-btn, #next-btn, #shuffle-btn, #repeat-btn { display: none !important; }
 
-  /* Row 3: progress bar full width */
-  #progress-row {
-    width: 100%;
+  #play-btn {
+    width: 36px !important;
+    height: 36px !important;
   }
-  #progress-row .time {
-    font-size: 10px;
-    min-width: 28px;
-    color: rgba(255, 255, 255, 0.4);
+  #play-btn svg {
+    width: 18px !important;
+    height: 18px !important;
   }
 
   /* Hide volume on mobile */
-  #player-right { display: none; }
+  #player-right { display: none !important; }
 
-  /* Progress bar — full width, thick, easy to drag */
-  #progress-container {
-    height: 6px !important;
-    padding: 12px 0 !important;
-    margin: 0 !important;
-    box-sizing: content-box !important;
-    background-clip: content-box !important;
+  /* Wrap np-info and player-center in a horizontal row via the parent flex */
+  /* The parent is flex-direction: column, so we need a wrapper row.
+     Since we can't add HTML, we make #player-bar a CSS grid on mobile instead */
+  #player-bar {
+    display: grid !important;
+    grid-template-columns: 1fr auto !important;
+    grid-template-rows: auto auto !important;
+    align-items: center !important;
   }
 
-  /* Always show the seek thumb on mobile */
-  #progress-bar::after {
-    transform: translateY(-50%) scale(1) !important;
-    width: 16px !important;
-    height: 16px !important;
-    background: white !important;
-    box-shadow: 0 0 6px rgba(255, 255, 255, 0.3) !important;
+  /* Progress row spans full width at top */
+  #progress-row {
+    grid-column: 1 / -1 !important;
+    grid-row: 1 !important;
+  }
+
+  /* np-info in left of second row */
+  #np-info {
+    grid-column: 1 !important;
+    grid-row: 2 !important;
+    padding: 8px 12px !important;
+  }
+
+  /* Controls in right of second row */
+  #player-center {
+    grid-column: 2 !important;
+    grid-row: 2 !important;
+    padding: 8px 12px 8px 0 !important;
+  }
+
+  /* Glass highlight — span full grid */
+  .glass-highlight {
+    grid-column: 1 / -1 !important;
+    grid-row: 1 / -1 !important;
   }
 
   /* Hide hamburger on mobile — replaced by floating Tracks pill button */
@@ -1317,7 +1356,7 @@ body {
   .mobile-tracks-btn {
     display: flex;
     position: fixed;
-    bottom: 120px;
+    bottom: 72px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 20;
@@ -1398,16 +1437,9 @@ body {
     min-width: unset;
   }
 
-  /* R6-1: Player bar top-edge glow line — premium glass feel */
+  /* R6-1: Player bar top-edge glow — hidden since progress bar sits at top */
   #player-bar::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: linear-gradient(to right, transparent, rgba(255,255,255,0.15), transparent);
-    z-index: 3;
+    display: none !important;
   }
 
   /* R6-2: Hide tracks pill when drawer is open */
@@ -1443,7 +1475,7 @@ body {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: calc(100vw - 160px);
+    max-width: calc(100vw - 80px);
   }
 
   /* R6-6: Subtle bounce animation when drawer opens */
@@ -1457,9 +1489,9 @@ body {
     100% { transform: translateY(0); }
   }
 
-  /* R6-7: Progress bar thumb glow when playing */
+  /* R6-7: Progress bar thumb — hidden on Spotify mini bar */
   #player-bar.is-playing #progress-bar::after {
-    box-shadow: 0 0 8px rgba(255, 255, 255, 0.4) !important;
+    display: none !important;
   }
 
   /* R6-8: Tracks pill entrance animation on page load */
@@ -1489,11 +1521,9 @@ body {
     transition: transform 0.08s !important;
   }
 
-  /* R7-3: Smooth progress bar interaction — larger thumb on touch */
+  /* R7-3: Progress bar — no thumb on Spotify mini bar */
   #progress-container:active #progress-bar::after {
-    width: 20px !important;
-    height: 20px !important;
-    box-shadow: 0 0 12px rgba(255, 255, 255, 0.5) !important;
+    display: none !important;
   }
 
   /* R7-4: Note input focus state — glass glow */
@@ -2029,23 +2059,18 @@ body {
 /* ========== LANDSCAPE PHONE ========== */
 @media (max-height: 500px) and (max-width: 767px) {
   #player-bar {
-    padding: 2px 10px;
-    padding-bottom: max(2px, env(safe-area-inset-bottom, 0px));
-    gap: 0;
-    min-height: 48px;
+    padding-bottom: max(0px, env(safe-area-inset-bottom, 0px)) !important;
   }
 
-  /* Hide now-playing title in landscape to save space */
+  #play-btn { width: 30px !important; height: 30px !important; }
+  #play-btn svg { width: 14px !important; height: 14px !important; }
+
   #np-info {
-    display: none;
+    padding: 4px 10px !important;
   }
-
-  #controls { gap: 8px; }
-  #play-btn { width: 32px !important; height: 32px !important; }
-  #play-btn svg { width: 16px !important; height: 16px !important; }
-  #controls button svg { width: 16px !important; height: 16px !important; }
-
-  #progress-row .time { font-size: 8px; }
+  #np-info .np-title {
+    font-size: 0.72rem !important;
+  }
 
   /* Sidebar shorter in landscape */
   #sidebar {
@@ -2055,7 +2080,7 @@ body {
 
   /* Tracks pill button closer to player bar in landscape */
   .mobile-tracks-btn {
-    bottom: 54px !important;
+    bottom: 48px !important;
     padding: 6px 16px !important;
     font-size: 0.65rem !important;
   }
@@ -2211,9 +2236,9 @@ body {
     font-size: 0.6rem !important;
   }
 
-  /* R9-7: Progress bar time labels — monospace for alignment */
+  /* R9-7: Progress bar time labels — hidden on Spotify mini bar */
   #progress-row .time {
-    font-family: "SF Mono", "Fira Code", monospace !important;
+    display: none !important;
   }
 
   /* R9-8: Note input disclaimer — larger for readability */
@@ -2286,6 +2311,47 @@ body {
   }
 }
 
+/* ========== VIEW TOGGLE PILL ========== */
+.view-toggle-pill {
+  position: fixed;
+  top: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 20px;
+  background: rgba(0, 0, 0, 0.5);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.view-toggle-option {
+  padding: 6px 18px;
+  border-radius: 16px;
+  border: none;
+  background: none;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.72rem;
+  font-weight: 500;
+  font-family: inherit;
+  letter-spacing: 0.06em;
+  text-transform: lowercase;
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s;
+}
+
+.view-toggle-option:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.view-toggle-option.active {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--fg-bright);
+}
+
 /* ========== BLOG VIEW ========== */
 .blog-view {
   position: relative;
@@ -2301,23 +2367,6 @@ body {
   animation: fadeIn 0.3s ease;
 }
 
-.blog-header {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20px 28px;
-  border-bottom: 1px solid var(--glass-border);
-}
-
-.blog-title {
-  font-size: 1.1rem;
-  font-weight: 200;
-  letter-spacing: 0.08em;
-  color: var(--fg-bright);
-  text-transform: lowercase;
-}
-
 .blog-back {
   background: none;
   border: none;
@@ -2331,26 +2380,6 @@ body {
 
 .blog-back:hover {
   color: var(--fg-bright);
-}
-
-.blog-close {
-  background: none;
-  border: none;
-  color: var(--fg-dim);
-  font-size: 1.2rem;
-  cursor: pointer;
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  transition: color 0.15s, background 0.15s;
-}
-
-.blog-close:hover {
-  color: var(--fg-bright);
-  background: rgba(255, 255, 255, 0.06);
 }
 
 .blog-content {
