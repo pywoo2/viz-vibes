@@ -586,14 +586,13 @@ export default function Pet() {
       </div>
       <div className="pet-log">
         <div className="pet-log-header">community log</div>
-        <div className="pet-log-messages">
+        <div className="pet-log-messages" ref={(el) => { if (el) el.scrollTop = el.scrollHeight; }}>
           {todos.length === 0 && (
             <div className="pet-log-empty">no messages yet...</div>
           )}
           {todos.map((t, i) => (
             <div key={i} className="pet-log-entry">
               <span className="pet-log-text">{t.text}</span>
-              <span className="pet-log-author">{'\u2014'} {t.author}</span>
             </div>
           ))}
         </div>
