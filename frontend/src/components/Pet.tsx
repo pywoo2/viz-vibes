@@ -317,10 +317,10 @@ interface TodoEntry {
 }
 
 const stageGoals = [
-  { stage: 'egg', next: 'baby', threshold: 50, emoji: '\u{1F95A}', nextEmoji: '\u{1F423}' },
-  { stage: 'baby', next: 'kid', threshold: 200, emoji: '\u{1F423}', nextEmoji: '\u{1F425}' },
-  { stage: 'kid', next: 'teen', threshold: 1000, emoji: '\u{1F425}', nextEmoji: '\u{1F426}' },
-  { stage: 'teen', next: 'adult', threshold: 5000, emoji: '\u{1F426}', nextEmoji: '\u{1F985}' },
+  { stage: 'egg', next: 'baby', threshold: 150, emoji: '\u{1F95A}', nextEmoji: '\u{1F423}' },
+  { stage: 'baby', next: 'kid', threshold: 600, emoji: '\u{1F423}', nextEmoji: '\u{1F425}' },
+  { stage: 'kid', next: 'teen', threshold: 3000, emoji: '\u{1F425}', nextEmoji: '\u{1F426}' },
+  { stage: 'teen', next: 'adult', threshold: 15000, emoji: '\u{1F426}', nextEmoji: '\u{1F985}' },
 ];
 
 export default function Pet() {
@@ -488,10 +488,35 @@ export default function Pet() {
   const currentGoal = stageGoals.find(g => g.stage === pet?.stage);
   const totalInteractions = pet?.totalInteractions ?? 0;
   const progress = currentGoal ? Math.min(100, (totalInteractions / currentGoal.threshold) * 100) : 100;
+  const currentStageEmoji = currentGoal?.emoji ?? '\u{2B50}';
+  const nextStageEmoji = currentGoal?.nextEmoji ?? '\u{2B50}';
 
   return (
     <div className="pet-container">
       <div className="pet-layout">
+      <div className="pet-instructions">
+        <div className="pet-instructions-header">how to care</div>
+        <div className="pet-instructions-body">
+          <p>{'\u{1F354}'} <strong>feed</strong> — reduces hunger</p>
+          <p>{'\u{1F3BE}'} <strong>play</strong> — increases happiness</p>
+          <p>{'\u2728'} <strong>clean</strong> — increases cleanliness</p>
+          <p className="pet-instructions-note">everyone shares this one pet — take care of it together! stats decay over time if nobody visits.</p>
+        </div>
+        <div className="pet-instructions-header">evolution</div>
+        <div className="pet-instructions-body">
+          <div className="pet-evolution-stages">
+            {'\u{1F95A}'} → {'\u{1F423}'} → {'\u{1F425}'} → {'\u{1F414}'} → {'\u{2B50}'}
+          </div>
+          <p>the pet evolves as the community interacts with it.</p>
+          <div className="pet-evolution">
+            <span>{currentStageEmoji}</span>
+            <div className="pet-evolution-bar">
+              <div className="pet-evolution-fill" style={{ width: `${progress}%` }} />
+            </div>
+            <span>{nextStageEmoji}</span>
+          </div>
+        </div>
+      </div>
       <div className="pet-device">
         <div className={`pet-screen${actionFlash ? ' action-flash' : ''}`}>
           <div className="pet-canvas-wrapper">
@@ -507,42 +532,30 @@ export default function Pet() {
               <span className="pet-stat-label">FED</span>
               <span className="pet-stat-bar">
                 <span
-                  className="pet-stat-fill"
-                  style={{ width: `${hungerVal}%` }}
+                  className={`pet-stat-fill${hungerVal < 0 ? ' overfed' : ''}`}
+                  style={{ width: `${Math.min(100, Math.abs(hungerVal))}%` }}
                 />
               </span>
-              <span className="pet-stat-val">{hungerVal}</span>
             </div>
             <div className="pet-stat">
               <span className="pet-stat-label">JOY</span>
               <span className="pet-stat-bar">
                 <span
-                  className="pet-stat-fill"
-                  style={{ width: `${happyVal}%` }}
+                  className={`pet-stat-fill${happyVal > 100 ? ' overfed' : ''}`}
+                  style={{ width: `${Math.min(100, happyVal)}%` }}
                 />
               </span>
-              <span className="pet-stat-val">{happyVal}</span>
             </div>
             <div className="pet-stat">
               <span className="pet-stat-label">CLN</span>
               <span className="pet-stat-bar">
                 <span
-                  className="pet-stat-fill"
-                  style={{ width: `${cleanVal}%` }}
+                  className={`pet-stat-fill${cleanVal > 100 ? ' overfed' : ''}`}
+                  style={{ width: `${Math.min(100, cleanVal)}%` }}
                 />
               </span>
-              <span className="pet-stat-val">{cleanVal}</span>
             </div>
           </div>
-          {currentGoal && (
-            <div className="pet-evolution">
-              <span>{currentGoal.emoji}</span>
-              <div className="pet-evolution-bar">
-                <div className="pet-evolution-fill" style={{ width: `${progress}%` }} />
-              </div>
-              <span>{currentGoal.nextEmoji}</span>
-            </div>
-          )}
           <div className="pet-info">
             {isEditingName ? (
               <input

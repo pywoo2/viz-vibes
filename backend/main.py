@@ -300,13 +300,13 @@ def apply_decay(pet: dict) -> dict:
 
 
 def get_stage(total_interactions: int) -> str:
-    if total_interactions < 50:
+    if total_interactions < 150:
         return "egg"
-    if total_interactions < 200:
+    if total_interactions < 600:
         return "baby"
-    if total_interactions < 1000:
+    if total_interactions < 3000:
         return "kid"
-    if total_interactions < 5000:
+    if total_interactions < 15000:
         return "teen"
     return "adult"
 
@@ -335,7 +335,7 @@ def get_pet():
 def feed_pet():
     pet = load_pet()
     pet = apply_decay(pet)
-    pet["hunger"] = max(0, pet["hunger"] - 5)
+    pet["hunger"] = pet["hunger"] - 5  # Can go below 0 (overfed)
     pet["totalInteractions"] += 1
     pet["lastFed"] = datetime.now(timezone.utc).isoformat()
     pet["stage"] = get_stage(pet["totalInteractions"])
@@ -349,7 +349,7 @@ def feed_pet():
 def play_pet():
     pet = load_pet()
     pet = apply_decay(pet)
-    pet["happiness"] = min(100, pet["happiness"] + 5)
+    pet["happiness"] = pet["happiness"] + 5  # Can go above 100 (overtired)
     pet["hunger"] = min(100, pet["hunger"] + 2)
     pet["totalInteractions"] += 1
     pet["lastPlayed"] = datetime.now(timezone.utc).isoformat()
@@ -364,7 +364,7 @@ def play_pet():
 def clean_pet():
     pet = load_pet()
     pet = apply_decay(pet)
-    pet["cleanliness"] = min(100, pet["cleanliness"] + 5)
+    pet["cleanliness"] = pet["cleanliness"] + 5  # Can go above 100 (overcleaned)
     pet["totalInteractions"] += 1
     pet["lastCleaned"] = datetime.now(timezone.utc).isoformat()
     pet["stage"] = get_stage(pet["totalInteractions"])
