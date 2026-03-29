@@ -563,7 +563,6 @@ export default function Pet() {
                 />
               </span>
               <span className="pet-stat-val">{Math.round(happyVal)}</span>
-              </span>
             </div>
             <div className="pet-stat">
               <span className="pet-stat-label">{isOvercleaned ? '⚠️' : ''} CLN</span>
