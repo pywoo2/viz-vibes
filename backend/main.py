@@ -1,5 +1,6 @@
 import json
 import os
+import random
 import urllib.parse
 from datetime import datetime, timezone
 
@@ -292,9 +293,10 @@ def apply_decay(pet: dict) -> dict:
     hours = (now - last).total_seconds() / 3600
     if hours >= 1:
         full_hours = int(hours)
-        pet["hunger"] = min(100, pet["hunger"] + 5 * full_hours)
-        pet["happiness"] = max(0, pet["happiness"] - 3 * full_hours)
-        pet["cleanliness"] = max(0, pet["cleanliness"] - 2 * full_hours)
+        for _ in range(full_hours):
+            pet["hunger"] = min(100, pet["hunger"] + random.randint(2, 8))
+            pet["happiness"] = max(0, pet["happiness"] - random.randint(2, 8))
+            pet["cleanliness"] = max(0, pet["cleanliness"] - random.randint(2, 8))
         pet["lastDecay"] = now.isoformat()
     return pet
 

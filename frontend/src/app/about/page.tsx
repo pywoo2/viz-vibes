@@ -101,6 +101,12 @@ export default function AboutPage() {
           >
             Made by Peter Woo
           </a>
+          <p style={{ fontSize: '0.75rem', color: 'var(--fg-dim)', marginTop: 4, fontWeight: 300 }}>
+            Head of Applied AI at{' '}
+            <a href="https://moment.com" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--fg)', textDecoration: 'none' }}>
+              Moment
+            </a>
+          </p>
 
           <Link
             href="/"

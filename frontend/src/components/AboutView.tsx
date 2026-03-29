@@ -57,6 +57,12 @@ export default function AboutView() {
           >
             Made by Peter Woo &rarr;
           </a>
+          <p className="about-view-bio">
+            Head of Applied AI at{' '}
+            <a href="https://moment.com" target="_blank" rel="noopener noreferrer">
+              Moment
+            </a>
+          </p>
         </div>
       </div>
     </div>
