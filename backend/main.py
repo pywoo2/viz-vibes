@@ -325,7 +325,7 @@ def get_pet():
 def feed_pet():
     pet = load_pet()
     pet = apply_decay(pet)
-    pet["hunger"] = max(0, pet["hunger"] - 20)
+    pet["hunger"] = max(0, pet["hunger"] - 5)
     pet["totalInteractions"] += 1
     pet["lastFed"] = datetime.now(timezone.utc).isoformat()
     pet["stage"] = get_stage(pet["totalInteractions"])
@@ -339,8 +339,8 @@ def feed_pet():
 def play_pet():
     pet = load_pet()
     pet = apply_decay(pet)
-    pet["happiness"] = min(100, pet["happiness"] + 15)
-    pet["hunger"] = min(100, pet["hunger"] + 5)
+    pet["happiness"] = min(100, pet["happiness"] + 5)
+    pet["hunger"] = min(100, pet["hunger"] + 2)
     pet["totalInteractions"] += 1
     pet["lastPlayed"] = datetime.now(timezone.utc).isoformat()
     pet["stage"] = get_stage(pet["totalInteractions"])
@@ -354,7 +354,7 @@ def play_pet():
 def clean_pet():
     pet = load_pet()
     pet = apply_decay(pet)
-    pet["cleanliness"] = min(100, pet["cleanliness"] + 25)
+    pet["cleanliness"] = min(100, pet["cleanliness"] + 5)
     pet["totalInteractions"] += 1
     pet["lastCleaned"] = datetime.now(timezone.utc).isoformat()
     pet["stage"] = get_stage(pet["totalInteractions"])
