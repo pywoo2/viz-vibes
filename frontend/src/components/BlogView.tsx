@@ -10,8 +10,15 @@ const NotionRenderer = lazy(() =>
 
 import 'react-notion-x/src/styles.css';
 
-export default function BlogView() {
-  const [activePost, setActivePost] = useState<Post | null>(null);
+interface BlogViewProps {
+  initialSlug?: string | null;
+  onPostChange?: (slug: string | null) => void;
+}
+
+export default function BlogView({ initialSlug, onPostChange }: BlogViewProps) {
+  const [activePost, setActivePost] = useState<Post | null>(
+    initialSlug ? posts.find((p) => p.slug === initialSlug) ?? null : null
+  );
   const [recordMap, setRecordMap] = useState<ExtendedRecordMap | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -28,11 +35,21 @@ export default function BlogView() {
       .finally(() => setLoading(false));
   }, [activePost]);
 
+  const openPost = (post: Post) => {
+    setActivePost(post);
+    onPostChange?.(post.slug);
+  };
+
+  const closePost = () => {
+    setActivePost(null);
+    onPostChange?.(null);
+  };
+
   return (
     <div className="blog-view">
       <div className="blog-content">
         {activePost && (
-          <button className="blog-back" onClick={() => setActivePost(null)}>
+          <button className="blog-back" onClick={closePost}>
             &larr; back
           </button>
         )}
@@ -59,7 +76,7 @@ export default function BlogView() {
               <li key={post.notionId}>
                 <button
                   className="blog-post-item"
-                  onClick={() => setActivePost(post)}
+                  onClick={() => openPost(post)}
                 >
                   <span className="blog-post-item-title">{post.title}</span>
                   <span className="blog-post-item-date">{post.date}</span>

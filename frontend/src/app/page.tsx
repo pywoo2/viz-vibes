@@ -13,8 +13,24 @@ import BlogView from '../components/BlogView';
 import AboutView from '../components/AboutView';
 import NotesView from '../components/NotesView';
 import Pet from '../components/Pet';
+import { posts } from '../lib/posts';
 
 type ViewMode = 'visualizer' | 'blog' | 'about' | 'notes' | 'pet';
+
+function parseHash(hash: string): { view: ViewMode; blogSlug: string | null } {
+  const h = hash.replace('#', '');
+  if (!h) return { view: 'visualizer', blogSlug: null };
+  if (h.startsWith('blog/')) {
+    const slug = h.slice(5);
+    if (slug && posts.find((p) => p.slug === slug)) {
+      return { view: 'blog', blogSlug: slug };
+    }
+    return { view: 'blog', blogSlug: null };
+  }
+  const validViews: ViewMode[] = ['visualizer', 'blog', 'about', 'notes', 'pet'];
+  if (validViews.includes(h as ViewMode)) return { view: h as ViewMode, blogSlug: null };
+  return { view: 'visualizer', blogSlug: null };
+}
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -28,7 +44,14 @@ export default function Home() {
   const [figuresVisible, setFiguresVisible] = useState(true);
   const [colorMode, setColorMode] = useState('rainbow');
   const [clickEffect, setClickEffect] = useState('ripple');
-  const [activeView, setActiveView] = useState<ViewMode>('visualizer');
+  const [activeView, setActiveView] = useState<ViewMode>(() => {
+    if (typeof window === 'undefined') return 'visualizer';
+    return parseHash(window.location.hash).view;
+  });
+  const [blogSlug, setBlogSlug] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null;
+    return parseHash(window.location.hash).blogSlug;
+  });
   const [showWarning, setShowWarning] = useState(true);
   const [notesRefreshKey, setNotesRefreshKey] = useState(0);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
@@ -36,6 +59,32 @@ export default function Home() {
   const drawerTouchCurrentY = useRef<number | null>(null);
   const touchStartRef = useRef<number>(0);
   const tracksPillRef = useRef<HTMLButtonElement>(null);
+
+  // Sync URL hash with view/blog state
+  useEffect(() => {
+    if (activeView === 'blog' && blogSlug) {
+      window.location.hash = `blog/${blogSlug}`;
+    } else if (activeView === 'visualizer') {
+      if (window.location.hash) history.replaceState(null, '', window.location.pathname);
+    } else {
+      window.location.hash = activeView;
+    }
+  }, [activeView, blogSlug]);
+
+  useEffect(() => {
+    const onHashChange = () => {
+      const { view, blogSlug: slug } = parseHash(window.location.hash);
+      setActiveView(view);
+      setBlogSlug(slug);
+    };
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, []);
+
+  const handleViewChange = (view: ViewMode) => {
+    setActiveView(view);
+    if (view !== 'blog') setBlogSlug(null);
+  };
 
   // Swipe-to-close: track touch on the drawer and close if swiped down > 100px
   const handleDrawerTouchStart = useCallback((e: React.TouchEvent) => {
@@ -245,13 +294,13 @@ export default function Home() {
             <button
               key={view}
               className={`view-toggle-option ${activeView === view ? 'active' : ''}`}
-              onClick={() => setActiveView(view)}
+              onClick={() => handleViewChange(view)}
             >
               {view === 'notes' ? 'leave a note' : view}
             </button>
           ))}
         </div>
-        {activeView === 'blog' && <BlogView />}
+        {activeView === 'blog' && <BlogView initialSlug={blogSlug} onPostChange={setBlogSlug} />}
         {activeView === 'about' && <AboutView />}
         {activeView === 'notes' && <NotesView onNoteSubmitted={() => setNotesRefreshKey((k) => k + 1)} />}
         {activeView === 'pet' && <Pet />}
