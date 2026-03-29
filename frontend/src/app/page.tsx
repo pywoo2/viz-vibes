@@ -25,7 +25,7 @@ export default function Home() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [vizMode, setVizMode] = useState('waveform');
   const [figuresVisible, setFiguresVisible] = useState(true);
-  const [colorMode, setColorMode] = useState('mono');
+  const [colorMode, setColorMode] = useState('rainbow');
   const [clickEffect, setClickEffect] = useState('ripple');
   const [activeView, setActiveView] = useState<ViewMode>('visualizer');
   const [showWarning, setShowWarning] = useState(true);
