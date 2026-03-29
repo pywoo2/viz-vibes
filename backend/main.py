@@ -170,6 +170,38 @@ def unlike_track(title: str):
     return {"title": title, "likes": likes[title]}
 
 
+IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg"}
+VIDEO_EXTENSIONS = {".mov", ".mp4", ".webm", ".m4v"}
+
+
+@app.get("/api/media")
+def list_media():
+    """List all images and videos in the art/ folder of R2."""
+    try:
+        s3 = get_r2_client()
+        result = []
+        # List art/ prefix (images)
+        response = s3.list_objects_v2(Bucket=R2_BUCKET, Prefix="art/")
+        for obj in response.get("Contents", []):
+            key = obj["Key"]
+            if key == "art/" or key.endswith("/"):
+                continue
+            ext = os.path.splitext(key)[1].lower()
+            if ext in IMAGE_EXTENSIONS:
+                media_type = "image"
+            elif ext in VIDEO_EXTENSIONS:
+                media_type = "video"
+            else:
+                continue
+            result.append({
+                "src": f"{R2_BASE}/{urllib.parse.quote(key, safe='()/,')}",
+                "type": media_type,
+            })
+        return result
+    except Exception:
+        return []
+
+
 @app.get("/api/notes")
 def get_notes():
     return load_notes()

@@ -2,66 +2,12 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 
-const R2_BASE = 'https://pub-7f15cc5f085b475bbeca640a22ea6d7f.r2.dev/art';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
-const ART_MEDIA = [
-  // Photos
-  { src: `${R2_BASE}/325C5B5B-51A5-45B4-B0C6-F4B22C64A812.jpg`, type: 'image' as const },
-  { src: `${R2_BASE}/52D65897-3742-4A5A-AA57-DD809D372053.jpg`, type: 'image' as const },
-  { src: `${R2_BASE}/IMG_0076.JPG`, type: 'image' as const },
-  { src: `${R2_BASE}/IMG_0107.JPG`, type: 'image' as const },
-  { src: `${R2_BASE}/IMG_0181.jpg`, type: 'image' as const },
-  { src: `${R2_BASE}/IMG_0244.jpg`, type: 'image' as const },
-  { src: `${R2_BASE}/IMG_0338.PNG`, type: 'image' as const },
-  { src: `${R2_BASE}/IMG_0381.jpg`, type: 'image' as const },
-  { src: `${R2_BASE}/IMG_0384.JPG`, type: 'image' as const },
-  { src: `${R2_BASE}/IMG_0409.JPG`, type: 'image' as const },
-  { src: `${R2_BASE}/IMG_0413.jpg`, type: 'image' as const },
-  { src: `${R2_BASE}/IMG_0530.jpg`, type: 'image' as const },
-  { src: `${R2_BASE}/IMG_0757.jpg`, type: 'image' as const },
-  { src: `${R2_BASE}/IMG_0878.JPG`, type: 'image' as const },
-  { src: `${R2_BASE}/IMG_0933.jpg`, type: 'image' as const },
-  { src: `${R2_BASE}/IMG_1111.PNG`, type: 'image' as const },
-  { src: `${R2_BASE}/IMG_1114.jpg`, type: 'image' as const },
-  { src: `${R2_BASE}/IMG_1129.PNG`, type: 'image' as const },
-  { src: `${R2_BASE}/IMG_1358.PNG`, type: 'image' as const },
-  { src: `${R2_BASE}/IMG_1700.jpg`, type: 'image' as const },
-  { src: `${R2_BASE}/IMG_1769.jpg`, type: 'image' as const },
-  { src: `${R2_BASE}/IMG_1897.JPG`, type: 'image' as const },
-  { src: `${R2_BASE}/IMG_1914.jpg`, type: 'image' as const },
-  { src: `${R2_BASE}/IMG_1966.jpg`, type: 'image' as const },
-  { src: `${R2_BASE}/IMG_2250.jpg`, type: 'image' as const },
-  { src: `${R2_BASE}/IMG_2750.jpg`, type: 'image' as const },
-  { src: `${R2_BASE}/IMG_3735%20(1).jpg`, type: 'image' as const },
-  // Videos
-  { src: `${R2_BASE}/videos/IMG_0451.MOV`, type: 'video' as const },
-  { src: `${R2_BASE}/videos/IMG_0667.MOV`, type: 'video' as const },
-  { src: `${R2_BASE}/videos/IMG_0683.MOV`, type: 'video' as const },
-  { src: `${R2_BASE}/videos/IMG_1264.MOV`, type: 'video' as const },
-  { src: `${R2_BASE}/videos/IMG_1303.MOV`, type: 'video' as const },
-  { src: `${R2_BASE}/videos/IMG_1613.MOV`, type: 'video' as const },
-  { src: `${R2_BASE}/videos/IMG_2075.MOV`, type: 'video' as const },
-  { src: `${R2_BASE}/videos/IMG_2391.MOV`, type: 'video' as const },
-  { src: `${R2_BASE}/videos/IMG_2668.MOV`, type: 'video' as const },
-  { src: `${R2_BASE}/videos/IMG_2685.MOV`, type: 'video' as const },
-  { src: `${R2_BASE}/videos/IMG_2769.MOV`, type: 'video' as const },
-  { src: `${R2_BASE}/videos/IMG_2901.MOV`, type: 'video' as const },
-  { src: `${R2_BASE}/videos/IMG_3027.MOV`, type: 'video' as const },
-  { src: `${R2_BASE}/videos/IMG_3216.MOV`, type: 'video' as const },
-  { src: `${R2_BASE}/videos/IMG_3238.MOV`, type: 'video' as const },
-  { src: `${R2_BASE}/videos/IMG_3262.MOV`, type: 'video' as const },
-  { src: `${R2_BASE}/videos/IMG_3606.MOV`, type: 'video' as const },
-  { src: `${R2_BASE}/videos/IMG_3695.MOV`, type: 'video' as const },
-  { src: `${R2_BASE}/videos/IMG_3785.MOV`, type: 'video' as const },
-  { src: `${R2_BASE}/videos/IMG_3865.MOV`, type: 'video' as const },
-  { src: `${R2_BASE}/videos/IMG_4217.MOV`, type: 'video' as const },
-  { src: `${R2_BASE}/videos/IMG_4502.MOV`, type: 'video' as const },
-  { src: `${R2_BASE}/videos/IMG_4862.MOV`, type: 'video' as const },
-  { src: `${R2_BASE}/videos/IMG_5909.MOV`, type: 'video' as const },
-  { src: `${R2_BASE}/videos/IMG_6285.MOV`, type: 'video' as const },
-  { src: `${R2_BASE}/videos/IMG_6672.MOV`, type: 'video' as const },
-  { src: `${R2_BASE}/videos/IMG_6693.MOV`, type: 'video' as const },
-];
+interface MediaItem {
+  src: string;
+  type: 'image' | 'video';
+}
 
 interface FiguresLayerProps {
   isPlaying: boolean;
@@ -85,9 +31,10 @@ function randomPosition() {
   return { x: 15 + Math.random() * 70, y: 15 + Math.random() * 70 };
 }
 
-function pickRandomMedia(exclude: string[], preferType?: 'image' | 'video'): { src: string; type: 'image' | 'video' } {
-  const available = ART_MEDIA.filter((m) => !exclude.includes(m.src));
-  const pool = available.length > 0 ? available : ART_MEDIA;
+function pickRandomMedia(allMedia: MediaItem[], exclude: string[], preferType?: 'image' | 'video'): MediaItem | null {
+  if (allMedia.length === 0) return null;
+  const available = allMedia.filter((m) => !exclude.includes(m.src));
+  const pool = available.length > 0 ? available : allMedia;
   if (preferType) {
     const typed = pool.filter((m) => m.type === preferType);
     if (typed.length > 0) return typed[Math.floor(Math.random() * typed.length)];
@@ -96,7 +43,20 @@ function pickRandomMedia(exclude: string[], preferType?: 'image' | 'video'): { s
 }
 
 export default function FiguresLayer({ visible, colorMode }: FiguresLayerProps) {
+  const [allMedia, setAllMedia] = useState<MediaItem[]>([]);
+  const allMediaRef = useRef<MediaItem[]>([]);
   const [images, setImages] = useState<MediaState[]>([]);
+
+  // Fetch media list from API
+  useEffect(() => {
+    fetch(`${API_URL}/api/media`)
+      .then((r) => r.json())
+      .then((data: MediaItem[]) => {
+        setAllMedia(data);
+        allMediaRef.current = data;
+      })
+      .catch(() => {});
+  }, []);
   const dragRef = useRef<{
     index: number;
     startX: number;
@@ -115,14 +75,15 @@ export default function FiguresLayer({ visible, colorMode }: FiguresLayerProps) 
       initializedRef.current = false;
       return;
     }
-    if (initializedRef.current) return;
+    if (initializedRef.current || allMedia.length === 0) return;
     initializedRef.current = true;
 
     const initial: MediaState[] = [];
     const usedSrcs: string[] = [];
     for (let i = 0; i < 3; i++) {
       // First slot is always a video
-      const media = pickRandomMedia(usedSrcs, i === 0 ? 'video' : undefined);
+      const media = pickRandomMedia(allMediaRef.current, usedSrcs, i === 0 ? 'video' : undefined);
+      if (!media) continue;
       usedSrcs.push(media.src);
       const pos = randomPosition();
       initial.push({ x: pos.x, y: pos.y, rotateX: 0, rotateY: 0, scale: 1, opacity: 0, src: media.src, type: media.type });
@@ -141,7 +102,7 @@ export default function FiguresLayer({ visible, colorMode }: FiguresLayerProps) 
     });
 
     return () => timers.forEach(clearTimeout);
-  }, [visible]);
+  }, [visible, allMedia]);
 
   // Cycle figures — 25s on mobile, 15s on desktop to reduce DOM updates
   useEffect(() => {
@@ -163,7 +124,8 @@ export default function FiguresLayer({ visible, colorMode }: FiguresLayerProps) 
           const usedSrcs = prev.map((img) => img.src);
           // If no videos remain after fade, force the replacement to be a video
           const remainingVideos = prev.filter((img, i) => i !== fadedIndex && img.opacity > 0 && img.type === 'video').length;
-          const newMedia = pickRandomMedia(usedSrcs, remainingVideos === 0 ? 'video' : undefined);
+          const newMedia = pickRandomMedia(allMediaRef.current, usedSrcs, remainingVideos === 0 ? 'video' : undefined);
+          if (!newMedia) return prev;
           const pos = randomPosition();
           return prev.map((img, i) =>
             i === fadedIndex
