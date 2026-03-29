@@ -206,6 +206,7 @@ export default function Home() {
         isPlaying={player.isPlaying}
         analyser={player.analyserRef?.current ?? null}
         visible={figuresVisible && activeView === 'visualizer'}
+        colorMode={colorMode}
       />
 
       <NotesLayer visible={figuresVisible && activeView === 'visualizer'} refreshKey={notesRefreshKey} />

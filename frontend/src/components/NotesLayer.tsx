@@ -46,6 +46,9 @@ export default function NotesLayer({ visible, refreshKey }: NotesLayerProps) {
     startY: number;
     startRotX: number;
     startRotY: number;
+    startPosX: number;
+    startPosY: number;
+    mode: 'rotate' | 'move';
   } | null>(null);
   const initializedRef = useRef(false);
   const allNotesRef = useRef<Note[]>([]);
@@ -175,16 +178,24 @@ export default function NotesLayer({ visible, refreshKey }: NotesLayerProps) {
     (e: React.MouseEvent, index: number) => {
       e.preventDefault();
       e.stopPropagation();
+      const isMove = e.button === 2;
       dragRef.current = {
         index,
         startX: e.clientX,
         startY: e.clientY,
         startRotX: displayed[index].rotateX,
         startRotY: displayed[index].rotateY,
+        startPosX: displayed[index].x,
+        startPosY: displayed[index].y,
+        mode: isMove ? 'move' : 'rotate',
       };
     },
     [displayed]
   );
+
+  const handleContextMenu = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+  }, []);
 
   const handleWheel = useCallback(
     (e: React.WheelEvent, index: number) => {
@@ -207,17 +218,29 @@ export default function NotesLayer({ visible, refreshKey }: NotesLayerProps) {
       if (!drag) return;
       const dx = e.clientX - drag.startX;
       const dy = e.clientY - drag.startY;
-      setDisplayed((prev) =>
-        prev.map((n, i) =>
-          i === drag.index
-            ? {
-                ...n,
-                rotateY: drag.startRotY + dx * 0.3,
-                rotateX: drag.startRotX - dy * 0.3,
-              }
-            : n
-        )
-      );
+      if (drag.mode === 'move') {
+        const pctX = (dx / window.innerWidth) * 100;
+        const pctY = (dy / window.innerHeight) * 100;
+        setDisplayed((prev) =>
+          prev.map((n, i) =>
+            i === drag.index
+              ? { ...n, x: drag.startPosX + pctX, y: drag.startPosY + pctY }
+              : n
+          )
+        );
+      } else {
+        setDisplayed((prev) =>
+          prev.map((n, i) =>
+            i === drag.index
+              ? {
+                  ...n,
+                  rotateY: drag.startRotY + dx * 0.3,
+                  rotateX: drag.startRotX - dy * 0.3,
+                }
+              : n
+          )
+        );
+      }
     };
 
     const onMouseUp = () => {
@@ -274,6 +297,7 @@ export default function NotesLayer({ visible, refreshKey }: NotesLayerProps) {
             lineHeight: '1.5',
           }}
           onMouseDown={(e) => handleMouseDown(e, index)}
+          onContextMenu={handleContextMenu}
           onWheel={(e) => handleWheel(e, index)}
         >
           &ldquo;{note.text}&rdquo;

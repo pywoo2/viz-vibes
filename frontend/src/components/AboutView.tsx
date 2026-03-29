@@ -21,7 +21,8 @@ export default function AboutView() {
 
           <h2>tips</h2>
           <p>
-            Click and drag the floating images and notes to rotate them in 3D.
+            Left-click and drag the floating images, videos, and notes to rotate them in 3D.
+            Right-click and drag to move them around.
             Scroll to zoom. Switch visualizers and click effects on the right
             panel. Heart a song to vote — the list sorts by most liked.
           </p>

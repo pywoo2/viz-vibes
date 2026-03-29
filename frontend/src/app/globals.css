@@ -2433,6 +2433,8 @@ body {
   flex: 1;
   overflow-y: auto;
   padding: 80px 48px 48px;
+  max-width: 750px;
+  margin: 0 auto;
   scrollbar-width: thin;
   scrollbar-color: var(--fg-muted) transparent;
 }
@@ -2447,160 +2449,152 @@ body {
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  max-width: 640px;
+  gap: 4px;
+  max-width: 720px;
 }
 
 .blog-post-item {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 6px;
+  gap: 4px;
   width: 100%;
-  padding: 20px 24px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid var(--glass-border);
-  border-radius: 14px;
+  padding: 18px 4px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 0;
   cursor: pointer;
   text-align: left;
   font-family: inherit;
-  transition: background 0.2s, border-color 0.2s, transform 0.2s;
+  transition: opacity 0.15s;
 }
 
 .blog-post-item:hover {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.14);
-  transform: translateY(-1px);
+  opacity: 0.7;
 }
 
 .blog-post-item-title {
-  font-size: 1rem;
-  font-weight: 400;
+  font-size: 1.1rem;
+  font-weight: 600;
   color: var(--fg-bright);
-  letter-spacing: 0.01em;
+  letter-spacing: -0.01em;
 }
 
 .blog-post-item-date {
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   color: var(--fg-muted);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
 }
 
 .blog-post-item-desc {
-  font-size: 0.82rem;
+  font-size: 0.95rem;
   color: var(--fg-dim);
-  font-weight: 300;
-  line-height: 1.55;
+  font-weight: 400;
+  line-height: 1.6;
 }
 
-/* Blog article — markdown typography */
+/* Blog article — Notion-inspired typography */
 .blog-article {
-  max-width: 640px;
+  max-width: 720px;
 }
 
 .blog-post-meta {
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 }
 
 .blog-post-meta time {
-  font-size: 0.7rem;
+  font-size: 0.85rem;
   color: var(--fg-muted);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
 }
 
 .blog-article h1 {
-  font-size: 1.6rem;
-  font-weight: 300;
-  letter-spacing: 0.02em;
+  font-size: 2.4rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
   color: var(--fg-bright);
-  margin-bottom: 20px;
-  line-height: 1.35;
+  margin-bottom: 24px;
+  line-height: 1.2;
 }
 
 .blog-article h2 {
-  font-size: 1.05rem;
-  font-weight: 400;
+  font-size: 1.5rem;
+  font-weight: 600;
   color: var(--fg-bright);
-  margin-top: 40px;
-  margin-bottom: 14px;
-  letter-spacing: 0.02em;
-  padding-bottom: 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  margin-top: 48px;
+  margin-bottom: 16px;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
 }
 
 .blog-article h3 {
-  font-size: 0.92rem;
-  font-weight: 500;
-  color: var(--fg);
-  margin-top: 28px;
-  margin-bottom: 10px;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--fg-bright);
+  margin-top: 36px;
+  margin-bottom: 12px;
+  letter-spacing: -0.01em;
 }
 
 .blog-article p {
-  font-size: 0.88rem;
-  font-weight: 300;
+  font-size: 1rem;
+  font-weight: 400;
   color: var(--fg);
-  line-height: 1.8;
-  margin-bottom: 18px;
+  line-height: 1.7;
+  margin-bottom: 16px;
 }
 
 .blog-article a {
-  color: var(--accent);
-  text-decoration: none;
-  border-bottom: 1px solid transparent;
-  transition: color 0.15s, border-color 0.15s;
+  color: var(--fg);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-color: var(--fg-muted);
+  transition: text-decoration-color 0.15s;
 }
 
 .blog-article a:hover {
-  color: var(--fg-bright);
-  border-bottom-color: var(--fg-dim);
+  text-decoration-color: var(--fg-bright);
 }
 
 .blog-article ul,
 .blog-article ol {
-  margin-bottom: 18px;
-  padding-left: 20px;
+  margin-bottom: 16px;
+  padding-left: 26px;
 }
 
 .blog-article li {
-  font-size: 0.88rem;
-  font-weight: 300;
+  font-size: 1rem;
+  font-weight: 400;
   color: var(--fg);
-  line-height: 1.8;
-  margin-bottom: 6px;
-  padding-left: 4px;
+  line-height: 1.7;
+  margin-bottom: 4px;
 }
 
 .blog-article li::marker {
-  color: var(--fg-muted);
+  color: var(--fg-dim);
 }
 
 .blog-article strong {
-  font-weight: 500;
+  font-weight: 600;
   color: var(--fg-bright);
 }
 
 .blog-article em {
-  color: var(--fg-dim);
+  font-style: italic;
 }
 
 .blog-article code {
-  font-size: 0.8rem;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.04);
-  border-radius: 5px;
-  padding: 2px 7px;
-  color: var(--accent);
-  font-family: 'SF Mono', 'Fira Code', 'JetBrains Mono', monospace;
+  font-size: 0.88em;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  padding: 2px 6px;
+  color: #e06c75;
+  font-family: 'SFMono-Regular', 'Consolas', 'Liberation Mono', 'Menlo', monospace;
 }
 
 .blog-article pre {
-  background: rgba(0, 0, 0, 0.35);
-  border: 1px solid var(--glass-border);
-  border-radius: 10px;
-  padding: 20px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 6px;
+  padding: 20px 24px;
   margin: 24px 0;
   overflow-x: auto;
   scrollbar-width: thin;
@@ -2609,21 +2603,16 @@ body {
 
 .blog-article pre code {
   background: none;
-  border: none;
   padding: 0;
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   color: var(--fg);
-  line-height: 1.6;
+  line-height: 1.55;
 }
 
 .blog-article blockquote {
-  border-left: 2px solid var(--accent-dim);
-  padding: 12px 20px;
+  border-left: 3px solid rgba(255, 255, 255, 0.15);
+  padding: 0 0 0 20px;
   margin: 24px 0;
-  background: rgba(255, 255, 255, 0.02);
-  border-radius: 0 8px 8px 0;
-  color: var(--fg-dim);
-  font-style: italic;
 }
 
 .blog-article blockquote p {
@@ -2633,31 +2622,18 @@ body {
 
 .blog-article hr {
   border: none;
-  border-top: 1px solid var(--glass-border);
-  margin: 40px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  margin: 48px 0;
 }
 
 .blog-article ol {
-  counter-reset: list-counter;
-  list-style: none;
-  padding-left: 0;
+  list-style: decimal;
 }
 
-.blog-article ol li {
-  counter-increment: list-counter;
-  padding-left: 28px;
-  position: relative;
-}
-
-.blog-article ol li::before {
-  content: counter(list-counter);
-  position: absolute;
-  left: 0;
-  color: var(--fg-muted);
-  font-size: 0.78rem;
-  font-weight: 500;
-  width: 20px;
-  text-align: right;
+.blog-article img {
+  max-width: 100%;
+  border-radius: 6px;
+  margin: 24px 0;
 }
 
 /* Notes form */
