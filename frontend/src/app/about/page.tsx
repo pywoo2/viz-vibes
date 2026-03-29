@@ -69,7 +69,7 @@ export default function AboutPage() {
         </Section>
 
         <Section title="the design">
-          Inspired by iOS liquid glass and MySpace.
+          Inspired by MySpace.
         </Section>
 
         <div

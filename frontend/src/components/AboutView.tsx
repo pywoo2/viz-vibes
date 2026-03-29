@@ -22,7 +22,7 @@ export default function AboutView() {
 
           <div className="about-view-section">
             <h2>the design</h2>
-            <p>Inspired by iOS liquid glass and MySpace.</p>
+            <p>Inspired by MySpace.</p>
           </div>
 
           <div className="about-view-section">
