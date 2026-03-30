@@ -348,14 +348,8 @@ def get_pet():
 def feed_pet():
     pet = load_pet()
     pet = apply_decay(pet)
-    new_hunger = pet["hunger"] - 5
-    if new_hunger < 0:
-        # Overfed! Progress goes backwards
-        pet["hunger"] = max(-5, new_hunger)
-        pet["totalInteractions"] = max(0, pet["totalInteractions"] - 5)
-    else:
-        pet["hunger"] = new_hunger
-        pet["totalInteractions"] += 1
+    pet["hunger"] = max(0, pet["hunger"] - 5)
+    pet["totalInteractions"] += 1
     pet["lastFed"] = datetime.now(timezone.utc).isoformat()
     pet["stage"] = get_stage(pet["totalInteractions"])
     pet["mood"] = get_mood(pet)
@@ -368,14 +362,8 @@ def feed_pet():
 def play_pet():
     pet = load_pet()
     pet = apply_decay(pet)
-    new_happy = pet["happiness"] + 5
-    if new_happy > 100:
-        # Overtired! Progress goes backwards
-        pet["happiness"] = min(105, new_happy)
-        pet["totalInteractions"] = max(0, pet["totalInteractions"] - 5)
-    else:
-        pet["happiness"] = new_happy
-        pet["totalInteractions"] += 1
+    pet["happiness"] = min(100, pet["happiness"] + 5)
+    pet["totalInteractions"] += 1
     pet["hunger"] = min(100, pet["hunger"] + 2)
     pet["lastPlayed"] = datetime.now(timezone.utc).isoformat()
     pet["stage"] = get_stage(pet["totalInteractions"])
@@ -389,14 +377,8 @@ def play_pet():
 def clean_pet():
     pet = load_pet()
     pet = apply_decay(pet)
-    new_clean = pet["cleanliness"] + 5
-    if new_clean > 100:
-        # Overcleaned! Progress goes backwards
-        pet["cleanliness"] = min(105, new_clean)
-        pet["totalInteractions"] = max(0, pet["totalInteractions"] - 5)
-    else:
-        pet["cleanliness"] = new_clean
-        pet["totalInteractions"] += 1
+    pet["cleanliness"] = min(100, pet["cleanliness"] + 5)
+    pet["totalInteractions"] += 1
     pet["lastCleaned"] = datetime.now(timezone.utc).isoformat()
     pet["stage"] = get_stage(pet["totalInteractions"])
     pet["mood"] = get_mood(pet)
