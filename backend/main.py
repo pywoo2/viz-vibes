@@ -74,6 +74,10 @@ class PetInteractBody(BaseModel):
     clean: int = 0
 
 
+class TrackLikeDelta(BaseModel):
+    delta: int
+
+
 def get_r2_client():
     return boto3.client(
         "s3",
@@ -188,6 +192,23 @@ def like_track(title: str):
         raise HTTPException(status_code=404, detail="Track not found")
     likes = load_likes()
     likes[title] = likes.get(title, 0) + 1
+    if not save_likes(likes):
+        raise HTTPException(status_code=500, detail="Failed to persist like")
+    return {"title": title, "likes": likes[title]}
+
+
+@app.post("/api/tracks/{title:path}/like/batch")
+def batch_like_track(title: str, body: TrackLikeDelta):
+    title = urllib.parse.unquote(title)
+    if body.delta == 0:
+        likes = load_likes()
+        return {"title": title, "likes": likes.get(title, 0)}
+    tracks = list_tracks_from_r2()
+    titles = [t["title"] for t in tracks]
+    if title not in titles:
+        raise HTTPException(status_code=404, detail="Track not found")
+    likes = load_likes()
+    likes[title] = max(likes.get(title, 0) + body.delta, 0)
     if not save_likes(likes):
         raise HTTPException(status_code=500, detail="Failed to persist like")
     return {"title": title, "likes": likes[title]}

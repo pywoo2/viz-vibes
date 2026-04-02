@@ -45,7 +45,6 @@ export default function Sidebar({
   colorMode,
   onColorModeChange,
 }: SidebarProps) {
-  const [likingTracks, setLikingTracks] = useState<Set<number>>(new Set());
   const [heartPulsingTracks, setHeartPulsingTracks] = useState<Set<number>>(new Set());
   const [downloadingTracks, setDownloadingTracks] = useState<Set<number>>(new Set());
   const sidebarRef = useRef<HTMLDivElement>(null);
@@ -87,14 +86,37 @@ export default function Sidebar({
     e.currentTarget.style.background = '';
   }, []);
 
-  const handleLike = useCallback(
-    async (e: React.MouseEvent, index: number) => {
-      e.stopPropagation();
-      if (likingTracks.has(index)) return;
+  // Batched likes: accumulate per-track deltas, debounce, flush one request per track
+  const pendingLikes = useRef<Record<number, number>>({});
+  const likeTimers = useRef<Record<number, ReturnType<typeof setTimeout>>>({});
+  const tracksRef = useRef(tracks);
+  tracksRef.current = tracks;
 
-      const track = tracks[index];
-      const prevLikes = track.likes || 0;
-      const newLikes = prevLikes + 1;
+  const flushLike = useCallback(async (index: number) => {
+    const delta = pendingLikes.current[index] || 0;
+    delete pendingLikes.current[index];
+    if (delta === 0) return;
+    const track = tracksRef.current[index];
+    if (!track) return;
+    try {
+      const res = await fetch(
+        `${API_URL}/api/tracks/${encodeURIComponent(track.title)}/like/batch`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ delta }),
+        }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        onUpdateTrackLikes(index, data.likes);
+      }
+    } catch { /* optimistic update already applied */ }
+  }, [onUpdateTrackLikes]);
+
+  const handleLike = useCallback(
+    (e: React.MouseEvent, index: number) => {
+      e.stopPropagation();
 
       // Effect 7: Trigger heart pulse animation
       setHeartPulsingTracks((prev) => new Set(prev).add(index));
@@ -107,30 +129,17 @@ export default function Sidebar({
       }, 900);
 
       // Optimistic update
-      onUpdateTrackLikes(index, newLikes);
-      setLikingTracks((prev) => new Set(prev).add(index));
+      const track = tracks[index];
+      onUpdateTrackLikes(index, (track.likes || 0) + 1);
 
-      try {
-        const res = await fetch(
-          `${API_URL}/api/tracks/${encodeURIComponent(track.title)}/like`,
-          { method: 'POST' }
-        );
-        if (!res.ok) {
-          // Server returned an error — revert optimistic update
-          onUpdateTrackLikes(index, prevLikes);
-        }
-      } catch {
-        // Network error — revert optimistic update
-        onUpdateTrackLikes(index, prevLikes);
-      } finally {
-        setLikingTracks((prev) => {
-          const next = new Set(prev);
-          next.delete(index);
-          return next;
-        });
-      }
+      // Accumulate delta
+      pendingLikes.current[index] = (pendingLikes.current[index] || 0) + 1;
+
+      // Debounce flush per track
+      if (likeTimers.current[index]) clearTimeout(likeTimers.current[index]);
+      likeTimers.current[index] = setTimeout(() => flushLike(index), 600);
     },
-    [tracks, likingTracks, onUpdateTrackLikes]
+    [tracks, onUpdateTrackLikes, flushLike]
   );
 
   const handleDownload = useCallback(
@@ -266,7 +275,7 @@ export default function Sidebar({
                   <div className="name">{track.title}</div>
                 </div>
                 <button
-                  className={`like-btn ${likingTracks.has(i) ? 'liked' : ''} ${heartPulsingTracks.has(i) ? 'heart-pulsing' : ''}`}
+                  className={`like-btn ${heartPulsingTracks.has(i) ? 'heart-pulsing' : ''}`}
                   onClick={(e) => handleLike(e, i)}
                   title="Like"
                   aria-label="Like this track"
