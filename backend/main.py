@@ -35,6 +35,8 @@ PET_KEY = "_pet.json"
 PET_TODOS_KEY = "_pet_todos.json"
 COUNTER_KEY = "_counter.json"
 COUNTER_LOG_KEY = "_counter_log.json"
+BLOG_LIKES_KEY = "_blog_likes.json"
+BLOG_COMMENTS_KEY = "_blog_comments.json"
 
 DEFAULT_PET = {
     "name": "tamagotchi",
@@ -64,6 +66,12 @@ class TodoBody(BaseModel):
 
 class RenameBody(BaseModel):
     name: str
+
+
+class PetInteractBody(BaseModel):
+    feed: int = 0
+    play: int = 0
+    clean: int = 0
 
 
 def get_r2_client():
@@ -387,6 +395,32 @@ def clean_pet():
     return pet
 
 
+@app.post("/api/pet/interact")
+def interact_pet(body: PetInteractBody):
+    total = body.feed + body.play + body.clean
+    if total == 0:
+        return load_pet()
+    pet = load_pet()
+    pet = apply_decay(pet)
+    now = datetime.now(timezone.utc).isoformat()
+    if body.feed > 0:
+        pet["hunger"] = max(0, pet["hunger"] - 5 * body.feed)
+        pet["lastFed"] = now
+    if body.play > 0:
+        pet["happiness"] = min(100, pet["happiness"] + 5 * body.play)
+        pet["hunger"] = min(100, pet["hunger"] + 2 * body.play)
+        pet["lastPlayed"] = now
+    if body.clean > 0:
+        pet["cleanliness"] = min(100, pet["cleanliness"] + 5 * body.clean)
+        pet["lastCleaned"] = now
+    pet["totalInteractions"] += total
+    pet["stage"] = get_stage(pet["totalInteractions"])
+    pet["mood"] = get_mood(pet)
+    if not save_pet(pet):
+        raise HTTPException(status_code=500, detail="Failed to persist pet state")
+    return pet
+
+
 @app.post("/api/pet/rename")
 def rename_pet(body: RenameBody):
     name = body.name.strip()[:20]
@@ -570,3 +604,100 @@ def reset_counter():
         raise HTTPException(status_code=500, detail="Failed to persist counter")
     append_counter_log("reset")
     return counter
+
+
+# ── Blog likes & comments ────────────────────────────────────────────
+
+
+class BlogCommentBody(BaseModel):
+    text: str
+    name: str = "anonymous"
+
+
+def load_blog_likes() -> dict[str, int]:
+    try:
+        s3 = get_r2_client()
+        response = s3.get_object(Bucket=R2_BUCKET, Key=BLOG_LIKES_KEY)
+        return json.loads(response["Body"].read().decode("utf-8"))
+    except Exception:
+        return {}
+
+
+def save_blog_likes(likes: dict[str, int]) -> bool:
+    try:
+        s3 = get_r2_client()
+        s3.put_object(
+            Bucket=R2_BUCKET,
+            Key=BLOG_LIKES_KEY,
+            Body=json.dumps(likes, indent=2).encode("utf-8"),
+            ContentType="application/json",
+        )
+        return True
+    except Exception as e:
+        print(f"[save_blog_likes] Failed: {e}")
+        return False
+
+
+def load_blog_comments() -> dict[str, list[dict]]:
+    try:
+        s3 = get_r2_client()
+        response = s3.get_object(Bucket=R2_BUCKET, Key=BLOG_COMMENTS_KEY)
+        return json.loads(response["Body"].read().decode("utf-8"))
+    except Exception:
+        return {}
+
+
+def save_blog_comments(comments: dict[str, list[dict]]) -> bool:
+    try:
+        s3 = get_r2_client()
+        s3.put_object(
+            Bucket=R2_BUCKET,
+            Key=BLOG_COMMENTS_KEY,
+            Body=json.dumps(comments, indent=2).encode("utf-8"),
+            ContentType="application/json",
+        )
+        return True
+    except Exception as e:
+        print(f"[save_blog_comments] Failed: {e}")
+        return False
+
+
+@app.get("/api/blog/{slug}/likes")
+def get_blog_likes(slug: str):
+    likes = load_blog_likes()
+    return {"slug": slug, "likes": likes.get(slug, 0)}
+
+
+@app.post("/api/blog/{slug}/like")
+def like_blog(slug: str):
+    likes = load_blog_likes()
+    likes[slug] = likes.get(slug, 0) + 1
+    if not save_blog_likes(likes):
+        raise HTTPException(status_code=500, detail="Failed to persist like")
+    return {"slug": slug, "likes": likes[slug]}
+
+
+@app.get("/api/blog/{slug}/comments")
+def get_blog_comments(slug: str):
+    comments = load_blog_comments()
+    return comments.get(slug, [])
+
+
+@app.post("/api/blog/{slug}/comments")
+def add_blog_comment(slug: str, body: BlogCommentBody):
+    text = body.text.strip()
+    if not text or len(text) > 500:
+        raise HTTPException(status_code=400, detail="Comment must be 1-500 characters")
+    name = body.name.strip()[:30] or "anonymous"
+    comments = load_blog_comments()
+    if slug not in comments:
+        comments[slug] = []
+    new_comment = {
+        "text": text,
+        "name": name,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+    comments[slug].append(new_comment)
+    if not save_blog_comments(comments):
+        raise HTTPException(status_code=500, detail="Failed to persist comment")
+    return new_comment

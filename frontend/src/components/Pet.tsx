@@ -431,7 +431,43 @@ export default function Pet() {
     setTimeout(() => setActionFlash(false), 300);
   }, []);
 
-  const handleAction = useCallback(async (action: string, animName: string, emoji: string, e?: React.MouseEvent) => {
+  // Batched interaction: accumulate clicks, debounce, send one request
+  const pendingActions = useRef({ feed: 0, play: 0, clean: 0 });
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const animResetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const flushActions = useCallback(async () => {
+    const batch = { ...pendingActions.current };
+    pendingActions.current = { feed: 0, play: 0, clean: 0 };
+    if (batch.feed + batch.play + batch.clean === 0) return;
+    try {
+      const res = await fetch(`${API_URL}/api/pet/interact`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(batch),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setPet(data);
+      }
+    } catch { /* optimistic update already applied */ }
+  }, []);
+
+  const queueAction = useCallback((action: 'feed' | 'play' | 'clean', animName: string, emoji: string, e?: React.MouseEvent) => {
+    pendingActions.current[action] += 1;
+
+    // Optimistic local update
+    setPet(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        hunger: action === 'feed' ? Math.max(0, prev.hunger - 5) : (action === 'play' ? Math.min(100, prev.hunger + 2) : prev.hunger),
+        happiness: action === 'play' ? Math.min(100, prev.happiness + 5) : prev.happiness,
+        cleanliness: action === 'clean' ? Math.min(100, prev.cleanliness + 5) : prev.cleanliness,
+        totalInteractions: prev.totalInteractions + 1,
+      };
+    });
+
     setAnimation(animName);
     const btnEl = e?.currentTarget as HTMLElement | undefined;
     if (btnEl) {
@@ -440,28 +476,19 @@ export default function Pet() {
     }
     triggerFlash();
     setTimeout(() => setFeedbackEmoji(null), 1500);
-    try {
-      await fetch(`${API_URL}/api/pet/${action}`, { method: 'POST' });
-      const data = await fetch(`${API_URL}/api/pet`).then(r => r.json());
-      setPet(data);
-    } catch {
-      // Simulate locally if backend is down
-      if (pet) {
-        setPet({
-          ...pet,
-          hunger: action === 'feed' ? Math.max(0, pet.hunger - 20) : pet.hunger,
-          happiness: action === 'play' ? Math.min(100, pet.happiness + 15) : pet.happiness,
-          cleanliness: action === 'clean' ? Math.min(100, pet.cleanliness + 25) : pet.cleanliness,
-          totalInteractions: pet.totalInteractions + 1,
-        });
-      }
-    }
-    setTimeout(() => setAnimation('idle'), 2000);
-  }, [pet, triggerFlash]);
 
-  const handleFeed = useCallback((e: React.MouseEvent) => handleAction('feed', 'eating', '\u{1F354}', e), [handleAction]);
-  const handlePlay = useCallback((e: React.MouseEvent) => handleAction('play', 'playing', '\u{1F3BE}', e), [handleAction]);
-  const handleClean = useCallback((e: React.MouseEvent) => handleAction('clean', 'sleeping', '\u2728', e), [handleAction]);
+    // Reset animation after inactivity
+    if (animResetTimer.current) clearTimeout(animResetTimer.current);
+    animResetTimer.current = setTimeout(() => setAnimation('idle'), 2000);
+
+    // Debounce the network request
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(flushActions, 600);
+  }, [triggerFlash, flushActions]);
+
+  const handleFeed = useCallback((e: React.MouseEvent) => queueAction('feed', 'eating', '\u{1F354}', e), [queueAction]);
+  const handlePlay = useCallback((e: React.MouseEvent) => queueAction('play', 'playing', '\u{1F3BE}', e), [queueAction]);
+  const handleClean = useCallback((e: React.MouseEvent) => queueAction('clean', 'sleeping', '\u2728', e), [queueAction]);
 
   const renamingRef = useRef(false);
   const handleRename = useCallback(async (newName: string) => {
