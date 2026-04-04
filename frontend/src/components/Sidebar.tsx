@@ -87,20 +87,21 @@ export default function Sidebar({
   }, []);
 
   // Batched likes: accumulate per-track deltas, debounce, flush one request per track
-  const pendingLikes = useRef<Record<number, number>>({});
-  const likeTimers = useRef<Record<number, ReturnType<typeof setTimeout>>>({});
+  // Keyed by track title (stable) instead of array index (shifts on re-sort)
+  const pendingLikes = useRef<Record<string, number>>({});
+  const likeTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const tracksRef = useRef(tracks);
   tracksRef.current = tracks;
 
-  const flushLike = useCallback(async (index: number) => {
-    const delta = pendingLikes.current[index] || 0;
-    delete pendingLikes.current[index];
+  const flushLike = useCallback(async (title: string) => {
+    const delta = pendingLikes.current[title] || 0;
+    delete pendingLikes.current[title];
     if (delta === 0) return;
-    const track = tracksRef.current[index];
-    if (!track) return;
+    const currentIndex = tracksRef.current.findIndex((t) => t.title === title);
+    if (currentIndex === -1) return;
     try {
       const res = await fetch(
-        `${API_URL}/api/tracks/${encodeURIComponent(track.title)}/like/batch`,
+        `${API_URL}/api/tracks/${encodeURIComponent(title)}/like/batch`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -109,7 +110,7 @@ export default function Sidebar({
       );
       if (res.ok) {
         const data = await res.json();
-        onUpdateTrackLikes(index, data.likes);
+        onUpdateTrackLikes(currentIndex, data.likes);
       }
     } catch { /* optimistic update already applied */ }
   }, [onUpdateTrackLikes]);
@@ -117,6 +118,7 @@ export default function Sidebar({
   const handleLike = useCallback(
     (e: React.MouseEvent, index: number) => {
       e.stopPropagation();
+      const title = tracks[index].title;
 
       // Effect 7: Trigger heart pulse animation
       setHeartPulsingTracks((prev) => new Set(prev).add(index));
@@ -129,15 +131,14 @@ export default function Sidebar({
       }, 900);
 
       // Optimistic update
-      const track = tracks[index];
-      onUpdateTrackLikes(index, (track.likes || 0) + 1);
+      onUpdateTrackLikes(index, (tracks[index].likes || 0) + 1);
 
       // Accumulate delta
-      pendingLikes.current[index] = (pendingLikes.current[index] || 0) + 1;
+      pendingLikes.current[title] = (pendingLikes.current[title] || 0) + 1;
 
       // Debounce flush per track
-      if (likeTimers.current[index]) clearTimeout(likeTimers.current[index]);
-      likeTimers.current[index] = setTimeout(() => flushLike(index), 600);
+      if (likeTimers.current[title]) clearTimeout(likeTimers.current[title]);
+      likeTimers.current[title] = setTimeout(() => flushLike(title), 600);
     },
     [tracks, onUpdateTrackLikes, flushLike]
   );
