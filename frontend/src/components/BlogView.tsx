@@ -44,7 +44,10 @@ export default function BlogView({ initialSlug, onPostChange }: BlogViewProps) {
     }
     setLoading(true);
     fetch(`/api/notion?pageId=${activePost.notionId}`)
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error(`Failed to load post (${r.status})`);
+        return r.json() as Promise<ExtendedRecordMap>;
+      })
       .then((data) => setRecordMap(data))
       .catch(() => setRecordMap(null))
       .finally(() => setLoading(false));
